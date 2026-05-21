@@ -4,10 +4,10 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 export default function Pedidos() {
-  const pedidosBase = [
+  const [pedidos, setPedidos] = useState([
     {
       id: "#94821",
       produto: "RTX 4090 ASUS ROG",
@@ -32,60 +32,29 @@ export default function Pedidos() {
       preco: "R$ 899,90",
       cor: "#ffcf40",
     },
-  ];
-
-  const [pedidos, setPedidos] = useState([
-    ...pedidosBase,
-    ...pedidosBase,
-    ...pedidosBase,
+    {
+      id: "#94824",
+      produto: "Monitor Gamer 240Hz",
+      status: "Em separação",
+      data: "08 Maio 2026",
+      preco: "R$ 2.199,90",
+      cor: "#ffb300",
+    },
+    {
+      id: "#94825",
+      produto: "SSD NVME 2TB",
+      status: "Entregue",
+      data: "02 Maio 2026",
+      preco: "R$ 1.049,90",
+      cor: "#ffcf40",
+    },
   ]);
-
-  const scrollRef = useRef(null);
-
-  function gerarPedidos() {
-    return pedidosBase.map((pedido) => ({
-      ...pedido,
-      id: `#${Math.floor(Math.random() * 90000) + 10000}`,
-    }));
-  }
 
   function deletarPedido(id) {
     setPedidos((prev) =>
       prev.filter((pedido) => pedido.id !== id)
     );
   }
-
-  useEffect(() => {
-    const container = scrollRef.current;
-
-    const handleScroll = () => {
-      if (!container) return;
-
-      const chegouNoFim =
-        container.scrollTop + container.clientHeight >=
-        container.scrollHeight - 100;
-
-      if (chegouNoFim) {
-        setPedidos((prev) => [
-          ...prev,
-          ...gerarPedidos(),
-        ]);
-      }
-    };
-
-    if (container) {
-      container.addEventListener("scroll", handleScroll);
-    }
-
-    return () => {
-      if (container) {
-        container.removeEventListener(
-          "scroll",
-          handleScroll
-        );
-      }
-    };
-  }, []);
 
   return (
     <div
@@ -348,7 +317,6 @@ export default function Pedidos() {
 
               {/* SCROLL */}
               <div
-                ref={scrollRef}
                 style={{
                   overflowY: "auto",
                   flex: 1,
@@ -356,9 +324,9 @@ export default function Pedidos() {
                 }}
               >
                 <div className="d-flex flex-column gap-4">
-                  {pedidos.map((pedido, index) => (
+                  {pedidos.map((pedido) => (
                     <div
-                      key={index}
+                      key={pedido.id}
                       style={{
                         position: "relative",
                         background: `
@@ -388,10 +356,10 @@ export default function Pedidos() {
                         style={{
                           position: "absolute",
                           top: "20px",
-                          right: "10px",
-                          width: "20px",
-                          height: "28px",
-                          borderRadius: "18px",
+                          right: "20px",
+                          width: "42px",
+                          height: "42px",
+                          borderRadius: "14px",
                           border:
                             "1px solid rgba(255,255,255,.06)",
                           background: `
@@ -408,30 +376,6 @@ export default function Pedidos() {
                             inset 0 1px 0 rgba(255,255,255,.03),
                             0 10px 25px rgba(0,0,0,.20)
                           `,
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform =
-                            "translateY(-2px) scale(1.04)";
-                          e.currentTarget.style.background =
-                            "linear-gradient(145deg, rgba(192,1,42,.35), rgba(120,0,20,.42))";
-                          e.currentTarget.style.border =
-                            "1px solid rgba(255,120,140,.20)";
-                          e.currentTarget.style.color =
-                            "#fff";
-                          e.currentTarget.style.boxShadow =
-                            "0 14px 30px rgba(192,1,42,.30)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform =
-                            "translateY(0px) scale(1)";
-                          e.currentTarget.style.background =
-                            "linear-gradient(145deg, rgba(255,255,255,.04), rgba(255,255,255,.02))";
-                          e.currentTarget.style.border =
-                            "1px solid rgba(255,255,255,.06)";
-                          e.currentTarget.style.color =
-                            "#ff758f";
-                          e.currentTarget.style.boxShadow =
-                            "inset 0 1px 0 rgba(255,255,255,.03), 0 10px 25px rgba(0,0,0,.20)";
                         }}
                       >
                         <i
@@ -565,18 +509,46 @@ export default function Pedidos() {
                     </div>
                   ))}
 
-                  {/* LOADING */}
-                  <div
-                    className="d-flex justify-content-center align-items-center"
-                    style={{
-                      height: "80px",
-                      color: "#ffcf40",
-                      fontWeight: "700",
-                      opacity: 0.7,
-                    }}
-                  >
-                    Carregando mais pedidos...
-                  </div>
+                  {pedidos.length === 0 && (
+                    <div
+                      className="d-flex flex-column justify-content-center align-items-center"
+                      style={{
+                        height: "300px",
+                        borderRadius: "28px",
+                        border:
+                          "1px solid rgba(255,255,255,.06)",
+                        background:
+                          "rgba(255,255,255,.02)",
+                      }}
+                    >
+                      <i
+                        className="bi bi-bag-x"
+                        style={{
+                          fontSize: "4rem",
+                          color: "#ffcf40",
+                          marginBottom: "18px",
+                        }}
+                      />
+
+                      <h3
+                        style={{
+                          color: "white",
+                          fontWeight: "700",
+                        }}
+                      >
+                        Nenhum pedido encontrado
+                      </h3>
+
+                      <p
+                        style={{
+                          color:
+                            "rgba(255,255,255,.55)",
+                        }}
+                      >
+                        Todos os pedidos foram removidos.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
