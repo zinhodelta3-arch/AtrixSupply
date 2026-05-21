@@ -7,13 +7,15 @@ const router = express.Router();
 
 // Rotas públicas (não precisam de autenticação)
 router.get('/', ProdutoController.listarTodos);
-router.get('/:id', ProdutoController.buscarPorId);
+router.get('/:id_produto', ProdutoController.buscarPorId);
+router.get('/categoria/:categoria', ProdutoController.buscarPorCategoria);
+router.get('/nome/:nome_produto', ProdutoController.buscarPorNome);
 
 // Rotas protegidas (precisam de autenticação)
 router.post('/', authMiddleware, uploadImagens.single('imagem'), handleUploadError, ProdutoController.criar);
 router.post('/upload', authMiddleware, uploadImagens.single('imagem'), handleUploadError, ProdutoController.uploadImagem);
-router.put('/:id', authMiddleware, uploadImagens.single('imagem'), handleUploadError, ProdutoController.atualizar);
-router.delete('/:id', authMiddleware, ProdutoController.excluir);
+router.put('/:id_produto', authMiddleware, uploadImagens.single('imagem'), handleUploadError, ProdutoController.atualizar);
+router.delete('/:id_produto', authMiddleware, ProdutoController.excluir);
 
 // Rotas OPTIONS para CORS (preflight requests)
 router.options('/', (req, res) => {

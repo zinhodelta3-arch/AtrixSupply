@@ -152,6 +152,14 @@ class AuthController {
                 });
             }
 
+            if (!tipo || tipo.trim() === '') {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'Tipo obrigatório',
+                    mensagem: 'O tipo é obrigatório'
+                });
+            }
+
             if (!cep || cep.trim() === '') {
                 return res.status(400).json({
                     sucesso: false,
@@ -221,6 +229,14 @@ class AuthController {
                 });
             }
 
+            if (tipo != 'comum' || tipo != 'fornecedor'){
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'Tipo inválido',
+                    mensagem: 'O usuário pode ser somente um cliente ou fornecedor'
+                })
+            }
+
             if (cep.length != 9) {
                 return res.status(400).json({
                     sucesso: false,
@@ -287,6 +303,37 @@ class AuthController {
     static async obterPerfil(req, res) {
         try {
             const usuario = await UsuarioModel.buscarPorId(req.usuario.id_user);
+            
+            if (!usuario) {
+                return res.status(404).json({
+                    sucesso: false,
+                    erro: 'Usuário não encontrado',
+                    mensagem: 'Usuário não foi encontrado'
+                });
+            }
+
+            // Remover senha dos dados retornados
+            const { senha, ...usuarioSemSenha } = usuario;
+
+            res.status(200).json({
+                sucesso: true,
+                dados: usuarioSemSenha
+            });
+        } catch (error) {
+            console.error('Erro ao obter perfil:', error);
+            res.status(500).json({
+                sucesso: false,
+                erro: 'Erro interno do servidor',
+                mensagem: 'Não foi possível obter o perfil'
+            });
+        }
+    }
+
+    // GET /auth/:id_user - Obter perfil do usuário específico
+    static async buscarUsuarioPorId(req, res) {
+        try {
+            const { id_user } = req.params
+            const usuario = await UsuarioModel.buscarPorId(id_user);
             
             if (!usuario) {
                 return res.status(404).json({
@@ -559,7 +606,7 @@ class AuthController {
     static async atualizarUsuario(req, res) {
         try {
             const { id_user } = req.params;
-            const { nome_user, cnpj, endereco, empresa, cargo, email, senha, tipo, cep } = req.body;
+            const { nome_user, cnpj, endereco, empresa, cargo, email, senha, cep } = req.body;
             
             // Validação do ID
             if (!id_user || isNaN(id_user)) {
@@ -693,9 +740,6 @@ class AuthController {
                 dadosAtualizacao.email = email.trim().toLowerCase();
             }
 
-            const saltRounds = 10;
-            const senhaHash = await bcrypt.hash(senha, saltRounds);
-
             if (senha !== undefined) {
                 if (senha.length < 6) {
                     return res.status(400).json({
@@ -707,10 +751,6 @@ class AuthController {
                 const saltRounds = 10;
                 const senhaHash = await bcrypt.hash(senha, saltRounds);
                 dadosAtualizacao.senha = senhaHash;
-            }
-
-            if (tipo !== undefined) {
-                dadosAtualizacao.tipo = tipo;
             }
 
             if (cep !== undefined) {
@@ -729,6 +769,10 @@ class AuthController {
                     });
                 }
                 dadosAtualizacao.cep = cep.trim();
+            }
+
+            if (req.file) {
+                dadosAtualizacao.foto = req.file.filename;
             }
 
             // Verificar se há dados para atualizar

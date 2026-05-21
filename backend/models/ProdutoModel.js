@@ -8,7 +8,7 @@ class ProdutoModel {
 
             const connection = await getConnection();
             try {
-                const sql = 'SELECT * FROM produtos ORDER BY id DESC LIMIT ? OFFSET ?';
+                const sql = 'SELECT * FROM produtos ORDER BY id_produto DESC LIMIT ? OFFSET ?';
 
                 const [produtos] = await connection.query(sql, [limite, offset]);
 
@@ -76,11 +76,77 @@ class ProdutoModel {
     }
 
     // Buscar produtos por categoria
-    static async buscarPorCategoria(categoria) {
-        try {
-            return await read('produtos', `categoria = '${categoria}'`);
+
+    static async buscarPorCategoria(categoria, limite, offset) {
+         try {
+
+            const connection = await getConnection();
+            try {
+                const sql = 'SELECT * FROM produtos WHERE categoria LIKE ? ORDER BY id_produto DESC LIMIT ? OFFSET ?;';
+
+                const [produtos] = await connection.query(sql, [categoria, limite, offset]);
+
+                const [totalResult] = await connection.query('SELECT COUNT(*) as total FROM produtos WHERE categoria LIKE ?', [categoria]);
+                const total = totalResult[0].total;
+
+                const paginaAtual = (offset / limite) + 1;
+                const totalPaginas = Math.ceil(total / limite);
+
+                return {
+                    produtos,
+                    total,
+                    pagina: paginaAtual,
+                    limite,
+                    totalPaginas
+                };
+            } finally {
+                connection.release();
+            }
         } catch (error) {
-            console.error('Erro ao buscar produtos por categoria:', error);
+            console.error('Erro ao listar produtos:', error);
+            throw error;
+        }
+    }
+
+    // static async buscarPorCategoria(categoria) {
+    //     try {
+    //         return await read('produtos', `categoria = '${categoria}'`);
+    //     } catch (error) {
+    //         console.error('Erro ao buscar produtos por categoria:', error);
+    //         throw error;
+    //     }
+    // }
+
+
+    static async buscarPorNome(nome_produto, limite, offset) {
+         try {
+
+            const connection = await getConnection();
+            try {
+                const sql = 'SELECT * FROM produtos WHERE nome_produto LIKE ? ORDER BY id_produto DESC LIMIT ? OFFSET ?;';
+
+                const nome = `%${nome_produto}%`;
+
+                const [produtos] = await connection.query(sql, [nome, limite, offset]);
+
+                const [totalResult] = await connection.query('SELECT COUNT(*) as total FROM produtos WHERE nome_produto LIKE ?;', [nome]);
+                const total = totalResult[0].total;
+
+                const paginaAtual = (offset / limite) + 1;
+                const totalPaginas = Math.ceil(total / limite);
+
+                return {
+                    produtos,
+                    total,
+                    pagina: paginaAtual,
+                    limite,
+                    totalPaginas
+                };
+            } finally {
+                connection.release();
+            }
+        } catch (error) {
+            console.error('Erro ao listar produtos:', error);
             throw error;
         }
     }

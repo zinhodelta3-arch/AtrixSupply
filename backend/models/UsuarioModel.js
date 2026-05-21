@@ -10,7 +10,7 @@ class UsuarioModel {
             // Buscar usuários com paginação (usando prepared statements para segurança)
             const connection = await getConnection();
             try {
-                const sql = 'SELECT * FROM usuarios ORDER BY id DESC LIMIT ? OFFSET ?';
+                const sql = 'SELECT * FROM usuarios ORDER BY id_user DESC LIMIT ? OFFSET ?';
                 const [usuarios] = await connection.query(sql, [limite, offset]);
                 
                 // Contar total de registros
@@ -36,7 +36,7 @@ class UsuarioModel {
     // Buscar usuário por ID
     static async buscarPorId(id_user) {
         try {
-            const rows = await read('usuarios', `id_user = ${id_user}`);
+            const rows = await read('usuarios', `id_user = ?`, [id_user]);
             return rows[0] || null;
         } catch (error) {
             console.error('Erro ao buscar usuário por ID:', error);

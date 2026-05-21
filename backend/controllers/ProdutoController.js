@@ -64,6 +64,120 @@ class ProdutoController {
         }
     }
 
+    // GET /produtos/:categoria - Listar todos os produtos da categoria (com paginação)
+    static async buscarPorCategoria(req, res) {
+        try {
+            
+            let categoria = req.params.categoria || 'geral'; //validar categoria dps
+            let pagina = parseInt(req.query.pagina) || 1;
+            let limite = parseInt(req.query.limite) || 10;
+
+            if (pagina <= 0) {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'Página inválida',
+                    mensagem: 'A página deve ser um número maior que zero'
+                });
+            }
+            if (limite <= 0) {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'Limite inválido',
+                    mensagem: 'O limite deve ser um número maior que zero'
+                });
+            }
+
+            const limiteMaximo = parseInt(process.env.PAGINACAO_LIMITE_MAXIMO) || 100;
+            if (limite > limiteMaximo) {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'Limite inválido',
+                    mensagem: `O limite deve ser um número entre 1 e ${limiteMaximo}`
+                });
+            }
+
+            const offset = (pagina - 1) * limite;
+
+            const resultado = await ProdutoModel.buscarPorCategoria(categoria, limite, offset); 
+
+            res.status(200).json({
+                sucesso: true,
+                dados: resultado.produtos,
+                paginacao: {
+                    pagina: resultado.pagina, 
+                    limite: resultado.limite, 
+                    total: resultado.total,   
+                    totalPaginas: resultado.totalPaginas 
+                }
+            });
+        } catch (error) {
+            console.error('Erro ao listar produtos:', error);
+            res.status(500).json({
+                sucesso: false,
+                erro: 'Erro interno do servidor',
+                mensagem: 'Não foi possível listar os produtos por categoria'
+            });
+        }
+    }
+
+        // GET /produtos/:nome - Listar todos os produtos da nome (com paginação)
+    static async buscarPorNome(req, res) {
+        try {
+            
+            let nome_produto = req.params.nome_produto || '*';
+            let pagina = parseInt(req.query.pagina) || 1;
+            let limite = parseInt(req.query.limite) || 10;
+
+            if (pagina <= 0) {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'Página inválida',
+                    mensagem: 'A página deve ser um número maior que zero'
+                });
+            }
+            if (limite <= 0) {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'Limite inválido',
+                    mensagem: 'O limite deve ser um número maior que zero'
+                });
+            }
+
+            const limiteMaximo = parseInt(process.env.PAGINACAO_LIMITE_MAXIMO) || 100;
+            if (limite > limiteMaximo) {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'Limite inválido',
+                    mensagem: `O limite deve ser um número entre 1 e ${limiteMaximo}`
+                });
+            }
+
+            const offset = (pagina - 1) * limite;
+
+            const resultado = await ProdutoModel.buscarPorNome(nome_produto, limite, offset); 
+
+            res.status(200).json({
+                sucesso: true,
+                dados: resultado.produtos,
+                paginacao: {
+                    pagina: resultado.pagina, 
+                    limite: resultado.limite, 
+                    total: resultado.total,   
+                    totalPaginas: resultado.totalPaginas 
+                }
+            });
+        } catch (error) {
+            console.error('Erro ao listar produtos:', error);
+            res.status(500).json({
+                sucesso: false,
+                erro: 'Erro interno do servidor',
+                mensagem: 'Não foi possível listar os produtos por nome'
+            });
+        }
+    }
+
+
+
     // GET /produtos/:id - Buscar produto por ID
     static async buscarPorId(req, res) {
         try {
@@ -105,7 +219,7 @@ class ProdutoController {
     // POST /produtos - Criar novo produto
     static async criar(req, res) {
         try {
-            const { nome_produto, descricao, preco, categoria, estoque, imagem, fornecedor  } = req.body;
+            const { nome_produto, descricao, preco, categoria, estoque, fornecedor  } = req.body;
 
             // Validações manuais - coletar todos os erros
             const erros = [];
@@ -149,12 +263,12 @@ class ProdutoController {
             }
 
             //validar imagem
-            if (!imagem || imagem.trim() === ''){
-                erros.push({
-                    campo: 'imagem',
-                    mensagem: 'Imagem é obrigatória'
-                })
-            }
+            // if (!imagem || imagem.trim() === ''){
+            //     erros.push({
+            //         campo: 'imagem',
+            //         mensagem: 'Imagem é obrigatória'
+            //     })
+            // }
 
             //validar fornecedor
             if (!fornecedor || fornecedor.trim() === ''){
@@ -163,6 +277,7 @@ class ProdutoController {
                     mensagem: 'Fornecedor é obrigatório'
                 })
             }
+
 
             // Se houver erros, retornar todos de uma vez
             if (erros.length > 0) {
@@ -173,15 +288,15 @@ class ProdutoController {
                 });
             }
 
-            // Preparar dados do produto]
+            // Preparar dados do produto
             //nome_produto, descricao, preco, categoria, estoque, imagem, fornecedor
             const dadosProduto = {
                 nome_produto: nome_produto.trim(),
                 descricao: descricao ? descricao.trim() : null,
                 preco: parseFloat(preco),
                 categoria: categoria ? categoria.trim() : 'Geral',
-                estoque: categoria.trim(),
-                imagem: imagem.trim(),
+                estoque: parseInt(estoque),
+   //             imagem: imagem.trim(),
                 fornecedor: fornecedor.trim()
             };
 
@@ -214,7 +329,7 @@ class ProdutoController {
     static async atualizar(req, res) {
         try {
             const { id_produto } = req.params;
-            const { nome_produto, descricao, preco, categoria, estoque, imagem, fornecedor } = req.body;
+            const { nome_produto, descricao, preco, categoria, estoque, fornecedor } = req.body;
 
             // Validação do ID
             if (!id_produto || isNaN(id_produto)) {
@@ -226,7 +341,7 @@ class ProdutoController {
             }
 
             // Verificar se o produto existe
-            const produtoExistente = await ProdutoModel.buscarPorId(id);
+            const produtoExistente = await ProdutoModel.buscarPorId(id_produto);
             if (!produtoExistente) {
                 return res.status(404).json({
                     sucesso: false,
@@ -238,15 +353,15 @@ class ProdutoController {
             // Preparar dados para atualização
             const dadosAtualizacao = {};
 
-            if (nome !== undefined) {
-                if (nome.trim() === '') {
+            if (nome_produto !== undefined) {
+                if (nome_produto.trim() === '') {
                     return res.status(400).json({
                         sucesso: false,
                         erro: 'Nome inválido',
                         mensagem: 'O nome não pode estar vazio'
                     });
                 }
-                dadosAtualizacao.nome = nome.trim();
+                dadosAtualizacao.nome_produto = nome_produto.trim();
             }
 
             if (preco !== undefined) {
@@ -261,7 +376,7 @@ class ProdutoController {
             }
 
             if (descricao !== undefined) {
-                dadosAtualizacao.descricao = descricao ? descricao.trim() : null;
+                dadosAtualizacao.descricao = descricao ? descricao.trim() : 'Ainda sem descrição';
             }
 
             if (categoria !== undefined) {
@@ -290,6 +405,17 @@ class ProdutoController {
                 dadosAtualizacao.imagem = req.file.filename;
             }
 
+            if (fornecedor !== undefined) {
+                if (fornecedor.trim() === '') {
+                    return res.status(400).json({
+                        sucesso: false,
+                        erro: 'Fornecedeor inválido',
+                        mensagem: 'O fornecedor não pode estar vazio'
+                    });
+                }
+                dadosAtualizacao.fornecedor = fornecedor.trim();
+            }
+
             // Verificar se há dados para atualizar
             if (Object.keys(dadosAtualizacao).length === 0) {
                 return res.status(400).json({
@@ -299,7 +425,7 @@ class ProdutoController {
                 });
             }
 
-            const resultado = await ProdutoModel.atualizar(id, dadosAtualizacao);
+            const resultado = await ProdutoModel.atualizar(id_produto, dadosAtualizacao);
 
             res.status(200).json({
                 sucesso: true,
@@ -321,10 +447,10 @@ class ProdutoController {
     // DELETE /produtos/:id - Excluir produto
     static async excluir(req, res) {
         try {
-            const { id } = req.params;
+            const { id_produto } = req.params;
 
             // Validação do ID
-            if (!id || isNaN(id)) {
+            if (!id_produto || isNaN(id_produto)) {
                 return res.status(400).json({
                     sucesso: false,
                     erro: 'ID inválido',
@@ -333,12 +459,12 @@ class ProdutoController {
             }
 
             // Verificar se o produto existe
-            const produtoExistente = await ProdutoModel.buscarPorId(id);
+            const produtoExistente = await ProdutoModel.buscarPorId(id_produto);
             if (!produtoExistente) {
                 return res.status(404).json({
                     sucesso: false,
                     erro: 'Produto não encontrado',
-                    mensagem: `Produto com ID ${id} não foi encontrado`
+                    mensagem: `Produto com ID ${id_produto} não foi encontrado`
                 });
             }
 
@@ -347,7 +473,7 @@ class ProdutoController {
                 await removerArquivoAntigo(produtoExistente.imagem, 'imagem');
             }
 
-            const resultado = await ProdutoModel.excluir(id);
+            const resultado = await ProdutoModel.excluir(id_produto);
 
             res.status(200).json({
                 sucesso: true,

@@ -2,10 +2,8 @@ import mysql from 'mysql2/promise';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 
-// Carregar variáveis do arquivo .env
 dotenv.config();
 
-// Configuração do pool de conexões
 const pool = mysql.createPool({
     host: process.env.DB_HOST,
     port: process.env.DB_PORT, 
@@ -17,13 +15,12 @@ const pool = mysql.createPool({
     queueLimit: 0,
 });
 
-// Função para obter uma conexão do pool
 async function getConnection() {
     return pool.getConnection();
 }
 
-// Função para ler registros (um ou múltiplos)
-async function read(table, where = null) {
+// CORREÇÃO: Adicionado o parâmetro 'params' padrão como array vazio
+async function read(table, where = null, params = []) {
     const connection = await getConnection();
     try {
         let sql = `SELECT * FROM ${table}`;
@@ -31,14 +28,15 @@ async function read(table, where = null) {
             sql += ` WHERE ${where}`;
         }
 
-        const [rows] = await connection.execute(sql);
+        // Agora enviamos os parâmetros de forma segura para o banco
+        const [rows] = await connection.execute(sql, params);
         return rows;
     } finally {
         connection.release();
     }
 }
 
-// Função para inserir um novo registro
+// (Essa função já estava segura contra injeção de valores!)
 async function create(table, data) {
     const connection = await getConnection();
     try {
@@ -54,8 +52,8 @@ async function create(table, data) {
     }
 }
 
-// Função para atualizar um registro
-async function update(table, data, where) {
+// CORREÇÃO: Adicionado suporte a parâmetros no WHERE do Update
+async function update(table, data, where, whereParams = []) {
     const connection = await getConnection();
     try {
         const set = Object.keys(data)
@@ -65,26 +63,26 @@ async function update(table, data, where) {
         const sql = `UPDATE ${table} SET ${set} WHERE ${where}`;
         const values = Object.values(data);
 
-        const [result] = await connection.execute(sql, [...values]);
+        // Junta os valores do SET com os valores do WHERE
+        const [result] = await connection.execute(sql, [...values, ...whereParams]);
         return result.affectedRows;
     } finally {
         connection.release();
     }
 }
 
-// Função para excluir um registro
-async function deleteRecord(table, where) {
+// CORREÇÃO: Adicionado suporte a parâmetros no WHERE do Delete
+async function deleteRecord(table, where, params = []) {
     const connection = await getConnection();
     try {
         const sql = `DELETE FROM ${table} WHERE ${where}`;
-        const [result] = await connection.execute(sql);
+        const [result] = await connection.execute(sql, params);
         return result.affectedRows;
     } finally {
         connection.release();
     }
 }
 
-// Função para comparar senha com hash
 async function comparePassword(password, hash) {
     try {
         return await bcrypt.compare(password, hash);
@@ -94,7 +92,6 @@ async function comparePassword(password, hash) {
     }
 }
 
-// Função para gerar hash da senha
 async function hashPassword(password) {
     try {
         return await bcrypt.hash(password, 10);

@@ -55,7 +55,7 @@ app.get('/', (req, res) => {
     res.json({
         sucesso: true,
         mensagem: 'API de Produtos - Sistema de Gestão',
-        versao: '1.0.0',
+        versao: '0.1.0',
         rotas: {
             autenticacao: '/api/auth',
             produtos: '/api/produtos'
@@ -66,6 +66,8 @@ app.get('/', (req, res) => {
             perfil: 'GET /api/auth/perfil',
             listarProdutos: 'GET /api/produtos',
             buscarProduto: 'GET /api/produtos/:id',
+            buscarProdutoPorNome: 'GET /api/produtos/nome/:nome',
+            buscarProdutoPorCategoria: 'GET /api/produtos/categoria/:categoria',
             criarProduto: 'POST /api/produtos',
             atualizarProduto: 'PUT /api/produtos/:id',
             excluirProduto: 'DELETE /api/produtos/:id'
