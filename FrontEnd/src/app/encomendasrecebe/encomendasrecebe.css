@@ -1,0 +1,68 @@
+.fornecedor-input {
+  background: #1c1c1c !important;
+  border: 1px solid #3b3b3b !important;
+  color: white !important;
+}
+
+.fornecedor-input::placeholder {
+  color: rgba(255,255,255,0.7);
+}
+
+.fornecedor-input:focus {
+  background: #1c1c1c !important;
+  color: white !important;
+  border-color: #f5061d !important;
+  box-shadow: 0 0 10px rgba(245, 6, 29, 0.4);
+}
+
+.filtro-btn {
+  background: linear-gradient(to right, #c0012a, #ff8800);
+  border: none;
+  transition: 0.3s;
+}
+
+.filtro-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.15);
+}
+
+.encomenda-card {
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: 0.3s;
+}
+
+.encomenda-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255,136,0,0.5);
+  box-shadow: 0 0 20px rgba(255,136,0,0.15);
+}
+
+.visualizar-btn {
+  background: linear-gradient(to right, #940533, #ff8800);
+  border: none;
+  transition: 0.3s;
+}
+
+.visualizar-btn:hover {
+  filter: brightness(1.2);
+  transform: scale(1.02);
+}
+
+.paginacao-btn {
+  background-color: #000 !important;
+  color: white !important;
+  border: 1px solid white !important;
+  transition: 0.3s;
+}
+
+.paginacao-btn:hover {
+  background: linear-gradient(to right, #940533, #ff8800) !important;
+  border-color: transparent !important;
+  color: white !important;
+}
+
+.paginacao-btn-active {
+  background: linear-gradient(to right, #c0012a, #ff8800) !important;
+  color: white !important;
+  border: 1px solid white !important;
+}
