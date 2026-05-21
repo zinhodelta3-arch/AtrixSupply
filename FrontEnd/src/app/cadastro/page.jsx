@@ -325,7 +325,7 @@ export default function Cadastro() {
         padding: "20px",
       }}
     >
-      {/* Three.js */}
+    
       <div
         ref={mountRef}
         style={{
@@ -335,7 +335,7 @@ export default function Cadastro() {
         }}
       />
 
-      {/* Overlay */}
+      
       <div
         style={{
           position: "absolute",
@@ -347,7 +347,7 @@ export default function Cadastro() {
         }}
       />
 
-      {/* Card */}
+     
       <main
         style={{
           position: "relative",
@@ -402,7 +402,7 @@ export default function Cadastro() {
             gap: "16px",
           }}
         >
-          {/* Row 1 */}
+       
           <div
             style={{
               display: "grid",
@@ -410,17 +410,6 @@ export default function Cadastro() {
               gap: "16px",
             }}
           >
-            <div style={fieldStyle}>
-              <label style={labelStyle}>
-                Email empresarial
-              </label>
-
-              <input
-                type="email"
-                placeholder="email@empresa.com"
-                style={inputStyle}
-              />
-            </div>
 
             <div style={fieldStyle}>
               <label style={labelStyle}>
@@ -433,9 +422,21 @@ export default function Cadastro() {
                 style={inputStyle}
               />
             </div>
+
+            <div style={fieldStyle}>
+              <label style={labelStyle}>
+                Email empresarial
+              </label>
+
+              <input
+                type="email"
+                placeholder="email@empresa.com"
+                style={inputStyle}
+              />
+            </div>
           </div>
 
-          {/* Row 2 */}
+         
           <div
             style={{
               display: "grid",
@@ -474,19 +475,7 @@ export default function Cadastro() {
 
               <input
                 type="text"
-                placeholder="Cargo que agrega em sua empresa"
-                style={inputStyle}
-              />
-            </div>
-
-            <div style={fieldStyle}>
-              <label style={labelStyle}>
-                CEP
-              </label>
-
-              <input
-                type="text"
-                placeholder="00000-000"
+                placeholder="Cargo que ocupa em sua empresa"
                 style={inputStyle}
               />
             </div>
@@ -517,6 +506,19 @@ export default function Cadastro() {
               </select>
             </div>
 
+
+            <div style={fieldStyle}>
+              <label style={labelStyle}>
+                CEP
+              </label>
+
+              <input
+                type="text"
+                placeholder="00000-000"
+                style={inputStyle}
+              />
+            </div>
+
             <div style={fieldStyle}>
               <label style={labelStyle}>
                 Endereço
@@ -530,7 +532,7 @@ export default function Cadastro() {
             </div>
           </div>
 
-          {/* Row 3 */}
+         
           <div
             style={{
               display: "grid",
@@ -545,7 +547,7 @@ export default function Cadastro() {
 
               <input
                 type="password"
-                placeholder="Digite sua senha"
+                placeholder="Crie uma senha"
                 style={inputStyle}
               />
             </div>
