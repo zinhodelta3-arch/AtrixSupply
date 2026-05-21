@@ -1,0 +1,208 @@
+.dashboard {
+  background: #14020a;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── HEADER ── */
+.dashboard-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #ffb300;
+  line-height: 1.1;
+}
+
+.dashboard-subtitle {
+  color: #ff8800;
+  font-size: 0.9rem;
+}
+
+/* ── STAT CARDS ── */
+.stat-card {
+  border: 1px solid rgba(255, 179, 0, 0.12);
+  border-radius: 20px;
+  padding: 1.4rem;
+  color: white;
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 0.22s ease,
+    border-color 0.22s ease;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(255, 179, 0, 0.35);
+}
+
+.stat-card::before {
+  content: "";
+  position: absolute;
+  top: -35px;
+  right: -35px;
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.04);
+  pointer-events: none;
+}
+
+.card-1 {
+  background: linear-gradient(
+    135deg,
+    #940533 0%,
+    #c0012a 100%
+  );
+}
+
+.card-2 {
+  background: linear-gradient(
+    135deg,
+    #c0012a 0%,
+    #f5061d 100%
+  );
+}
+
+.card-3 {
+  background: linear-gradient(
+    135deg,
+    #ff8800 0%,
+    #ffb300 100%
+  );
+}
+
+.card-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.12);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 1.4rem;
+}
+
+.card-label {
+  font-size: 0.88rem;
+  opacity: 0.85;
+}
+
+.card-value {
+  font-size: 1.9rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ── CHART ── */
+.chart-card {
+  background: linear-gradient(
+    180deg,
+    rgba(148, 5, 51, 0.22) 0%,
+    rgba(20, 2, 10, 0.95) 100%
+  );
+
+  border-radius: 22px;
+  padding: 1.75rem;
+
+  border: 1px solid rgba(255, 179, 0, 0.12);
+
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+
+  overflow: hidden;
+}
+
+.chart-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #ffb300;
+}
+
+.chart-badge {
+  font-size: 11px;
+  padding: 3px 12px;
+  border-radius: 20px;
+
+  background: rgba(255, 179, 0, 0.12);
+  color: #ffb300;
+
+  font-weight: 500;
+}
+
+.chart-area {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+}
+
+.line-chart {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+}
+
+/* GRID */
+.chart-grid line {
+  stroke: rgba(255, 255, 255, 0.06);
+}
+
+/* LINHA */
+.chart-line {
+  fill: none;
+  stroke: #ff8800;
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+
+  filter: drop-shadow(
+    0 0 8px rgba(255, 136, 0, 0.45)
+  );
+}
+
+/* ÁREA */
+.chart-fill {
+  fill: url(#incomeGradient);
+  opacity: 0.3;
+}
+
+/* PONTOS */
+.chart-dot {
+  fill: #ffb300;
+  stroke: #14020a;
+  stroke-width: 4;
+  transition: r 0.15s ease;
+}
+
+.chart-dot:hover {
+  r: 9;
+  cursor: pointer;
+}
+
+/* MESES */
+.month-label {
+  font-size: 12px;
+  fill: rgba(255, 179, 0, 0.75);
+  font-weight: 600;
+}
+
+/* ── RESPONSIVIDADE ── */
+@media (max-width: 768px) {
+  .dashboard-title {
+    font-size: 1.6rem;
+  }
+
+  .card-value {
+    font-size: 1.6rem;
+  }
+
+  .chart-card {
+    padding: 1rem;
+  }
+
+  .month-label {
+    font-size: 10px;
+  }
+}
