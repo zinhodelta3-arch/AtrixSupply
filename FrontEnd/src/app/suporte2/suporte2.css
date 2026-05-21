@@ -1,0 +1,92 @@
+  .suporte-card {
+  background-color: #121212;
+  box-shadow: 0 0 20px rgba(204, 204, 204, 0.507) !important;
+  transition: 0.3s ease;
+  }
+
+  .suporte-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 0 30px rgba(255, 255, 255, 0.534) !important;
+  }
+
+  .btn-especialista {
+    border: 2px solid #940533;
+    color: #940533;
+    background: transparent;
+    transition: 0.3s;
+    font-weight: 600;
+  }
+
+  .btn-especialista:hover {
+    background-color: #940533;
+    color: white;
+  }
+
+  .btn-outline-danger,
+  .btn-outline-warning {
+    transition: 0.3s;
+    font-weight: 600;
+  }
+
+  .faq-item {
+    border: none;
+    overflow: hidden;
+    border-radius: 16px;
+  }
+
+  .faq-button {
+    background-color: #800000ee !important;
+    color: white !important;
+    font-weight: 600;
+    box-shadow: none !important;
+  }
+
+  .faq-button:not(.collapsed) {
+    background-color: #800000ee !important;
+    color: white !important;
+  }
+
+  .faq-button::after {
+    filter: brightness(0) invert(1);
+  }
+
+  .faq-body {
+    background-color: #b3b1b180;
+    color: #4a4a4a;
+    line-height: 1.7;
+  }
+
+  .accordion-button:focus {
+    box-shadow: none;
+    border: none;
+  }
+
+  .form-control:focus {
+    border-color: #f5061d;
+    box-shadow: 0 0 0 0.2rem rgba(245, 6, 29, 0.2);
+  }
+
+  .ttl {
+    color: white;
+  }
+
+  .sbttl {
+    color: rgb(196, 196, 196);
+  }
+
+  .fundo {
+    background-color: #000000;
+  }
+
+  .sprt {
+    background-color: #0000003f;
+  }
+
+  .ctt {
+    background-color: #a5a5a56e;
+    border: 1px solid #271111 !important
+  }
+
+  .ctt::placeholder {
+  color: rgba(207, 207, 207, 0.87) !important
+}
