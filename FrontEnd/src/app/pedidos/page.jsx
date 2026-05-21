@@ -1,9 +1,92 @@
 "use client";
 
 import "bootstrap/dist/css/bootstrap.min.css";
-import Image from "next/image";
+import "bootstrap-icons/font/bootstrap-icons.css";
 
-export default function Perfil() {
+import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
+
+export default function Pedidos() {
+  const pedidosBase = [
+    {
+      id: "#94821",
+      produto: "RTX 4090 ASUS ROG",
+      status: "Em transporte",
+      data: "19 Maio 2026",
+      preco: "R$ 12.499,90",
+      cor: "#ffb300",
+    },
+    {
+      id: "#94822",
+      produto: "Ryzen 9 9950X",
+      status: "Processando",
+      data: "17 Maio 2026",
+      preco: "R$ 4.299,90",
+      cor: "#ffcf40",
+    },
+    {
+      id: "#94823",
+      produto: "Water Cooler Elite",
+      status: "Entregue",
+      data: "10 Maio 2026",
+      preco: "R$ 899,90",
+      cor: "#ffcf40",
+    },
+  ];
+
+  const [pedidos, setPedidos] = useState([
+    ...pedidosBase,
+    ...pedidosBase,
+    ...pedidosBase,
+  ]);
+
+  const scrollRef = useRef(null);
+
+  function gerarPedidos() {
+    return pedidosBase.map((pedido) => ({
+      ...pedido,
+      id: `#${Math.floor(Math.random() * 90000) + 10000}`,
+    }));
+  }
+
+  function deletarPedido(id) {
+    setPedidos((prev) =>
+      prev.filter((pedido) => pedido.id !== id)
+    );
+  }
+
+  useEffect(() => {
+    const container = scrollRef.current;
+
+    const handleScroll = () => {
+      if (!container) return;
+
+      const chegouNoFim =
+        container.scrollTop + container.clientHeight >=
+        container.scrollHeight - 100;
+
+      if (chegouNoFim) {
+        setPedidos((prev) => [
+          ...prev,
+          ...gerarPedidos(),
+        ]);
+      }
+    };
+
+    if (container) {
+      container.addEventListener("scroll", handleScroll);
+    }
+
+    return () => {
+      if (container) {
+        container.removeEventListener(
+          "scroll",
+          handleScroll
+        );
+      }
+    };
+  }, []);
+
   return (
     <div
       className="d-flex justify-content-center align-items-center p-4"
@@ -26,7 +109,8 @@ export default function Perfil() {
       <div
         style={{
           width: "100%",
-          maxWidth: "1080px",
+          maxWidth: "1200px",
+          height: "90vh",
           background: `
             linear-gradient(
               145deg,
@@ -34,266 +118,471 @@ export default function Perfil() {
               rgba(28,22,25,.96)
             )
           `,
-          borderRadius: "28px",
+          borderRadius: "32px",
           overflow: "hidden",
-          border: "1px solid rgba(255,215,120,.14)",
+          border: "1px solid rgba(255,215,120,.12)",
           boxShadow: `
-            0 20px 50px rgba(221, 25, 25, 0.45),
-            0 0 30px rgba(235, 194, 13, 0.43)
+            0 25px 60px rgba(221, 25, 25, 0.28),
+            0 0 30px rgba(235, 194, 13, 0.10)
           `,
-          backdropFilter: "blur(12px)",
+          backdropFilter: "blur(16px)",
         }}
       >
-        <div className="row g-0">
-          {/* LADO ESQUERDO */}
+        <div className="row g-0 h-100">
+          {/* SIDEBAR */}
           <div
-            className="col-lg-5"
+            className="col-lg-4"
             style={{
               background: `
                 linear-gradient(
                   180deg,
-                  #ffb300cc,
-                  #ff88008c,
-                  #f5061e93
+                  rgba(255,179,0,.88),
+                  rgba(255,136,0,.45),
+                  rgba(192,1,42,.65)
                 )
               `,
               borderRight:
-                "1px solid rgba(255,255,255,.06)",
+                "1px solid rgba(255,255,255,.05)",
             }}
           >
             <div
               className="d-flex flex-column align-items-center"
               style={{
-                padding: "50px 35px",
+                padding: "45px 30px",
+                height: "100%",
               }}
             >
               {/* FOTO */}
               <div
                 style={{
-                  width: "220px",
-                  height: "220px",
-                  borderRadius: "24px",
+                  width: "180px",
+                  height: "180px",
+                  borderRadius: "28px",
                   overflow: "hidden",
                   position: "relative",
                   border:
-                    "3px solid rgba(255,179,0,.75)",
+                    "3px solid rgba(255,255,255,.18)",
                   boxShadow: `
-                    0 15px 35px rgba(0,0,0,.45),
-                    0 0 20px rgba(192,1,42,.18)
+                    0 20px 40px rgba(0,0,0,.35),
+                    0 0 25px rgba(255,179,0,.25)
                   `,
                 }}
               >
                 <Image
                   src="/core.png"
-                  alt="Perfil"
+                  alt="Usuário"
                   fill
                   priority
-                  sizes="220px"
+                  sizes="180px"
                   style={{
                     objectFit: "cover",
                   }}
                 />
               </div>
 
-              {/* NOME */}
+              {/* USER */}
               <div
                 className="w-100 mt-4"
                 style={{
-                  background: "rgba(255,255,255,.03)",
+                  background: "rgba(255,255,255,.04)",
                   border:
-                    "1px solid rgba(255,215,120,.12)",
-                  borderRadius: "18px",
-                  padding: "18px",
+                    "1px solid rgba(255,255,255,.08)",
+                  borderRadius: "22px",
+                  padding: "22px",
                   textAlign: "center",
+                  backdropFilter: "blur(10px)",
                 }}
               >
-                <p
+                <h3
                   style={{
-                    margin: 0,
-                    color: "#ffe082",
-                    fontWeight: "700",
-                    fontSize: "1.35rem",
-                    letterSpacing: ".4px",
+                    color: "#fff4c4",
+                    fontWeight: "800",
+                    fontSize: "1.45rem",
+                    marginBottom: "5px",
                   }}
                 >
-                  Henrique Lopez Vieira
-                </p>
+                  Henrique Vieira
+                </h3>
 
                 <span
                   style={{
-                    color: "rgba(255,255,255,.60)",
-                    fontSize: ".92rem",
+                    color: "rgba(255,255,255,.75)",
+                    fontSize: ".95rem",
                   }}
                 >
-                  Frontend Developer
+                  Cliente Premium
                 </span>
               </div>
 
-              {/* DESCRIÇÃO */}
+              {/* RESUMO */}
               <div
                 className="w-100 mt-4"
                 style={{
                   background: "rgba(255,255,255,.03)",
                   border:
-                    "1px solid rgba(192,1,42,.15)",
-                  borderRadius: "18px",
+                    "1px solid rgba(255,255,255,.06)",
+                  borderRadius: "22px",
                   padding: "28px",
+                  backdropFilter: "blur(10px)",
                 }}
               >
                 <h4
                   style={{
-                    color: "#ffcf40",
+                    color: "#fff0a6",
                     fontWeight: "700",
-                    marginBottom: "18px",
+                    marginBottom: "22px",
                     textAlign: "center",
-                    fontSize: "1.35rem",
                   }}
                 >
-                  Descrição
+                  Resumo
                 </h4>
 
-                <p
-                  style={{
-                    color: "rgba(255,255,255,.86)",
-                    lineHeight: "1.9",
-                    fontSize: ".98rem",
-                    textAlign: "center",
-                    margin: 0,
-                  }}
-                >
-                  Desenvolvedor Frontend especializado
-                  em interfaces modernas, experiência
-                  do usuário e desenvolvimento de
-                  aplicações web responsivas utilizando
-                  React e Next.js.
-                </p>
+                <div className="d-flex flex-column gap-3">
+                  {[
+                    {
+                      titulo: "Pedidos",
+                      valor: pedidos.length,
+                    },
+                    {
+                      titulo: "Em andamento",
+                      valor: "03",
+                    },
+                    {
+                      titulo: "Finalizados",
+                      valor: "21",
+                    },
+                  ].map((item, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        background:
+                          "rgba(255,255,255,.05)",
+                        border:
+                          "1px solid rgba(255,255,255,.05)",
+                        borderRadius: "18px",
+                        padding: "16px",
+                      }}
+                    >
+                      <p
+                        style={{
+                          margin: 0,
+                          color: "#ffe082",
+                          fontSize: ".82rem",
+                          marginBottom: "6px",
+                          fontWeight: "700",
+                          textTransform: "uppercase",
+                          letterSpacing: ".5px",
+                        }}
+                      >
+                        {item.titulo}
+                      </p>
+
+                      <span
+                        style={{
+                          fontSize: "1.35rem",
+                          fontWeight: "800",
+                          color: "white",
+                        }}
+                      >
+                        {item.valor}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
 
-          {/* LADO DIREITO */}
-          <div className="col-lg-7">
+          {/* CONTEÚDO */}
+          <div className="col-lg-8">
             <div
               style={{
-                padding: "50px 45px",
+                padding: "45px 38px",
+                height: "90vh",
+                display: "flex",
+                flexDirection: "column",
               }}
             >
-              <h2
-                style={{
-                  color: "#ee3110",
-                  textAlign: "center",
-                  fontWeight: "800",
-                  marginBottom: "35px",
-                  fontSize: "2.1rem",
-                  letterSpacing: ".5px",
-                }}
-              >
-                Informações Pessoais
-              </h2>
-
-              <div
-                style={{
-                  background: `
-                    linear-gradient(
-                      145deg,
-                      rgba(29,31,36,.95),
-                      rgba(35,22,27,.95)
-                    )
-                  `,
-                  borderRadius: "22px",
-                  padding: "38px",
-                  border:
-                    "1px solid rgba(199, 31, 31, 0.64)",
-                  boxShadow:
-                    "0 10px 25px rgba(0,0,0,.28)",
-                }}
-              >
-                {/* ITEM */}
-                {[
-                  {
-                    titulo: "Email",
-                    cor: "#ffcf40",
-                    valor: "henrique.vieira@intel.com",
-                  },
-                  {
-                    titulo: "Empresa",
-                    cor: "#ffcf40",
-                    valor: "Intel Corporation",
-                  },
-                  {
-                    titulo: "Cargo",
-                    cor: "#ffcf40",
-                    valor: "Frontend Developer",
-                  },
-                  {
-                    titulo: "Endereço",
-                    cor: "#ffcf40",
-                    valor: "São Paulo, Brasil",
-                  },
-                ].map((item, index) => (
-                  <div
-                    key={index}
+              {/* TOPO */}
+              <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+                <div>
+                  <h1
                     style={{
-                      paddingBottom: "22px",
-                      marginBottom:
-                        index !== 3 ? "22px" : "0",
-                      borderBottom:
-                        index !== 3
-                          ? "1px solid rgba(255,255,255,.06)"
-                          : "none",
+                      color: "#ffe082",
+                      fontWeight: "800",
+                      margin: 0,
+                      fontSize: "2.3rem",
                     }}
                   >
-                    <p
-                      style={{
-                        color: item.cor,
-                        marginBottom: "8px",
-                        fontWeight: "700",
-                        fontSize: ".98rem",
-                        textTransform: "uppercase",
-                        letterSpacing: ".8px",
-                      }}
-                    >
-                      {item.titulo}
-                    </p>
+                    Meus Pedidos
+                  </h1>
 
-                    <span
-                      style={{
-                        color: "rgba(255,255,255,.92)",
-                        fontSize: "1.05rem",
-                        fontWeight: "500",
-                      }}
-                    >
-                      {item.valor}
-                    </span>
-                  </div>
-                ))}
-              </div>
+                  <p
+                    style={{
+                      color: "rgba(255,255,255,.58)",
+                      marginTop: "8px",
+                      marginBottom: 0,
+                    }}
+                  >
+                    Acompanhe seus pedidos e status.
+                  </p>
+                </div>
 
-              {/* BOTÃO */}
-              <div className="d-flex justify-content-center mt-5">
                 <button
                   className="btn"
                   style={{
                     background:
-                      "linear-gradient(90deg,#ffcf40,#ffb300,#c0012a)",
+                      "linear-gradient(90deg,#ffcf40,#ff9d00,#c0012a)",
                     color: "white",
-                    padding: "14px 34px",
-                    borderRadius: "14px",
-                    fontWeight: "700",
+                    padding: "14px 28px",
+                    borderRadius: "16px",
                     border: "none",
-                    fontSize: ".98rem",
-                    letterSpacing: ".3px",
+                    fontWeight: "700",
                     boxShadow:
-                      "0 10px 22px rgba(192,1,42,.25)",
+                      "0 12px 24px rgba(192,1,42,.22)",
                   }}
                 >
-                  Editar Perfil
+                  Novo Pedido
                 </button>
+              </div>
+
+              {/* SCROLL */}
+              <div
+                ref={scrollRef}
+                style={{
+                  overflowY: "auto",
+                  flex: 1,
+                  paddingRight: "6px",
+                }}
+              >
+                <div className="d-flex flex-column gap-4">
+                  {pedidos.map((pedido, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        position: "relative",
+                        background: `
+                          linear-gradient(
+                            145deg,
+                            rgba(30,32,38,.95),
+                            rgba(38,24,29,.95)
+                          )
+                        `,
+                        borderRadius: "26px",
+                        padding: "30px",
+                        border:
+                          "1px solid rgba(255,255,255,.05)",
+                        boxShadow: `
+                          inset 0 1px 0 rgba(255,255,255,.03),
+                          0 12px 30px rgba(0,0,0,.25)
+                        `,
+                        overflow: "hidden",
+                      }}
+                    >
+                      {/* DELETE BUTTON */}
+                      <button
+                        onClick={() =>
+                          deletarPedido(pedido.id)
+                        }
+                        className="btn d-flex align-items-center justify-content-center"
+                        style={{
+                          position: "absolute",
+                          top: "20px",
+                          right: "10px",
+                          width: "20px",
+                          height: "28px",
+                          borderRadius: "18px",
+                          border:
+                            "1px solid rgba(255,255,255,.06)",
+                          background: `
+                            linear-gradient(
+                              145deg,
+                              rgba(255,255,255,.04),
+                              rgba(255,255,255,.02)
+                            )
+                          `,
+                          backdropFilter: "blur(10px)",
+                          color: "#ff758f",
+                          transition: "all .25s ease",
+                          boxShadow: `
+                            inset 0 1px 0 rgba(255,255,255,.03),
+                            0 10px 25px rgba(0,0,0,.20)
+                          `,
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform =
+                            "translateY(-2px) scale(1.04)";
+                          e.currentTarget.style.background =
+                            "linear-gradient(145deg, rgba(192,1,42,.35), rgba(120,0,20,.42))";
+                          e.currentTarget.style.border =
+                            "1px solid rgba(255,120,140,.20)";
+                          e.currentTarget.style.color =
+                            "#fff";
+                          e.currentTarget.style.boxShadow =
+                            "0 14px 30px rgba(192,1,42,.30)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform =
+                            "translateY(0px) scale(1)";
+                          e.currentTarget.style.background =
+                            "linear-gradient(145deg, rgba(255,255,255,.04), rgba(255,255,255,.02))";
+                          e.currentTarget.style.border =
+                            "1px solid rgba(255,255,255,.06)";
+                          e.currentTarget.style.color =
+                            "#ff758f";
+                          e.currentTarget.style.boxShadow =
+                            "inset 0 1px 0 rgba(255,255,255,.03), 0 10px 25px rgba(0,0,0,.20)";
+                        }}
+                      >
+                        <i
+                          className="bi bi-trash3-fill"
+                          style={{
+                            fontSize: "1rem",
+                          }}
+                        />
+                      </button>
+
+                      <div className="row align-items-center">
+                        {/* PRODUTO */}
+                        <div className="col-md-5 mb-4 mb-md-0">
+                          <p
+                            style={{
+                              color: pedido.cor,
+                              marginBottom: "10px",
+                              fontWeight: "700",
+                              textTransform: "uppercase",
+                              letterSpacing: "1px",
+                              fontSize: ".78rem",
+                            }}
+                          >
+                            Pedido {pedido.id}
+                          </p>
+
+                          <h4
+                            style={{
+                              color: "white",
+                              fontWeight: "700",
+                              marginBottom: "12px",
+                              fontSize: "1.25rem",
+                            }}
+                          >
+                            {pedido.produto}
+                          </h4>
+
+                          <span
+                            style={{
+                              color:
+                                "rgba(255,255,255,.60)",
+                            }}
+                          >
+                            Data: {pedido.data}
+                          </span>
+                        </div>
+
+                        {/* STATUS */}
+                        <div className="col-md-3 mb-4 mb-md-0">
+                          <div
+                            style={{
+                              background:
+                                "rgba(255,255,255,.04)",
+                              border:
+                                "1px solid rgba(255,255,255,.05)",
+                              borderRadius: "18px",
+                              padding: "16px",
+                              textAlign: "center",
+                            }}
+                          >
+                            <p
+                              style={{
+                                color: pedido.cor,
+                                marginBottom: "7px",
+                                fontSize: ".78rem",
+                                fontWeight: "700",
+                                textTransform: "uppercase",
+                                letterSpacing: ".8px",
+                              }}
+                            >
+                              Status
+                            </p>
+
+                            <span
+                              style={{
+                                color: "white",
+                                fontWeight: "600",
+                              }}
+                            >
+                              {pedido.status}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* PREÇO */}
+                        <div className="col-md-2 mb-4 mb-md-0">
+                          <p
+                            style={{
+                              color: "#ffcf40",
+                              marginBottom: "8px",
+                              fontWeight: "700",
+                              fontSize: ".78rem",
+                              textTransform: "uppercase",
+                              letterSpacing: ".8px",
+                            }}
+                          >
+                            Valor
+                          </p>
+
+                          <span
+                            style={{
+                              color: "white",
+                              fontWeight: "700",
+                              fontSize: "1.05rem",
+                            }}
+                          >
+                            {pedido.preco}
+                          </span>
+                        </div>
+
+                        {/* DETALHES */}
+                        <div className="col-md-2 d-flex justify-content-md-end">
+                          <button
+                            className="btn"
+                            style={{
+                              background:
+                                "rgba(255,255,255,.04)",
+                              border:
+                                "1px solid rgba(255,179,0,.16)",
+                              color: "#ffe082",
+                              borderRadius: "14px",
+                              padding: "12px 18px",
+                              fontWeight: "700",
+                              transition: ".2s",
+                            }}
+                          >
+                            Detalhes
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* LOADING */}
+                  <div
+                    className="d-flex justify-content-center align-items-center"
+                    style={{
+                      height: "80px",
+                      color: "#ffcf40",
+                      fontWeight: "700",
+                      opacity: 0.7,
+                    }}
+                  >
+                    Carregando mais pedidos...
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </div> 
     </div>
   );
 }
