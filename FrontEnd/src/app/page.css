@@ -1,0 +1,60 @@
+.btn-custom{
+    background-color: #940533;
+    border-color: #c0012a;
+    transition: transform 0.3s ease;
+    cursor: pointer;
+}
+
+.btn-custom:hover{
+    background-color:  #c0012a;
+    border-color:  #c0012a;
+    transform:scale(1.08);
+}
+
+.btn-sec{
+    border-color: #ffb300;
+    color: #ffb300;
+    transition: transform 0.3s ease;
+    cursor: pointer;
+}
+
+.btn-sec:hover{
+    background-color: #ffb300;
+    color: black;
+    border-color: #ffb300;
+    transform:scale(1.08);
+}
+
+.lead{
+    color: white;
+
+}
+
+.titulo{
+    color: #ff8800;
+}
+
+
+.container-color{
+    background-color: black;
+}
+
+.center{
+    background-color: black;
+}
+
+.fundo{
+    background-color: black;
+}
+
+.azul{
+    color: #940533;
+}
+
+.carrosel-btn{
+    background-color: #ff8800;
+}
+
+.container55{
+    background-color: #940533;
+}
