@@ -2,83 +2,28 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
-const menuItems = [
-  {
-    text: "Dashboard",
-    icon: "speedometer2",
-    href: "/dashboard",
-  },
-  {
-    text: "Usuários",
-    icon: "people",
-    href: "/dashboard/usuarios",
-  },
-  {
-    text: "Produtos",
-    icon: "box-seam",
-    href: "/dashboard/produtos",
-  },
-  {
-    text: "Pedidos",
-    icon: "cart3",
-    href: "/dashboard/pedidos",
-  },
-  {
-    text: "Fornecedores",
-    icon: "truck",
-    href: "/dashboard/fornecedores",
-  },
-];
-
-function NavItem({ item, pathname }) {
-  const isActive = pathname === item.href;
-
-  return (
-    <li className="nav-item mb-2">
-      <Link
-        href={item.href}
-        className="nav-link d-flex align-items-center px-3 py-2 text-decoration-none"
-        style={{
-          borderRadius: "14px",
-          background: isActive
-            ? "rgba(255,255,255,0.08)"
-            : "transparent",
-
-          border: isActive
-            ? "1px solid rgba(255,179,0,0.18)"
-            : "1px solid transparent",
-
-          color: isActive ? "#ffb300" : "#f3f4f6",
-
-          transition: "all .25s ease",
-        }}
-      >
-        <i
-          className={`bi bi-${item.icon} me-3`}
-          style={{
-            fontSize: "1.1rem",
-            color: isActive ? "#ff8800" : "#e4e4e7",
-            transition: "all .25s ease",
-          }}
-        />
-
-        <span
-          className="fw-medium"
-          style={{
-            fontSize: ".95rem",
-            letterSpacing: ".2px",
-          }}
-        >
-          {item.text}
-        </span>
-      </Link>
-    </li>
-  );
-}
+import Image from "next/image";
 
 export default function Sidebar() {
   const pathname = usePathname();
+
+  const isActive = (path) => pathname === path;
+
+  const linkStyle = (active) => ({
+    borderRadius: "14px",
+    background: active ? "rgba(255,255,255,0.08)" : "transparent",
+    border: active
+      ? "1px solid rgba(255,179,0,0.18)"
+      : "1px solid transparent",
+    color: active ? "#ffb300" : "#f3f4f6",
+    transition: "all .25s ease",
+  });
+
+  const iconStyle = (active) => ({
+    fontSize: "1.1rem",
+    color: active ? "#ff8800" : "#e4e4e7",
+    transition: "all .25s ease",
+  });
 
   return (
     <aside
@@ -86,7 +31,6 @@ export default function Sidebar() {
       style={{
         width: "280px",
         minHeight: "100vh",
-
         background: `
           linear-gradient(
             180deg,
@@ -96,11 +40,8 @@ export default function Sidebar() {
             #3b0215 100%
           )
         `,
-
         borderRight: "1px solid rgba(255,255,255,0.06)",
-
         boxShadow: "inset -1px 0 0 rgba(255,255,255,0.04)",
-
         position: "sticky",
         top: 0,
       }}
@@ -110,13 +51,14 @@ export default function Sidebar() {
         href="/ATRIXsupply"
         className="d-flex align-items-center text-decoration-none mb-4 px-2"
       >
-        <div
-          className="d-flex justify-content-center align-items-center me-3"
-          style={{
-          }}
-        >
-            <img src="logo.png" alt=""
-            width={40} />
+        <div className="d-flex justify-content-center align-items-center me-3">
+          <Image
+            src="/logo.png"
+            alt="ATRIX Logo"
+            width={35}
+            height={42}
+            priority
+          />
         </div>
 
         <div className="d-flex flex-column">
@@ -128,8 +70,7 @@ export default function Sidebar() {
               letterSpacing: "-0.5px",
             }}
           >
-            ATRIX
-            <span style={{ color: "#ffffff" }}>supply</span>
+            ATRIX<span style={{ color: "#ffffff" }}>supply</span>
           </span>
 
           <span
@@ -154,14 +95,83 @@ export default function Sidebar() {
       />
 
       {/* NAVIGATION */}
+
       <ul className="nav nav-pills flex-column gap-1">
-        {menuItems.map((item) => (
-          <NavItem
-            key={item.href}
-            item={item}
-            pathname={pathname}
-          />
-        ))}
+
+        {/* DASHBOARD */}
+        <li className="nav-item mb-2">
+          <Link
+            href="/dashboard"
+            className="nav-link d-flex align-items-center px-3 py-2 text-decoration-none"
+            style={linkStyle(isActive("/dashboard"))}
+          >
+            <i
+              className="bi bi-speedometer2 me-3"
+              style={iconStyle(isActive("/dashboard"))}
+            />
+            Dashboard
+          </Link>
+        </li>
+
+        {/* USUÁRIOS */}
+        <li className="nav-item mb-2">
+          <Link
+            href="/dashboard/usuarios"
+            className="nav-link d-flex align-items-center px-3 py-2 text-decoration-none"
+            style={linkStyle(isActive("/dashboard/usuarios"))}
+          >
+            <i
+              className="bi bi-people me-3"
+              style={iconStyle(isActive("/dashboard/usuarios"))}
+            />
+            Usuários
+          </Link>
+        </li>
+
+        {/* PRODUTOS */}
+        <li className="nav-item mb-2">
+          <Link
+            href="/dashboard/produtos"
+            className="nav-link d-flex align-items-center px-3 py-2 text-decoration-none"
+            style={linkStyle(isActive("/dashboard/produtos"))}
+          >
+            <i
+              className="bi bi-box-seam me-3"
+              style={iconStyle(isActive("/dashboard/produtos"))}
+            />
+            Produtos
+          </Link>
+        </li>
+
+        {/* PEDIDOS */}
+        <li className="nav-item mb-2">
+          <Link
+            href="/dashboard/pedidos"
+            className="nav-link d-flex align-items-center px-3 py-2 text-decoration-none"
+            style={linkStyle(isActive("/dashboard/pedidos"))}
+          >
+            <i
+              className="bi bi-cart3 me-3"
+              style={iconStyle(isActive("/dashboard/pedidos"))}
+            />
+            Pedidos
+          </Link>
+        </li>
+
+        {/* FORNECEDORES */}
+        <li className="nav-item mb-2">
+          <Link
+            href="/dashboard/fornecedores"
+            className="nav-link d-flex align-items-center px-3 py-2 text-decoration-none"
+            style={linkStyle(isActive("/dashboard/fornecedores"))}
+          >
+            <i
+              className="bi bi-truck me-3"
+              style={iconStyle(isActive("/dashboard/fornecedores"))}
+            />
+            Fornecedores
+          </Link>
+        </li>
       </ul>
 
       {/* PROFILE AREA */}
@@ -170,45 +180,32 @@ export default function Sidebar() {
           className="d-flex align-items-center justify-content-between p-2"
           style={{
             background: "rgba(255,255,255,0.06)",
-
             border: "1px solid rgba(255,255,255,0.08)",
-
             borderRadius: "18px",
-
             backdropFilter: "blur(10px)",
           }}
         >
-          {/* USER */}
+          {/* USER INFO */}
           <div className="d-flex align-items-center">
-            {/* AVATAR */}
             <div
               className="d-flex justify-content-center align-items-center fw-bold"
               style={{
                 width: "42px",
                 height: "42px",
-
                 borderRadius: "14px",
-
                 background: "rgba(255,136,0,0.15)",
-
                 border: "1px solid rgba(255,179,0,0.12)",
-
                 color: "#ffb300",
-
                 fontSize: ".9rem",
               }}
             >
               AS
             </div>
 
-            {/* INFO */}
             <div className="ms-3">
               <div
                 className="fw-semibold"
-                style={{
-                  color: "#ffffff",
-                  fontSize: ".9rem",
-                }}
+                style={{ color: "#ffffff", fontSize: ".9rem" }}
               >
                 Admin
               </div>
@@ -230,15 +227,10 @@ export default function Sidebar() {
             style={{
               width: "38px",
               height: "38px",
-
               borderRadius: "12px",
-
               background: "rgba(255,255,255,0.06)",
-
               border: "1px solid rgba(255,255,255,0.08)",
-
               color: "#ff8800",
-
               transition: "all .25s ease",
             }}
           >
