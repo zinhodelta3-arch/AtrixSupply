@@ -199,7 +199,7 @@ export default function Sidebar() {
                 fontSize: ".9rem",
               }}
             >
-              AS
+              ADM
             </div>
 
             <div className="ms-3">
