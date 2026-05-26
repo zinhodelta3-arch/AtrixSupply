@@ -15,143 +15,95 @@ export default function PainelFornecedor() {
     {
       id: 1,
       produto: "Porca",
-      categoria: "Motores",
-      empresa: "Indústria Alpha",
       quantidade: 4,
-      status: "concluído",
-      data: "12/06/2026",
+      descricao:
+        "Porca industrial de alta resistência utilizada em motores pesados.",
+      entrega: "18/06/2026",
     },
 
     {
       id: 2,
-      produto: "parafuso",
-      categoria: "Motores",
-      empresa: "Indústria Alpha",
-      quantidade: 4,
-      status: "Enviado",
-      data: "12/06/2026",
+      produto: "Parafuso",
+      quantidade: 12,
+      descricao:
+        "Parafuso industrial galvanizado resistente à corrosão.",
+      entrega: "20/06/2026",
     },
 
     {
       id: 3,
-      produto: "parafuso",
-      categoria: "Motores",
-      empresa: "Indústria Alpha",
-      quantidade: 4,
-      status: "Pendente",
-      data: "12/06/2026",
-    },
-
-    {
-      id: 4,
       produto: "Motor Industrial X200",
-      categoria: "Motores",
-      empresa: "Indústria Alpha",
-      quantidade: 4,
-      status: "Pendente",
-      data: "12/06/2026",
-    },
-
-    {
-      id: 5,
-      produto: "Motor Industrial X200",
-      categoria: "Rolamentos",
-      empresa: "Indústria Alpha",
-      quantidade: 4,
-      status: "Pendente",
-      data: "12/06/2026",
-    },
-
-    {
-      id: 6,
-      produto: "Motor Industrial X200",
-      categoria: "Rolamentos",
-      empresa: "Indústria Alpha",
-      quantidade: 4,
-      status: "Pendente",
-      data: "12/06/2026",
-    },
-
-    {
-      id: 7,
-      produto: "Motor Industrial X200",
-      categoria: "Motores",
-      empresa: "Indústria Alpha",
-      quantidade: 4,
-      status: "Pendente",
-      data: "12/06/2026",
-    },
-
-    {
-      id: 8,
-      produto: "Motor Industrial X200",
-      categoria: "Motores",
-      empresa: "Indústria Alpha",
-      quantidade: 4,
-      status: "Pendente",
-      data: "12/06/2026",
+      quantidade: 2,
+      descricao:
+        "Motor industrial de alta potência para linhas automatizadas.",
+      entrega: "25/06/2026",
     },
   ];
 
-const [listaEncomendas, setListaEncomendas] = 
-  useState(encomendas);
+  const [listaEncomendas] =
+    useState(encomendas);
 
-const [paginaAtual, setPaginaAtual] = useState(1);
+  const [paginaAtual, setPaginaAtual] =
+    useState(1);
 
-const [busca, setBusca] = useState("");
+  const [busca, setBusca] = useState("");
 
-const [categoriaSelecionada, setCategoriaSelecionada] =
-  useState("Todas");
+  const [pedidoSelecionado, setPedidoSelecionado] =
+    useState(null);
 
-const [statusSelecionado, setStatusSelecionado] =
-  useState("Todos");
+  const [orcamentos, setOrcamentos] =
+    useState([
+      {
+        id: 1,
+        nome: "Básico",
+        tipo: "Econômico",
+        preco: "1250",
+        publicado: true,
+      },
 
-const [filtrosAplicados, setFiltrosAplicados] = useState({
-  categoria: "Todas",
-  status: "Todos",
-});
+      {
+        id: 2,
+        nome: "Profissional",
+        tipo: "Premium",
+        preco: "2850",
+        publicado: false,
+      },
 
-const encomendasPorPagina = 8;
+      {
+        id: 3,
+        nome: "Enterprise",
+        tipo: "Avançado",
+        preco: "5400",
+        publicado: true,
+      },
+    ]);
 
-const indiceUltimaEncomenda = paginaAtual * encomendasPorPagina;
+  const encomendasPorPagina = 8;
 
-const indicePrimeiraEncomenda =
-  indiceUltimaEncomenda - encomendasPorPagina;
+  const indiceUltimaEncomenda =
+    paginaAtual * encomendasPorPagina;
 
+  const indicePrimeiraEncomenda =
+    indiceUltimaEncomenda -
+    encomendasPorPagina;
 
-const encomendasFiltradas = listaEncomendas.filter(
-  (pedido) => {
-
-    const buscaMatch =
-      pedido.produto
+  const encomendasFiltradas =
+    listaEncomendas.filter((pedido) => {
+      return pedido.produto
         .toLowerCase()
         .includes(busca.toLowerCase());
+    });
 
-    const categoriaMatch =
-      filtrosAplicados.categoria === "Todas" ||
-      pedido.categoria === filtrosAplicados.categoria;
-
-    const statusMatch =
-      filtrosAplicados.status === "Todos" ||
-      pedido.status === filtrosAplicados.status;
-
-    return (
-      buscaMatch &&
-      categoriaMatch &&
-      statusMatch
+  const encomendasAtuais =
+    encomendasFiltradas.slice(
+      indicePrimeiraEncomenda,
+      indiceUltimaEncomenda
     );
-  }
-);
 
-const encomendasAtuais = encomendasFiltradas.slice(
-  indicePrimeiraEncomenda,
-  indiceUltimaEncomenda
-);
-
-const totalPaginas = Math.ceil(
-  encomendasFiltradas.length / encomendasPorPagina
-);
-
+  const totalPaginas = Math.ceil(
+    encomendasFiltradas.length /
+      encomendasPorPagina
+  );
 
   return (
     <main
@@ -160,17 +112,17 @@ const totalPaginas = Math.ceil(
         minHeight: "100vh",
       }}
     >
-
+      {/* HEADER */}
       <section
         className="py-5 text-white"
         style={{
           background:
-            "linear-gradient(135deg, #940533, #c0012a, #f5061d)",
+            "linear-gradient(135deg,#940533,#c0012a,#f5061d)",
         }}
       >
         <div className="container py-4">
           <div className="row align-items-center">
-            <div className="col-lg-8">
+            <div className="col-lg-12 text-center">
               <span className="badge bg-warning text-dark mb-3 px-3 py-2">
                 Painel do Fornecedor
               </span>
@@ -180,27 +132,19 @@ const totalPaginas = Math.ceil(
               </h1>
 
               <p className="lead mt-3">
-                Visualize todos os pedidos recebidos pela sua empresa,
-                acompanhe o status das encomendas e organize suas entregas.
+                Visualize todos os pedidos
+                recebidos pela sua empresa.
               </p>
-            </div>
-
-            <div className="col-lg-4 text-lg-end mt-4 mt-lg-0">
-              <button className="btn btn-outline-light btn-lg fw-semibold" 
-              onClick={() => window.location.reload()}>
-                Atualizar pedidos
-              </button>
             </div>
           </div>
         </div>
       </section>
 
-    
+      {/* CONTEÚDO */}
       <section className="py-5">
         <div className="container-fluid px-4">
           <div className="row">
-            
-     
+            {/* FILTROS */}
             <div className="col-lg-3 mb-4">
               <div
                 className="p-4 rounded-4 shadow-lg position-sticky"
@@ -212,219 +156,442 @@ const totalPaginas = Math.ceil(
                 }}
               >
                 <h3 className="text-white fw-bold mb-4">
-                  Filtrar Encomendas
+                  Buscar Produto
                 </h3>
 
-             
                 <div className="mb-4">
-                  <label className="form-label text-white">
-                    Buscar Produto
-                  </label>
-
                   <input
                     type="text"
                     className="form-control fornecedor-input"
-                    placeholder="Digite o nome do produto"
+                    placeholder="Digite o nome"
                     value={busca}
-                    onChange={(e) => setBusca(e.target.value)}
+                    onChange={(e) =>
+                      setBusca(
+                        e.target.value
+                      )
+                    }
                   />
                 </div>
-
-
-                <div className="mb-4">
-                  <label className="form-label text-white">
-                    Categoria
-                  </label>
-
-                  <select
-                    className="form-select fornecedor-input"
-                    value={categoriaSelecionada}
-                    onChange={(e) => 
-                      setCategoriaSelecionada(e.target.value)}
-                  >
-                    <option>Todas</option>
-                    <option>Motores</option>
-                    <option>Rolamentos</option>
-                    <option>Painéis</option>
-                    <option>Engrenagens</option>
-                  </select>
-                </div>
-
-              
-                <div className="mb-4">
-                  <label className="form-label text-white">
-                    Status
-                  </label>
-
-                  <select
-                    className="form-select fornecedor-input"
-                    value={statusSelecionado}
-                    onChange={(e) => 
-                        setStatusSelecionado(e.target.value)}
-                  >
-                    <option>Todos</option>
-                    <option>Pendente</option>
-                    <option>Em andamento</option>
-                    <option>Enviado</option>
-                    <option>Concluído</option>
-                  </select>
-                </div>
-
-                <button
-                className="btn w-100 text-white fw-semibold filtro-btn"
-                onClick={() => setFiltrosAplicados({
-                    categoria: categoriaSelecionada,
-                    status: statusSelecionado,
-                })}> Aplicar filtros
-                </button>
               </div>
             </div>
 
-        
+            {/* LISTA */}
             <div className="col-lg-9">
-                {encomendasFiltradas.length === 0 && (
-  <div
-    className="text-center py-5 rounded-4"
-    style={{
-      background: "#111",
-      border: "1px solid rgba(255,255,255,0.1)",
-    }}
-  >
-    <h3 className="text-white fw-bold mb-3">
-      Nenhuma encomenda encontrada
-    </h3>
-
-    <p className="text-secondary mb-0">
-      Tente alterar os filtros ou buscar outro produto.
-    </p>
-  </div>
-)}
               <div className="row g-4">
-                {encomendasAtuais.map((pedido) => (
-                  <div className="col-12" key={pedido.id}>
+                {encomendasAtuais.map(
+                  (pedido) => (
                     <div
-                      className="card border-0 shadow-lg overflow-hidden encomenda-card"
-                      style={{
-                        background: "#111",
-                      }}
+                      className="col-12"
+                      key={pedido.id}
                     >
-                      <div className="card-body p-4">
-                        <div className="row align-items-center">
-                          
-            
-                          <div className="col-lg-8">
-                            <div className="d-flex flex-wrap gap-2 mb-3">
-                              <span className="badge bg-danger">
-                                {pedido.categoria}
-                              </span>
+                      <div
+                        className="card border-0 shadow-lg overflow-hidden"
+                        style={{
+                          background:
+                            "#111",
+                        }}
+                      >
+                        <div className="card-body p-4">
+                          <div className="row align-items-center">
+                            <div className="col-lg-8">
+                              <h3 className="text-white fw-bold mb-3">
+                                {
+                                  pedido.produto
+                                }
+                              </h3>
 
-                              <span className="badge bg-warning text-dark">
-                                {pedido.status}
-                              </span>
+                              <p className="text-secondary mb-2">
+                                Quantidade:
+                                <span className="text-white fw-semibold ms-2">
+                                  {
+                                    pedido.quantidade
+                                  }
+                                </span>
+                              </p>
+
+                              <p className="text-secondary">
+                                Entrega:
+                                <span className="text-white fw-semibold ms-2">
+                                  {
+                                    pedido.entrega
+                                  }
+                                </span>
+                              </p>
                             </div>
 
-                            <h3 className="text-white fw-bold">
-                              {pedido.produto}
-                            </h3>
+                            <div className="col-lg-4 mt-4 mt-lg-0">
+                              <div className="d-grid gap-3">
+                                <button
+                                  className="btn btn-outline-light fw-semibold"
+                                  data-bs-toggle="modal"
+                                  data-bs-target="#modalDetalhes"
+                                  onClick={() =>
+                                    setPedidoSelecionado(
+                                      pedido
+                                    )
+                                  }
+                                >
+                                  Ver detalhes
+                                </button>
 
-                            <p className="text-secondary mb-2">
-                              Empresa solicitante:
-                              <span className="text-white fw-semibold ms-2">
-                                {pedido.empresa}
-                              </span>
-                            </p>
-
-                            <p className="text-secondary mb-2">
-                              Quantidade:
-                              <span className="text-white fw-semibold ms-2">
-                                {pedido.quantidade}
-                              </span>
-                            </p>
-
-                            <p className="text-secondary">
-                              Data do pedido:
-                              <span className="text-white fw-semibold ms-2">
-                                {pedido.data}
-                              </span>
-                            </p>
-                          </div>
-
-
-                          <div className="col-lg-4 mt-4 mt-lg-0">
-                            <div className="d-grid gap-3">
-                              <button className="btn visualizar-btn text-white fw-semibold">
-                                Ver detalhes
-                              </button>
-
-                              <select className="form-select fornecedor-input">
-                                <option>Alterar status</option>
-                                <option>Pendente</option>
-                                <option>Em andamento</option>
-                                <option>Enviado</option>
-                                <option>Concluído</option>
-                              </select>
+                                <button
+                                  className="btn visualizar-btn text-white fw-semibold"
+                                  data-bs-toggle="modal"
+                                  data-bs-target="#modalOrcamento"
+                                  onClick={() =>
+                                    setPedidoSelecionado(
+                                      pedido
+                                    )
+                                  }
+                                >
+                                  Gerenciar orçamento
+                                </button>
+                              </div>
                             </div>
                           </div>
-
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                )}
               </div>
 
-
-<nav className="mt-5">
-  <ul className="pagination justify-content-center">
-
-    <li className={`page-item ${paginaAtual === 1 ? "disabled" : ""}`}>
-      <button
-        className="page-link paginacao-btn"
-        onClick={() => setPaginaAtual(paginaAtual - 1)}
-      >
-        Anterior
-      </button>
-    </li>
-
-    {[...Array(totalPaginas)].map((_, index) => (
-      <li
-        key={index}
-        className={`page-item ${
-          paginaAtual === index + 1 ? "active" : ""
-        }`}
-      >
-        <button
-          className={
-            paginaAtual === index + 1
-              ? "page-link paginacao-btn-active"
-              : "page-link paginacao-btn"
-          }
-          onClick={() => setPaginaAtual(index + 1)}
-        >
-          {index + 1}
-        </button>
-      </li>
-    ))}
-
-    <li
-      className={`page-item ${
-        paginaAtual === totalPaginas ? "disabled" : ""
-      }`}
-    >
-      <button
-        className="page-link paginacao-btn"
-        onClick={() => setPaginaAtual(paginaAtual + 1)}
-      >
-        Próximo
-      </button>
-    </li>
-
-  </ul>
-</nav>
+              <nav className="mt-5">
+                <ul className="pagination justify-content-center">
+                  {[...Array(totalPaginas)].map(
+                    (_, index) => (
+                      <li
+                        key={index}
+                        className={`page-item ${
+                          paginaAtual ===
+                          index + 1
+                            ? "active"
+                            : ""
+                        }`}
+                      >
+                        <button
+                          className="page-link"
+                          onClick={() =>
+                            setPaginaAtual(
+                              index + 1
+                            )
+                          }
+                        >
+                          {index + 1}
+                        </button>
+                      </li>
+                    )
+                  )}
+                </ul>
+              </nav>
             </div>
           </div>
         </div>
       </section>
+
+      {/* MODAL DETALHES */}
+      <div
+        className="modal fade"
+        id="modalDetalhes"
+        tabIndex="-1"
+      >
+        <div className="modal-dialog modal-dialog-centered modal-lg">
+          <div
+            className="modal-content border-0"
+            style={{
+              background: "#111",
+              color: "white",
+              borderRadius: "24px",
+            }}
+          >
+            <div
+              className="modal-header border-0"
+              style={{
+                background:
+                  "linear-gradient(135deg,#940533,#c0012a,#f5061d)",
+              }}
+            >
+              <h2 className="fw-bold">
+                {
+                  pedidoSelecionado?.produto
+                }
+              </h2>
+
+              <button
+                type="button"
+                className="btn-close btn-close-white"
+                data-bs-dismiss="modal"
+              ></button>
+            </div>
+
+            <div className="modal-body p-4">
+              <div className="mb-4">
+                <h5 className="text-secondary">
+                  Descrição
+                </h5>
+
+                <p>
+                  {
+                    pedidoSelecionado?.descricao
+                  }
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* MODAL ORÇAMENTO */}
+      <div
+        className="modal fade"
+        id="modalOrcamento"
+        tabIndex="-1"
+      >
+        <div className="modal-dialog modal-dialog-centered modal-xl">
+          <div
+            className="modal-content border-0"
+            style={{
+              background: "#111",
+              color: "white",
+              borderRadius: "24px",
+            }}
+          >
+            <div
+              className="modal-header border-0"
+              style={{
+                background:
+                  "linear-gradient(135deg,#940533,#c0012a,#f5061d)",
+              }}
+            >
+              <div>
+                <h2 className="fw-bold mb-1">
+                  Orçamentos
+                </h2>
+
+                <p className="mb-0 opacity-75">
+                  {
+                    pedidoSelecionado?.produto
+                  }
+                </p>
+              </div>
+
+              <button
+                type="button"
+                className="btn-close btn-close-white"
+                data-bs-dismiss="modal"
+              ></button>
+            </div>
+
+            <div className="modal-body p-4">
+              <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+                <h3 className="fw-bold">
+                  Opções de orçamento
+                </h3>
+
+                <button
+                  className="btn visualizar-btn text-white fw-semibold"
+                  onClick={() =>
+                    setOrcamentos([
+                      ...orcamentos,
+                      {
+                        id: Date.now(),
+                        nome: "Novo Plano",
+                        tipo: "Novo",
+                        preco: "0",
+                        publicado: false,
+                      },
+                    ])
+                  }
+                >
+                  + Adicionar
+                </button>
+              </div>
+
+              <div className="row g-4">
+                {orcamentos.map(
+                  (
+                    orcamento,
+                    index
+                  ) => (
+                    <div
+                      className="col-lg-4"
+                      key={
+                        orcamento.id
+                      }
+                    >
+                      <div
+                        className="p-4 rounded-4 h-100"
+                        style={{
+                          background:
+                            "#181818",
+
+                          border:
+                            "1px solid rgba(255,255,255,0.08)",
+                        }}
+                      >
+                        <div className="d-flex justify-content-between align-items-center mb-3">
+                          <span
+                            className={`badge ${
+                              orcamento.publicado
+                                ? "bg-success"
+                                : "bg-secondary"
+                            }`}
+                          >
+                            {orcamento.publicado
+                              ? "Publicado"
+                              : "Não publicado"}
+                          </span>
+
+                          <button
+                            className={`btn btn-sm ${
+                              orcamento.publicado
+                                ? "btn-outline-warning"
+                                : "btn-outline-success"
+                            }`}
+                            onClick={() => {
+                              const novos =
+                                [
+                                  ...orcamentos,
+                                ];
+
+                              novos[
+                                index
+                              ].publicado =
+                                !novos[
+                                  index
+                                ]
+                                  .publicado;
+
+                              setOrcamentos(
+                                novos
+                              );
+                            }}
+                          >
+                            {orcamento.publicado
+                              ? "Privar"
+                              : "Publicar"}
+                          </button>
+                        </div>
+
+                        <input
+                          type="text"
+                          className="form-control fornecedor-input fw-bold mb-3"
+                          value={
+                            orcamento.nome
+                          }
+                          onChange={(
+                            e
+                          ) => {
+                            const novos =
+                              [
+                                ...orcamentos,
+                              ];
+
+                            novos[
+                              index
+                            ].nome =
+                              e.target.value;
+
+                            setOrcamentos(
+                              novos
+                            );
+                          }}
+                        />
+
+                        <input
+                          type="text"
+                          className="form-control fornecedor-input mb-3"
+                          placeholder="Tipo"
+                          value={
+                            orcamento.tipo
+                          }
+                          onChange={(
+                            e
+                          ) => {
+                            const novos =
+                              [
+                                ...orcamentos,
+                              ];
+
+                            novos[
+                              index
+                            ].tipo =
+                              e.target.value;
+
+                            setOrcamentos(
+                              novos
+                            );
+                          }}
+                        />
+
+                        <input
+                          type="text"
+                          className="form-control fornecedor-input mb-4"
+                          placeholder="Preço"
+                          value={
+                            orcamento.preco
+                          }
+                          onChange={(
+                            e
+                          ) => {
+                            const novos =
+                              [
+                                ...orcamentos,
+                              ];
+
+                            novos[
+                              index
+                            ].preco =
+                              e.target.value;
+
+                            setOrcamentos(
+                              novos
+                            );
+                          }}
+                        />
+
+                        <h2 className="fw-bold text-danger mb-4">
+                          R${" "}
+                          {
+                            orcamento.preco
+                          }
+                        </h2>
+
+                        <div className="d-flex gap-2">
+                          <button className="btn visualizar-btn text-white fw-semibold w-100">
+                            Salvar
+                          </button>
+
+                          <button
+                            className="btn btn-outline-danger"
+                            onClick={() => {
+                              const novos =
+                                orcamentos.filter(
+                                  (
+                                    _,
+                                    i
+                                  ) =>
+                                    i !==
+                                    index
+                                );
+
+                              setOrcamentos(
+                                novos
+                              );
+                            }}
+                          >
+                            🗑
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
   );
 }

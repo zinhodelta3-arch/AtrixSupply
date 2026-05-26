@@ -20,7 +20,7 @@ export default function Footer(){
         <h5 className="fw-bold mb-3">Suporte</h5>
         <ul className="list-unstyled d-flex flex-column gap-2">
           <li>
-            <a href="#" className="footer-link">
+            <a href="suporte" className="footer-link">
               Ajuda
             </a>
           </li>

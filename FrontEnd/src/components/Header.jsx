@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 export default function Header() {
     return(
@@ -15,7 +16,7 @@ export default function Header() {
 
                 <nav className="navbar">
                   <div className="container-fluid">
-                    <a className="navbar-brand" href="#">
+                    <a className="navbar-brand" href="/">
                       Atrix Supply
                     </a>
                   </div>
@@ -41,26 +42,26 @@ export default function Header() {
                   <ul className="navbar-nav navbar-center gap-lg-4">
 
                     <li className="nav-item">
-                      <a className="nav-link" href="#">
-                        Inicio
+                      <Link className="nav-link" href="/produtos">
+                        Produtos
+                      </Link>
+                    </li>
+
+                    <li className="nav-item">
+                      <a className="nav-link" href="/pedidos">
+                        Pedidos
                       </a>
                     </li>
 
                     <li className="nav-item">
-                      <a className="nav-link" href="#">
-                        Projetos
+                      <a className="nav-link" href="/encomendas">
+                         Encomendas
                       </a>
                     </li>
 
                     <li className="nav-item">
-                      <a className="nav-link" href="#">
-                        Tecnologia
-                      </a>
-                    </li>
-
-                    <li className="nav-item">
-                      <a className="nav-link" href="#">
-                        Contato
+                      <a className="nav-link" href="/logistica">
+                        Logistica
                       </a>
                     </li>
 
@@ -76,11 +77,11 @@ export default function Header() {
                     {/* DROPDOWN */}
                     <div className="profile-dropdown">
 
-                      <a href="#">
+                      <a href="/login">
                         Entrar
                       </a>
 
-                      <a href="#">
+                      <a href="cadastro">
                         Cadastrar
                       </a>
 
