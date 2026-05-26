@@ -46,7 +46,7 @@ export default function Sidebar() {
         top: 0,
       }}
     >
-      {/* LOGO */}
+  
       <Link
         href="/ATRIXsupply"
         className="d-flex align-items-center text-decoration-none mb-4 px-2"
@@ -84,7 +84,7 @@ export default function Sidebar() {
         </div>
       </Link>
 
-      {/* DIVIDER */}
+     
       <div
         className="mb-3"
         style={{
@@ -94,11 +94,11 @@ export default function Sidebar() {
         }}
       />
 
-      {/* NAVIGATION */}
+     
 
       <ul className="nav nav-pills flex-column gap-1">
 
-        {/* DASHBOARD */}
+       
         <li className="nav-item mb-2">
           <Link
             href="/dashboard"
@@ -113,7 +113,7 @@ export default function Sidebar() {
           </Link>
         </li>
 
-        {/* USUÁRIOS */}
+        
         <li className="nav-item mb-2">
           <Link
             href="/dashboard/usuarios"
@@ -128,7 +128,7 @@ export default function Sidebar() {
           </Link>
         </li>
 
-        {/* PRODUTOS */}
+       
         <li className="nav-item mb-2">
           <Link
             href="/dashboard/produtos"
@@ -143,7 +143,7 @@ export default function Sidebar() {
           </Link>
         </li>
 
-        {/* PEDIDOS */}
+       
         <li className="nav-item mb-2">
           <Link
             href="/dashboard/pedidos"
@@ -158,7 +158,7 @@ export default function Sidebar() {
           </Link>
         </li>
 
-        {/* FORNECEDORES */}
+       
         <li className="nav-item mb-2">
           <Link
             href="/dashboard/fornecedores"
@@ -174,18 +174,33 @@ export default function Sidebar() {
         </li>
       </ul>
 
-      {/* PROFILE AREA */}
+       <li className="nav-item mb-2">
+          <Link
+            href="/dashboard/suporte"
+            className="nav-link d-flex align-items-center px-3 py-2 text-decoration-none"
+            style={linkStyle(isActive("/dashboard/suporte"))}
+          >
+            <i
+              className="bi bi-truck me-3"
+              style={iconStyle(isActive("/dashboard/suporte"))}
+            />
+            Suporte
+          </Link>
+        </li>
+
+
+     
       <div className="mt-auto pt-4">
         <div
           className="d-flex align-items-center justify-content-between p-2"
           style={{
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            borderRadius: "18px",
-            backdropFilter: "blur(10px)",
+              background: "rgba(255, 229, 229, 0.06)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: "18px",
+              backdropFilter: "blur(10px)",
           }}
         >
-          {/* USER INFO */}
+         
           <div className="d-flex align-items-center">
             <div
               className="d-flex justify-content-center align-items-center fw-bold"
@@ -221,7 +236,7 @@ export default function Sidebar() {
             </div>
           </div>
 
-          {/* LOGOUT */}
+       
           <button
             className="btn d-flex align-items-center justify-content-center p-0"
             style={{

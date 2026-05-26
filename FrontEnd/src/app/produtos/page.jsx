@@ -16,146 +16,7 @@ export default function Produtos() {
       id: "id",
       nome: "Nome do produto",
       descricao: "Descrição do produto",
-      imagem: "Imagem do produto",
-    },
-
-    {
-      id: "id",
-      nome: "Nome do produto",
-      descricao: "Descrição do produto",
-      imagem: "Imagem do produto",
-    },
-
-    {
-      id: "id",
-      nome: "Nome do produto",
-      descricao: "Descrição do produto",
-      imagem: "Imagem do produto",
-    },
-
-    {
-      id: "id",
-      nome: "Nome do produto",
-      descricao: "Descrição do produto",
-      imagem: "Imagem do produto",
-    },
-
-    {
-      id: "id",
-      nome: "Nome do produto",
-      descricao: "Descrição do produto",
-      imagem: "Imagem do produto",
-    },
-
-    {
-      id: "id",
-      nome: "Nome do produto",
-      descricao: "Descrição do produto",
-      imagem: "Imagem do produto",
-    },
-
-    {
-      id: "id",
-      nome: "Nome do produto",
-      descricao: "Descrição do produto",
-      imagem: "Imagem do produto",
-    },
-
-    {
-      id: "id",
-      nome: "Nome do produto",
-      descricao: "Descrição do produto",
-      imagem: "Imagem do produto",
-    },
-
-    {
-      id: "id",
-      nome: "Nome do produto",
-      descricao: "Descrição do produto",
-      imagem: "Imagem do produto",
-    },
-
-    {
-      id: "id",
-      nome: "Nome do produto",
-      descricao: "Descrição do produto",
-      imagem: "Imagem do produto",
-    },
-
-    {
-      id: "id",
-      nome: "Nome do produto",
-      descricao: "Descrição do produto",
-      imagem: "Imagem do produto",
-    },
-
-    {
-      id: "id",
-      nome: "Nome do produto",
-      descricao: "Descrição do produto",
-      imagem: "Imagem do produto",
-    },
-
-    {
-      id: "id",
-      nome: "Nome do produto",
-      descricao: "Descrição do produto",
-      imagem: "Imagem do produto",
-    },
-
-    {
-      id: "id",
-      nome: "Nome do produto",
-      descricao: "Descrição do produto",
-      imagem: "Imagem do produto",
-    },
-
-    {
-      id: "id",
-      nome: "Nome do produto",
-      descricao: "Descrição do produto",
-      imagem: "Imagem do produto",
-    },
-
-    {
-      id: "id",
-      nome: "Nome do produto",
-      descricao: "Descrição do produto",
-      imagem: "Imagem do produto",
-    },
-
-    {
-      id: "id",
-      nome: "Nome do produto",
-      descricao: "Descrição do produto",
-      imagem: "Imagem do produto",
-    },
-
-    {
-      id: "id",
-      nome: "Nome do produto",
-      descricao: "Descrição do produto",
-      imagem: "Imagem do produto",
-    },
-
-    {
-      id: "id",
-      nome: "Nome do produto",
-      descricao: "Descrição do produto",
-      imagem: "Imagem do produto",
-    },
-
-    {
-      id: "id",
-      nome: "Nome do produto",
-      descricao: "Descrição do produto",
-      imagem: "Imagem do produto",
-    },
-
-    {
-      id: "id",
-      nome: "Nome do produto",
-      descricao: "Descrição do produto",
+      preco: "R$",
       imagem: "Imagem do produto",
     },
 
@@ -347,6 +208,15 @@ const totalPaginas = Math.ceil(
                           }}
                         >
                           {produto.descricao}
+                        </p>
+
+                        <p
+                          className="card-text mt-2 fw-bold"
+                          style={{
+                            color: "#5ba100dc",
+                          }}
+                        >
+                          {produto.preco}
                         </p>
 
                         <div className="mt-auto">
