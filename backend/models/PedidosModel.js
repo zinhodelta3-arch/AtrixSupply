@@ -1,7 +1,7 @@
 import { create, read, update, deleteRecord, getConnection } from '../config/database.js';
 
 // Model para operações com produtos
-class ProdutoModel {
+class PedidosModel {
     // Listar todos os produtos (com paginação)
     static async listarTodos(limite, offset) {
         try {
@@ -178,4 +178,4 @@ class ProdutoModel {
     }
 }
 
-export default PedidoModel;
+export default PedidosModel;

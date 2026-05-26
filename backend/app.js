@@ -53,8 +53,8 @@ app.use('/api/auth', authRotas);
 app.use('/api/produtos', produtoRotas);
 app.use('/api/usuarios', usuarioRotas);
 app.use('/api/logistica', logisticaRotas);
-app.use('api/pedidos', pedidoRotas);
-app.use('api/orcamentos', orcamentoRotas)
+app.use('/api/pedidos', pedidoRotas);
+app.use('/api/orcamentos', orcamentoRotas)
 
 // Rota raiz
 app.get('/', (req, res) => {
