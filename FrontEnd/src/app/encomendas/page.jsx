@@ -2,6 +2,7 @@
 
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
+import "./page.css";
 
 import Image from "next/image";
 import { useState } from "react";
@@ -15,6 +16,8 @@ export default function Encomendas() {
       data: "19 Maio 2026",
       preco: "R$ 12.499,90",
       cor: "#ffb300",
+       descricao:
+    "Placa de vídeo enviada via transporte expresso com seguro total.",
 
       orcamentos: [
         {
@@ -39,6 +42,8 @@ export default function Encomendas() {
       data: "17 Maio 2026",
       preco: "R$ 4.299,90",
       cor: "#ffcf40",
+       descricao:
+    "Placa de vídeo enviada via transporte expresso com seguro total.",
 
       orcamentos: [
         {
@@ -62,7 +67,9 @@ export default function Encomendas() {
       status: "Entregue",
       data: "10 Maio 2026",
       preco: "R$ 899,90",
-      cor: "#ffcf40",
+      cor: "#6dff8b",
+       descricao:
+    "Placa de vídeo enviada via transporte expresso com seguro total.",
 
       orcamentos: [
         {
@@ -79,17 +86,63 @@ export default function Encomendas() {
         },
       ],
     },
-
   ]);
 
   const [modalAberto, setModalAberto] = useState(false);
-  const [pedidoSelecionado, setPedidoSelecionado] = useState(null);
+  const [encomendaSelecionada, setEncomendaSelecionada] = useState(null);
+
+  // NOVOS STATES
+const [modalCriar, setModalCriar] = useState(false);
+
+const [novaEncomenda, setNovaEncomenda] = useState({
+  produto: "",
+  descricao: "",
+});
 
   function deletarEncomenda(id) {
     setEncomendas((prev) =>
       prev.filter((encomenda) => encomenda.id !== id)
     );
   }
+
+
+  function criarEncomenda() {
+  if (
+    !novaEncomenda.produto ||
+    !novaEncomenda.descricao
+  )
+    return;
+
+  const nova = {
+    id: `#${Math.floor(Math.random() * 90000) + 10000}`,
+    produto: novaEncomenda.produto,
+    descricao: novaEncomenda.descricao,
+
+    status: "Processando",
+    data: "26 Maio 2026",
+    preco: "R$ 0,00",
+    cor: "#ffcf40",
+
+    orcamentos: [
+      {
+        empresa: "Kabum",
+        valor: "R$ 0,00",
+      },
+    ],
+  };
+
+  setEncomendas((prev) => [
+    nova,
+    ...prev,
+  ]);
+
+  setNovaEncomenda({
+    produto: "",
+    descricao: "",
+  });
+
+  setModalCriar(false);
+}
 
   return (
     <div
@@ -133,6 +186,7 @@ export default function Encomendas() {
         }}
       >
         <div className="row g-0 h-100">
+
           {/* SIDEBAR */}
           <div
             className="col-lg-4"
@@ -140,9 +194,9 @@ export default function Encomendas() {
               background: `
                 linear-gradient(
                   0deg,
-                  rgba(255, 123, 0, 0.88),
-                 
-                  rgba(192,1,42,.65)
+                  rgba(0, 0, 0, 0.88),
+                  rgba(255, 17, 0, 0.88),
+                  rgba(156, 0, 34, 0.65)
                 )
               `,
               borderRight:
@@ -333,21 +387,22 @@ export default function Encomendas() {
                 </div>
 
                 <button
-                  className="btn"
-                  style={{
-                    background:
-                      "linear-gradient(90deg,#ffcf40,#ff9d00,#c0012a)",
-                    color: "white",
-                    padding: "14px 28px",
-                    borderRadius: "16px",
-                    border: "none",
-                    fontWeight: "700",
-                    boxShadow:
-                      "0 12px 24px rgba(192,1,42,.22)",
-                  }}
-                >
-                  +
-                </button>
+  className="btn"
+  onClick={() => setModalCriar(true)}
+  style={{
+    background:
+      "linear-gradient(90deg,#ffcf40,#ff9d00,#c0012a)",
+    color: "white",
+    padding: "14px 28px",
+    borderRadius: "16px",
+    border: "none",
+    fontWeight: "700",
+    boxShadow:
+      "0 12px 24px rgba(192,1,42,.22)",
+  }}
+>
+  +
+</button>
               </div>
 
               {/* SCROLL */}
@@ -359,6 +414,7 @@ export default function Encomendas() {
                 }}
               >
                 <div className="d-flex flex-column gap-4">
+
                   {encomendas.map((encomenda) => (
                     <div
                       key={encomenda.id}
@@ -412,6 +468,7 @@ export default function Encomendas() {
                       </button>
 
                       <div className="row align-items-center">
+
                         {/* PRODUTO */}
                         <div className="col-md-5 mb-4 mb-md-0">
                           <p
@@ -511,7 +568,7 @@ export default function Encomendas() {
                           <button
                             className="btn"
                             onClick={() => {
-                              setPedidoSelecionado(
+                              setEncomendaSelecionada(
                                 encomenda
                               );
                               setModalAberto(true);
@@ -530,6 +587,7 @@ export default function Encomendas() {
                             Detalhes
                           </button>
                         </div>
+
                       </div>
                     </div>
                   ))}
@@ -574,6 +632,7 @@ export default function Encomendas() {
                       </p>
                     </div>
                   )}
+
                 </div>
               </div>
             </div>
@@ -582,7 +641,7 @@ export default function Encomendas() {
       </div>
 
       {/* MODAL */}
-      {modalAberto && pedidoSelecionado && (
+      {modalAberto && encomendaSelecionada && (
         <div
           className="d-flex justify-content-center align-items-center"
           style={{
@@ -635,27 +694,109 @@ export default function Encomendas() {
             <div className="mb-4">
               <p
                 style={{
-                  color: pedidoSelecionado.cor,
+                  color: encomendaSelecionada.cor,
                   fontWeight: "700",
                   textTransform: "uppercase",
                   letterSpacing: "1px",
                 }}
               >
-                Encomenda {pedidoSelecionado.id}
+                Encomenda {encomendaSelecionada.id}
               </p>
 
               <h2
                 style={{
                   color: "#f5061d",
                   fontWeight: "800",
+                  textAlign: "center",
                 }}
               >
-                {pedidoSelecionado.produto}
+                {encomendaSelecionada.produto}
               </h2>
             </div>
 
+            {/* DESCRIÇÃO */}
+{/* DESCRIÇÃO */}
+<div
+  style={{
+    marginBottom: "35px",
+  }}
+>
+  <p
+    style={{
+      color: "#ffe082",
+      fontWeight: "800",
+      letterSpacing: "1px",
+      fontSize: ".82rem",
+      marginBottom: "14px",
+      textTransform: "uppercase",
+    }}
+  >
+    Descrição
+  </p>
+
+  <p
+    style={{
+      color: "rgba(255,255,255,.82)",
+      fontSize: "1rem",
+      lineHeight: "1.9",
+      margin: 0,
+      fontWeight: "400",
+    }}
+  >
+    {encomendaSelecionada.descricao}
+  </p>
+
+  <div
+    style={{
+      marginTop: "18px",
+      width: "100%",
+      height: "2px",
+      borderRadius: "999px",
+      background: `
+        linear-gradient(
+          90deg,
+          rgba(245,6,29,0),
+          rgba(245,6,29,.9),
+          rgba(255,207,64,.95),
+          rgba(245,6,29,.9),
+          rgba(245,6,29,0)
+        )
+      `,
+      boxShadow: `
+        0 0 12px rgba(245,6,29,.35),
+        0 0 18px rgba(255,207,64,.18)
+      `,
+    }}
+  />
+</div>
+<button
+  className="btn d-flex align-items-center justify-content-center"
+  style={{
+    position: "absolute",
+    top: "20px",
+    right: "70px",
+    width: "42px",
+    height: "42px",
+    borderRadius: "14px",
+    border: "1px solid rgba(255,179,0,.18)",
+    background: `
+      linear-gradient(
+        145deg,
+        rgba(255,179,0,.18),
+        rgba(255,140,0,.10)
+      )
+    `,
+    backdropFilter: "blur(10px)",
+    color: "#ffb300",
+    boxShadow: "0 0 18px rgba(255,179,0,.18)",
+  }}
+>
+  <i className="bi bi-pencil-fill" />
+</button>
+
             {/* INFO */}
-            <div className="row g-4 mb-4">
+            <div className="row g-4 mb-5">
+
               <div className="col-md-4">
                 <div
                   style={{
@@ -680,7 +821,7 @@ export default function Encomendas() {
                       fontWeight: "700",
                     }}
                   >
-                    {pedidoSelecionado.status}
+                    {encomendaSelecionada.status}
                   </span>
                 </div>
               </div>
@@ -709,7 +850,7 @@ export default function Encomendas() {
                       fontWeight: "700",
                     }}
                   >
-                    {pedidoSelecionado.data}
+                    {encomendaSelecionada.data}
                   </span>
                 </div>
               </div>
@@ -738,10 +879,11 @@ export default function Encomendas() {
                       fontWeight: "700",
                     }}
                   >
-                    {pedidoSelecionado.preco}
+                    {encomendaSelecionada.preco}
                   </span>
                 </div>
               </div>
+
             </div>
 
             {/* ORÇAMENTOS */}
@@ -750,52 +892,390 @@ export default function Encomendas() {
                 style={{
                   color: "#940533",
                   fontWeight: "700",
-                  marginBottom: "20px",
+                  marginBottom: "25px",
                 }}
               >
                 Orçamentos de Empresas
               </h4>
 
               <div className="d-flex flex-column gap-3">
-                {pedidoSelecionado.orcamentos.map(
-                  (orcamento, index) => (
-                    <div
-                      key={index}
-                      className="d-flex justify-content-between align-items-center"
-                      style={{
-                        background:
-                          "rgba(255,255,255,.04)",
-                        border:
-                          "1px solid rgba(255,255,255,.06)",
-                        borderRadius: "18px",
-                        padding: "18px 20px",
-                      }}
-                    >
-                      <span
-                        style={{
-                          color: "white",
-                          fontWeight: "600",
-                        }}
-                      >
-                        {orcamento.empresa}
-                      </span>
 
-                      <span
-                        style={{
-                          color: "#ffd900",
-                          fontWeight: "800",
-                        }}
+                {encomendaSelecionada.orcamentos.map(
+                  (orcamento, index) => (
+                    <div key={index}>
+
+                      {/* HEADER */}
+                      <button
+                        className="btn w-100 d-flex justify-content-between align-items-center px-0"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target={`#orcamento-${index}`}
                       >
-                        {orcamento.valor}
-                      </span>
+                        <div className="d-flex align-items-center gap-3">
+
+                          <div
+                            style={{
+                              width: "12px",
+                              height: "12px",
+                              borderRadius: "50%",
+                              background: "#ffcf40",
+                              boxShadow:
+                                "0 0 14px rgba(255,207,64,.8)",
+                            }}
+                          />
+
+                          <span
+                            style={{
+                              color: "white",
+                              fontWeight: "700",
+                              fontSize: "1rem",
+                            }}
+                          >
+                            {orcamento.empresa}
+                          </span>
+                        </div>
+
+                        <div
+                          style={{
+                            width: "38px",
+                            height: "38px",
+                            borderRadius: "12px",
+                            background:
+                              "rgba(255,255,255,.04)",
+                            border:
+                              "1px solid rgba(255,255,255,.06)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <i
+                            className="bi bi-chevron-down"
+                            style={{
+                              color: "#ffcf40",
+                            }}
+                          />
+                        </div>
+                      </button>
+
+                      {/* HR */}
+                      <hr
+                        style={{
+                          border: "none",
+                          height: "2px",
+                          background: `
+                            linear-gradient(
+                              90deg,
+                              rgba(245,6,29,0),
+                              rgba(245,6,29,.9),
+                              rgba(255,207,64,.95),
+                              rgba(245,6,29,.9),
+                              rgba(245,6,29,0)
+                            )
+                          `,
+                          borderRadius: "999px",
+                          marginTop: "12px",
+                          marginBottom: "20px",
+                          boxShadow: `
+                            0 0 12px rgba(245,6,29,.35),
+                            0 0 18px rgba(255,207,64,.18)
+                          `,
+                        }}
+                      />
+
+                      {/* COLLAPSE */}
+                      <div
+                        className="collapse"
+                        id={`orcamento-${index}`}
+                      >
+                        <div className="d-flex flex-column gap-3 mb-3">
+
+                          {[
+                            {
+                              nome: "Entrega Expressa",
+                              valor: orcamento.valor,
+                              icone:
+                                "bi-lightning-charge-fill",
+                            },
+                            {
+                              nome: "Entrega Econômica",
+                              valor: "R$ 120,00 OFF",
+                              icone: "bi-wallet2",
+                            },
+                            {
+                              nome: "Retirada em Loja",
+                              valor: "Frete Grátis",
+                              icone: "bi-shop",
+                            },
+                          ].map((opcao, i) => (
+                            <div
+                              key={i}
+                              className="d-flex justify-content-between align-items-center"
+                              style={{
+                                background: `
+                                  linear-gradient(
+                                    145deg,
+                                    rgba(255,255,255,.05),
+                                    rgba(255,255,255,.025)
+                                  )
+                                `,
+                                border:
+                                  "1px solid rgba(255,255,255,.06)",
+                                borderRadius: "18px",
+                                padding: "18px 20px",
+                                backdropFilter: "blur(10px)",
+                                boxShadow: `
+                                  inset 0 1px 0 rgba(255,255,255,.03),
+                                  0 10px 20px rgba(0,0,0,.18)
+                                `,
+                              }}
+                            >
+                              <div className="d-flex align-items-center gap-3">
+
+                                <div
+                                  style={{
+                                    width: "42px",
+                                    height: "42px",
+                                    borderRadius: "14px",
+                                    background: `
+                                      linear-gradient(
+                                        145deg,
+                                        rgba(255,207,64,.18),
+                                        rgba(245,6,29,.18)
+                                      )
+                                    `,
+                                    border:
+                                      "1px solid rgba(255,255,255,.08)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    color: "#ffcf40",
+                                  }}
+                                >
+                                  <i
+                                    className={`bi ${opcao.icone}`}
+                                  />
+                                </div>
+
+                                <div>
+                                  <span
+                                    style={{
+                                      color: "white",
+                                      fontWeight: "700",
+                                      display: "block",
+                                    }}
+                                  >
+                                    {opcao.nome}
+                                  </span>
+
+                                  <small
+                                    style={{
+                                      color:
+                                        "rgba(255,255,255,.48)",
+                                    }}
+                                  >
+                                    Melhor opção disponível
+                                  </small>
+                                </div>
+                              </div>
+
+                              <span
+                                style={{
+                                  color: "#ffd900",
+                                  fontWeight: "800",
+                                  fontSize: "1rem",
+                                }}
+                              >
+                                {opcao.valor}
+                              </span>
+                            </div>
+                          ))}
+
+                        </div>
+                      </div>
+
                     </div>
                   )
                 )}
               </div>
             </div>
+
           </div>
         </div>
       )}
+      {/* MODAL CRIAR */}
+{modalCriar && (
+  <div
+    className="d-flex justify-content-center align-items-center"
+    style={{
+      position: "fixed",
+      inset: 0,
+      background: "rgba(0,0,0,.75)",
+      backdropFilter: "blur(10px)",
+      zIndex: 9999,
+      padding: "20px",
+    }}
+  >
+    <div
+      style={{
+        width: "100%",
+        maxWidth: "650px",
+        borderRadius: "28px",
+        padding: "35px",
+        background: `
+          linear-gradient(
+            145deg,
+            rgba(25,26,32,.98),
+            rgba(35,20,25,.98)
+          )
+        `,
+        border:
+          "1px solid rgba(255,179,0,.12)",
+        position: "relative",
+      }}
+    >
+      {/* FECHAR */}
+      <button
+        onClick={() => setModalCriar(false)}
+        className="btn"
+        style={{
+          position: "absolute",
+          top: "18px",
+          right: "18px",
+          width: "42px",
+          height: "42px",
+          borderRadius: "14px",
+          background: "rgba(255,255,255,.05)",
+          border:
+            "1px solid rgba(255,255,255,.08)",
+          color: "#ff7b93",
+        }}
+      >
+        <i className="bi bi-x-lg"></i>
+      </button>
+
+      <h2
+        style={{
+          color: "#ffe082",
+          fontWeight: "800",
+          marginBottom: "30px",
+          marginRight: "50px",
+          textAlign: "center",
+        }}
+      >
+        Nova Encomenda
+      </h2>
+
+      <div className="d-flex flex-column gap-4">
+
+        {/* PRODUTO */}
+        <div>
+          <label
+            style={{
+              color: "#ffcf40",
+              marginBottom: "10px",
+              display: "block",
+              fontWeight: "700",
+            }}
+          >
+            Produto
+          </label>
+
+          <input
+            type="text"
+            value={novaEncomenda.produto}
+            onChange={(e) =>
+              setNovaEncomenda({
+                ...novaEncomenda,
+                produto: e.target.value,
+              })
+            }
+            className="form-control"
+            style={{
+              background: "rgba(255,255,255,.05)",
+              border:
+                "1px solid rgba(255,255,255,.08)",
+              color: "white",
+              borderRadius: "16px",
+              padding: "14px",
+            }}
+          />
+        </div>
+
+        
+        {/* DESCRIÇÃO */}
+<div>
+  <label
+    style={{
+      color: "#ffcf40",
+      marginBottom: "10px",
+      display: "block",
+      fontWeight: "700",
+    }}
+  >
+    Descrição
+  </label>
+
+  <textarea
+    placeholder="Descreva a encomenda..."
+    value={novaEncomenda.descricao}
+    onChange={(e) =>
+      setNovaEncomenda({
+        ...novaEncomenda,
+        descricao: e.target.value,
+      })
+    }
+    className="form-control"
+    rows={5}
+    style={{
+      background: "rgba(255,255,255,.05)",
+      border:
+        "1px solid rgba(255,255,255,.08)",
+      color: "white",
+      borderRadius: "16px",
+      padding: "16px",
+      resize: "none",
+      lineHeight: "1.7",
+    }}
+  />
+</div>
+
+        
+
+        {/* BOTÃO */}
+        <div
+  style={{
+    position: "relative",
+    borderRadius: "22px",
+    overflow: "hidden",
+    marginTop: "10px",
+  }}
+  className="botao-glow"
+>
+  <button
+    onClick={criarEncomenda}
+    className="btn w-100"
+    style={{
+      position: "relative",
+      zIndex: 2,
+      background:
+        "linear-gradient(90deg,#ffcf40,#ff9d00,#c0012a)",
+      color: "white",
+      padding: "16px",
+      borderRadius: "20px",
+      border: "none",
+      fontWeight: "800",
+      backdropFilter: "blur(10px)",
+    }}
+  >
+    Criar Encomenda
+  </button>
+</div>
+
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }
