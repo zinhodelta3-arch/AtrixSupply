@@ -1,4 +1,6 @@
 import PedidosModel from '../models/PedidosModel.js';
+import UsuarioModel from '../models/UsuarioModel.js';
+import ProdutoModel from '../models/ProdutoModel.js';
 import { fileURLToPath } from 'url';
 import path from 'path';
 
@@ -54,16 +56,16 @@ class PedidoController {
                 }
             });
         } catch (error) {
-            console.error('Erro ao listar produtos:', error);
+            console.error('Erro ao listar pedidos:', error);
             res.status(500).json({
                 sucesso: false,
                 erro: 'Erro interno do servidor',
-                mensagem: 'Não foi possível listar os produtos'
+                mensagem: 'Não foi possível listar os pedidos'
             });
         }
     }
 
-        // GET /pedidos/:id - Buscar pedido por ID
+    // GET /pedidos/:id - Buscar pedido por ID
     static async buscarPorId(req, res) {
         try {
             const { id_pedido } = req.params;
@@ -82,8 +84,8 @@ class PedidoController {
             if (!pedido) {
                 return res.status(404).json({
                     sucesso: false,
-                    erro: 'Produto não encontrado',
-                    mensagem: `Produto com ID ${id_pedido} não foi encontrado`
+                    erro: 'Pedido não encontrado',
+                    mensagem: `Pedido com ID ${id_pedido} não foi encontrado`
                 });
             }
 
@@ -92,17 +94,17 @@ class PedidoController {
                 dados: pedido
             });
         } catch (error) {
-            console.error('Erro ao buscar produto:', error);
+            console.error('Erro ao buscar pedido:', error);
             res.status(500).json({
                 sucesso: false,
                 erro: 'Erro interno do servidor',
-                mensagem: 'Não foi possível buscar o produto'
+                mensagem: 'Não foi possível buscar o pedido'
             });
         }
     }
 
 
-        // GET /produtos/id_user/:id_user- Buscar pedido por ID do usuário
+        // GET /pedidos/id_user/:id_user- Buscar pedido por ID do usuário
     static async buscarPorIdUser(req, res) {
         try {
             const { id_user } = req.params;
@@ -120,6 +122,7 @@ class PedidoController {
 
             if (!pedido) {
                 return res.status(404).json({
+                    sucesso: false,
                     erro: 'Sem pedidos',
                     mensagem: `O usuário não possui pedidos`
                 });
@@ -130,16 +133,16 @@ class PedidoController {
                 dados: pedido
             });
         } catch (error) {
-            console.error('Erro ao buscar produto:', error);
+            console.error('Erro ao buscar pedido:', error);
             res.status(500).json({
                 sucesso: false,
                 erro: 'Erro interno do servidor',
-                mensagem: 'Não foi possível buscar o produto'
+                mensagem: 'Não foi possível buscar o pedido'
             });
         }
     }
 
-        // GET /pedidos/nome_user/:nome_user - Listar todos os pedidos com o nome do usuário (com paginação)
+    // GET /pedidos/nome_user/:nome_user - Listar todos os pedidos com o nome do usuário (com paginação)
     static async buscarPorNome(req, res) {
         try {
             
@@ -186,17 +189,73 @@ class PedidoController {
                 }
             });
         } catch (error) {
-            console.error('Erro ao listar produtos:', error);
+            console.error('Erro ao listar pedidos:', error);
             res.status(500).json({
                 sucesso: false,
                 erro: 'Erro interno do servidor',
-                mensagem: 'Não foi possível listar os produtos por nome'
+                mensagem: 'Não foi possível listar os pedidos por nome'
+            });
+        }
+    }
+
+    // GET /pedidos/status/:status - Listar todos os pedidos com o status (com paginação, para admin)
+    static async buscarPorStatus(req, res) {
+        try {
+            
+            let status = req.params.status || '*';
+            let pagina = parseInt(req.query.pagina) || 1;
+            let limite = parseInt(req.query.limite) || 10;
+
+            if (pagina <= 0) {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'Página inválida',
+                    mensagem: 'A página deve ser um número maior que zero'
+                });
+            }
+            if (limite <= 0) {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'Limite inválido',
+                    mensagem: 'O limite deve ser um número maior que zero'
+                });
+            }
+
+            const limiteMaximo = parseInt(process.env.PAGINACAO_LIMITE_MAXIMO) || 100;
+            if (limite > limiteMaximo) {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'Limite inválido',
+                    mensagem: `O limite deve ser um número entre 1 e ${limiteMaximo}`
+                });
+            }
+
+            const offset = (pagina - 1) * limite;
+
+            const resultado = await PedidosModel.buscarPorStatus(status, limite, offset); 
+
+            res.status(200).json({
+                sucesso: true,
+                dados: resultado.pedidos,
+                paginacao: {
+                    pagina: resultado.pagina, 
+                    limite: resultado.limite, 
+                    total: resultado.total,   
+                    totalPaginas: resultado.totalPaginas 
+                }
+            });
+        } catch (error) {
+            console.error('Erro ao listar pedidos:', error);
+            res.status(500).json({
+                sucesso: false,
+                erro: 'Erro interno do servidor',
+                mensagem: 'Não foi possível listar os pedidos por status'
             });
         }
     }
 
 
-    // POST /pedidos - Criar novo produto
+    // POST /pedidos - Criar novo pedido
     static async criar(req, res) {
         try {
             const { id_user, id_produto } = req.body;
@@ -220,13 +279,22 @@ class PedidoController {
                 })
             }
 
+             // Se houver erros, retornar todos de uma vez
+            if (erros.length > 0) {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'Dados inválidos',
+                    detalhes: erros
+                });
+            }
+
             // Verificar se o user existe
             const userExistente = await UsuarioModel.buscarPorId(id_user);
             if (!userExistente) {
                 return res.status(404).json({
                     sucesso: false,
-                    erro: 'Produto não encontrado',
-                    mensagem: `Produto com ID ${id_user} não foi encontrado`
+                    erro: 'Usuário não encontrado',
+                    mensagem: `Usuário com ID ${id_user} não foi encontrado`
                 });
             }
 
@@ -240,16 +308,6 @@ class PedidoController {
                 });
             }
 
-
-            // Se houver erros, retornar todos de uma vez
-            if (erros.length > 0) {
-                return res.status(400).json({
-                    sucesso: false,
-                    erro: 'Dados inválidos',
-                    detalhes: erros
-                });
-            }
-
             // Preparar dados do pedido
             const dadosPedido = {
                 id_user: parseInt(id_user),
@@ -260,14 +318,14 @@ class PedidoController {
 
             res.status(201).json({
                 sucesso: true,
-                mensagem: 'Produto criado com sucesso',
+                mensagem: 'Pedido criado com sucesso',
                 dados: {
                     id: pedidoId,
                     ...dadosPedido
                 }
             });
         } catch (error) {
-            console.error('Erro ao criar produto:', error);
+            console.error('Erro ao criar pedido:', error);
             res.status(500).json({
                 sucesso: false,
                 erro: 'Erro interno do servidor',
@@ -275,6 +333,7 @@ class PedidoController {
             });
         }
     }
+    
 
     // PUT /pedido/:id - Atualizar pedido
     static async atualizar(req, res) {
@@ -296,7 +355,7 @@ class PedidoController {
             if (!pedidoExistente) {
                 return res.status(404).json({
                     sucesso: false,
-                    erro: 'Produto não encontrado',
+                    erro: 'Pedido não encontrado',
                     mensagem: `Pedido com ID ${id_pedido} não foi encontrado`
                 });
             }
@@ -306,11 +365,11 @@ class PedidoController {
 
             //validar data de entrega
             if (data_entrega !== undefined) {
+                const date = new Date(data_entrega);
                 const hoje = new Date();
-                const date = data_entrega.getTime();
                 hoje.setHours(0,0,0,0);
 
-                if (isNaN(date)) {
+                if (isNaN(date.getTime())) {
                     return res.status(400).json({
                         sucesso: false,
                         erro: 'Data de entrega inválida',
@@ -326,7 +385,7 @@ class PedidoController {
                     });
                 }
 
-                dadosAtualizacao.data_entrega = date.toLocaleDateString('pt-BR');
+                dadosAtualizacao.data_entrega = date.toISOString().split('T')[0];
             }
 
             // Verificar se há dados para atualizar
@@ -338,21 +397,21 @@ class PedidoController {
                 });
             }
 
-            const resultado = await ProdutoModel.atualizar(id_produto, dadosAtualizacao);
+            const resultado = await PedidosModel.atualizar(id_pedido, dadosAtualizacao);
 
             res.status(200).json({
                 sucesso: true,
-                mensagem: 'Produto atualizado com sucesso',
+                mensagem: 'Pedido atualizado com sucesso',
                 dados: {
                     linhasAfetadas: resultado.affectedRows || 1
                 }
             });
         } catch (error) {
-            console.error('Erro ao atualizar produto:', error);
+            console.error('Erro ao atualizar pedido:', error);
             res.status(500).json({
                 sucesso: false,
                 erro: 'Erro interno do servidor',
-                mensagem: 'Não foi possível atualizar o produto'
+                mensagem: 'Não foi possível atualizar o pedido'
             });
         }
     }
@@ -371,13 +430,13 @@ class PedidoController {
                 });
             }
 
-            // Verificar se o produto existe
+            // Verificar se o pedido existe
             const pedidoExistente = await PedidosModel.buscarPorId(id_pedido);
             if (!pedidoExistente) {
                 return res.status(404).json({
                     sucesso: false,
-                    erro: 'Produto não encontrado',
-                    mensagem: `Produto com ID ${id_pedido} não foi encontrado`
+                    erro: 'Pedido não encontrado',
+                    mensagem: `Pedido com ID ${id_pedido} não foi encontrado`
                 });
             }
 
@@ -385,17 +444,17 @@ class PedidoController {
 
             res.status(200).json({
                 sucesso: true,
-                mensagem: 'Produto excluído com sucesso',
+                mensagem: 'Pedido excluído com sucesso',
                 dados: {
                     linhasAfetadas: resultado || 1
                 }
             });
         } catch (error) {
-            console.error('Erro ao excluir produto:', error);
+            console.error('Erro ao excluir pedido:', error);
             res.status(500).json({
                 sucesso: false,
                 erro: 'Erro interno do servidor',
-                mensagem: 'Não foi possível excluir o produto'
+                mensagem: 'Não foi possível excluir o pedido'
             });
         }
     }
