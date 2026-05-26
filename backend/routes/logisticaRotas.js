@@ -4,14 +4,12 @@ import { authMiddleware } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
-// Rotas públicas (não precisam de autenticação)
-router.get('/', LogisticaController.listarTodos);
-router.get('/veiculo/:veiculo', LogisticaController.buscarPorVeiculo);
-router.get('/disponibilidade/:disponibilidade', LogisticaController.buscarPorDisponibilidade);
-router.get('/nome/:nome_logistica', LogisticaController.buscarPorNome);
-router.get('/:id_logistica', LogisticaController.buscarPorId);
-
 // Rotas protegidas (precisam de autenticação)
+router.get('/', authMiddleware, LogisticaController.listarTodos);
+router.get('/veiculo/:veiculo', authMiddleware, LogisticaController.buscarPorVeiculo);
+router.get('/disponibilidade/:disponibilidade', authMiddleware, LogisticaController.buscarPorDisponibilidade);
+router.get('/nome/:nome_logistica', authMiddleware, LogisticaController.buscarPorNome);
+router.get('/:id_logistica', authMiddleware, LogisticaController.buscarPorId);
 router.post('/', authMiddleware, LogisticaController.criar);
 router.put('/:id_logistica', authMiddleware, LogisticaController.atualizar);
 router.delete('/:id_logistica', authMiddleware, LogisticaController.excluir);
