@@ -69,7 +69,7 @@ const adminMiddleware = (req, res, next) => {
     next();
 };
 
-const autoMiddleware = (req, res, next) => {
+const selfMiddleware = (req, res, next) => {
     if (req.usuario.id_user !== req.params.id_user) {
         return res.status(403).json({ 
             erro: 'Acesso negado',
@@ -79,5 +79,5 @@ const autoMiddleware = (req, res, next) => {
     next();
 };
 
-export { authMiddleware, adminMiddleware, autoMiddleware };
+export { authMiddleware, adminMiddleware, selfMiddleware };
 

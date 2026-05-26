@@ -65,6 +65,19 @@ CREATE TABLE encomendas (
         REFERENCES logistica(id_logistica)
 );
 
+CREATE TABLE orcamentos (
+    id_orcamento INT AUTO_INCREMENT PRIMARY KEY,
+    id_encomenda INT NOT NULL
+    nome_orcamento VARCHAR(255) NOT NULL,
+    tipo_orcamento VARCHAR(255) NOT NULL,
+    estimacao DECIMAL(10,2) NOT NULL,
+    estado ENUM('visivel', 'invisivel', 'escolhida') NOT NULL DEFAULT 'invisivel',
+
+    CONSTRAINT fk_orcamento_encomenda
+        FOREIGN KEY (id_encomenda)
+        REFERENCES encomendas(id_encomenda)
+);
+
 CREATE TABLE pedidos (
     id_pedido INT AUTO_INCREMENT PRIMARY KEY,
     id_user INT NOT NULL,

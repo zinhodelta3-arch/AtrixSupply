@@ -1,6 +1,6 @@
 import express from 'express';
 import ProdutoController from '../controllers/ProdutoController.js';
-import { authMiddleware } from '../middlewares/authMIddleware.js';
+import { authMiddleware } from '../middlewares/authMiddleware.js';
 import { uploadImagens, handleUploadError } from '../middlewares/uploadMiddleware.js';
 
 const router = express.Router();
@@ -32,7 +32,7 @@ router.options('/upload', (req, res) => {
     res.status(200).send();
 });
 
-router.options('/:id', (req, res) => {
+router.options('/:id_produto', (req, res) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, PUT, DELETE, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
