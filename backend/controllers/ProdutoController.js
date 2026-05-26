@@ -393,7 +393,7 @@ class ProdutoController {
                         mensagem: 'O estoque deve ser um número maior ou igual que zero'
                     });
                 }
-                dadosAtualizacao.estoque = parseFloat(estoque);
+                dadosAtualizacao.estoque = parseInt(estoque);
             }
 
             // Adicionar nova imagem se foi enviada

@@ -75,6 +75,40 @@ class ProdutoModel {
         }
     }
 
+
+    //buscar pelo id do user
+
+    static async buscarPorIdUser(id_user, limite, offset) {
+         try {
+
+            const connection = await getConnection();
+            try {
+                const sql = 'SELECT p.* FROM pedidos p JOIN usuarios u ON u.id_user = p.id_user WHERE id_user = ?;';
+
+                const [pedidos] = await connection.query(sql, [id_user, limite, offset]);
+
+                const [totalResult] = await connection.query('SELECT COUNT(*) as total FROM pedidos p JOIN usuarios u ON u.id_user = p.id_user WHERE u.id_user = ?;', [id_user]);
+                const total = totalResult[0].total;
+
+                const paginaAtual = (offset / limite) + 1;
+                const totalPaginas = Math.ceil(total / limite);
+
+                return {
+                    pedidos,
+                    total,
+                    pagina: paginaAtual,
+                    limite,
+                    totalPaginas
+                };
+            } finally {
+                connection.release();
+            }
+        } catch (error) {
+            console.error('Erro ao listar produtos:', error);
+            throw error;
+        }
+    }
+
     //buscar pelo nome do user
 
     static async buscarPorNome(nome_user, limite, offset) {

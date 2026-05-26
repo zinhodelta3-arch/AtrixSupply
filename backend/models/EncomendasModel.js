@@ -1,7 +1,7 @@
 import { create, read, update, deleteRecord, getConnection } from '../config/database.js';
 
 // Model para operações com produtos
-class ProdutoModel {
+class EncomendaModel {
     // Listar todos as encomendas (com paginação)
     static async listarTodos(limite, offset) {
         try {
@@ -56,9 +56,9 @@ class ProdutoModel {
     }
 
     // Atualizar produto
-    static async atualizar(id_encomenda, dadosPedido) {
+    static async atualizar(id_encomenda, dadosEncomenda) {
         try {
-            return await update('pedidos', dadosPedido, `id_encomenda = ${id_encomenda}`);
+            return await update('pedidos', dadosEncomenda, `id_encomenda = ${id_encomenda}`);
         } catch (error) {
             console.error('Erro ao atualizar produto:', error);
             throw error;
@@ -68,34 +68,34 @@ class ProdutoModel {
     // Excluir encomenda
     static async excluir(id_encomenda) {
         try {
-            return await deleteRecord('encomendas', `id_encomenda = ${id_pedido}`);
+            return await deleteRecord('encomendas', `id_encomenda = ${id_encomenda}`);
         } catch (error) {
             console.error('Erro ao excluir produto:', error);
             throw error;
         }
     }
 
-    //buscar pelo nome do user
+    //buscar pelo nome das peças
 
-    static async buscarPorNome(nome_user, limite, offset) {
+    static async buscarPorNome(pecas, limite, offset) {
          try {
 
             const connection = await getConnection();
             try {
-                const sql = 'SELECT p.* FROM pedidos p JOIN usuarios u ON u.id_user = p.id_user WHERE u.nome_user LIKE ?;';
+                const sql = 'SELECT * FROM encomendas JOIN WHERE pecas LIKE ?;';
 
-                const nome = `%${nome_user}%`;
+                const nome = `%${pecas}%`;
 
-                const [pedidos] = await connection.query(sql, [nome, limite, offset]);
+                const [encomendas] = await connection.query(sql, [nome, limite, offset]);
 
-                const [totalResult] = await connection.query('SELECT COUNT(*) as total FROM pedidos p JOIN usuarios u ON u.id_user = p.id_user WHERE u.nome_user LIKE ?;', [nome]);
+                const [totalResult] = await connection.query('SELECT COUNT(*) as total FROM encomendas WHERE pecas LIKE ?;', [nome]);
                 const total = totalResult[0].total;
 
                 const paginaAtual = (offset / limite) + 1;
                 const totalPaginas = Math.ceil(total / limite);
 
                 return {
-                    pedidos,
+                    encomendas,
                     total,
                     pagina: paginaAtual,
                     limite,
@@ -110,38 +110,7 @@ class ProdutoModel {
         }
     }
 
-    //buscar pelo status
-
-    static async buscarPorStatus(status, limite, offset) {
-         try {
-
-            const connection = await getConnection();
-            try {
-                const sql = 'SELECT * FROM pedidos WHERE status = ?;';
-
-                const [pedidos] = await connection.query(sql, [status, limite, offset]);
-
-                const [totalResult] = await connection.query('SELECT COUNT(*) as total FROM pedidos WHERE status = ?;', [status]);
-                const total = totalResult[0].total;
-
-                const paginaAtual = (offset / limite) + 1;
-                const totalPaginas = Math.ceil(total / limite);
-
-                return {
-                    pedidos,
-                    total,
-                    pagina: paginaAtual,
-                    limite,
-                    totalPaginas
-                };
-            } finally {
-                connection.release();
-            }
-        } catch (error) {
-            console.error('Erro ao listar produtos:', error);
-            throw error;
-        }
-    }
+    // 
 }
 
-export default PedidoModel;
+export default EncomendaModel;
