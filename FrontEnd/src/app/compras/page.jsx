@@ -97,7 +97,7 @@ export default function Compra() {
                 }}
               >
                 <Image
-                  src="/teste.png"
+                  src="/fixadores.png"
                   alt="Produto"
                   fill
                   priority
@@ -141,7 +141,7 @@ export default function Compra() {
                     fontSize: ".98rem",
                   }}
                 >
-                  A RTX 4090 ASUS ROG STRIX oferece
+                  Os Fixadores oferecem
                   desempenho extremo para jogos,
                   edição profissional, modelagem 3D e
                   aplicações avançadas. Sua
@@ -330,7 +330,7 @@ export default function Compra() {
                   }}
                 >
                   <i className="bi bi-lightning-charge-fill me-2" />
-                  Adicionar ao carinho
+                  Adicionar ao carrinho
                 </button>
               </div>
 

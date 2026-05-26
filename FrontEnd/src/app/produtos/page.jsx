@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 
-import "./produtos.css"
+import "./produtos.css";
 
 export default function Produtos() {
   useEffect(() => {
@@ -13,33 +15,76 @@ export default function Produtos() {
 
   const produtos = [
     {
-      id: "id",
-      nome: "Nome do produto",
-      descricao: "Descrição do produto",
-      preco: "R$",
-      imagem: "Imagem do produto",
+      id: 1,
+      nome: "Motor Industrial X200",
+      descricao: "Motor de alta performance para uso industrial.",
+      preco: "R$ 4.500",
+      imagem:
+        "https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcTbNGoTPkp0FCEaso75eZN-6C_qby-QJ1j8sZOGOhZ_t5GPTYUMVl0nXcCWIekiXL8hhUn-OQl6uXo3jHvZltf-aDgO7q2ekpnkGKbg_CRcDromkmvxgOsj1Q",
     },
 
-];
+    {
+      id: 2,
+      nome: "Rolamento Premium",
+      descricao: "Rolamento resistente para máquinas pesadas.",
+      preco: "R$ 850",
+      imagem:
+        "https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcTbNGoTPkp0FCEaso75eZN-6C_qby-QJ1j8sZOGOhZ_t5GPTYUMVl0nXcCWIekiXL8hhUn-OQl6uXo3jHvZltf-aDgO7q2ekpnkGKbg_CRcDromkmvxgOsj1Q",
+    },
 
-const [paginaAtual, setPaginaAtual] = useState(1);
+    {
+      id: 3,
+      nome: "Painel Elétrico",
+      descricao: "Painel moderno para automação industrial.",
+      preco: "R$ 2.300",
+      imagem:
+        "https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcTbNGoTPkp0FCEaso75eZN-6C_qby-QJ1j8sZOGOhZ_t5GPTYUMVl0nXcCWIekiXL8hhUn-OQl6uXo3jHvZltf-aDgO7q2ekpnkGKbg_CRcDromkmvxgOsj1Q",
+    },
 
-const produtosPorPagina = 12;
+    {
+      id: 4,
+      nome: "Engrenagem Reforçada",
+      descricao: "Engrenagem reforçada para equipamentos industriais.",
+      preco: "R$ 1.200",
+      imagem:
+        "https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcTbNGoTPkp0FCEaso75eZN-6C_qby-QJ1j8sZOGOhZ_t5GPTYUMVl0nXcCWIekiXL8hhUn-OQl6uXo3jHvZltf-aDgO7q2ekpnkGKbg_CRcDromkmvxgOsj1Q",
+    },
 
-const ultimoProduto =
-  paginaAtual * produtosPorPagina;
+    {
+      id: 5,
+      nome: "Compressor Turbo",
+      descricao: "Compressor potente para ambientes industriais.",
+      preco: "R$ 6.700",
+      imagem:
+        "https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcTbNGoTPkp0FCEaso75eZN-6C_qby-QJ1j8sZOGOhZ_t5GPTYUMVl0nXcCWIekiXL8hhUn-OQl6uXo3jHvZltf-aDgO7q2ekpnkGKbg_CRcDromkmvxgOsj1Q",
+    },
 
-const primeiroProduto =
-  ultimoProduto - produtosPorPagina;
+    {
+      id: 6,
+      nome: "Bomba Hidráulica",
+      descricao: "Alta eficiência para sistemas hidráulicos.",
+      preco: "R$ 3.900",
+      imagem:
+        "https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcTbNGoTPkp0FCEaso75eZN-6C_qby-QJ1j8sZOGOhZ_t5GPTYUMVl0nXcCWIekiXL8hhUn-OQl6uXo3jHvZltf-aDgO7q2ekpnkGKbg_CRcDromkmvxgOsj1Q",
+    },
+  ];
 
-const produtosAtuais = produtos.slice(
-  primeiroProduto,
-  ultimoProduto
-);
+  const [paginaAtual, setPaginaAtual] = useState(1);
 
-const totalPaginas = Math.ceil(
-  produtos.length / produtosPorPagina
-);
+  const produtosPorPagina = 12;
+
+  const ultimoProduto = paginaAtual * produtosPorPagina;
+
+  const primeiroProduto = ultimoProduto - produtosPorPagina;
+
+  const produtosAtuais = produtos.slice(
+    primeiroProduto,
+    ultimoProduto
+  );
+
+  const totalPaginas = Math.ceil(
+    produtos.length / produtosPorPagina
+  );
 
   return (
     <main
@@ -48,7 +93,6 @@ const totalPaginas = Math.ceil(
         minHeight: "100vh",
       }}
     >
-
       <section
         className="py-5 text-white"
         style={{
@@ -57,7 +101,9 @@ const totalPaginas = Math.ceil(
         }}
       >
         <div className="container py-4">
-          <h1 className="display-4 fw-bold">Nossos Produtos</h1>
+          <h1 className="display-4 fw-bold">
+            Nossos Produtos
+          </h1>
 
           <p className="lead mt-3 col-lg-8">
             Encontre peças industriais, componentes técnicos e soluções
@@ -66,24 +112,22 @@ const totalPaginas = Math.ceil(
         </div>
       </section>
 
-
       <section className="py-5">
         <div className="container-fluid px-4">
           <div className="row">
-
             <div className="col-lg-3 mb-4">
               <div
                 className="p-4 rounded-4 shadow-lg position-sticky"
                 style={{
                   top: "20px",
                   background: "#111",
-                  border: "1px solid rgba(255, 255, 255, 0.14)",
+                  border:
+                    "1px solid rgba(255, 255, 255, 0.14)",
                 }}
               >
                 <h3 className="text-white fw-bold mb-4">
                   Filtrar Produtos
                 </h3>
-
 
                 <div className="mb-4">
                   <label className="form-label text-white">
@@ -101,7 +145,6 @@ const totalPaginas = Math.ceil(
                     }}
                   />
                 </div>
-
 
                 <div className="mb-4">
                   <label className="form-label text-white">
@@ -124,7 +167,6 @@ const totalPaginas = Math.ceil(
                   </select>
                 </div>
 
-
                 <div className="mb-4">
                   <label className="form-label text-white">
                     Faixa de preço
@@ -135,7 +177,6 @@ const totalPaginas = Math.ceil(
                     className="form-range"
                   />
                 </div>
-
 
                 <div className="mb-4">
                   <label className="form-label text-white">
@@ -171,22 +212,24 @@ const totalPaginas = Math.ceil(
               </div>
             </div>
 
-
             <div className="col-lg-9">
               <div className="row g-4">
                 {produtosAtuais.map((produto) => (
-                  <div className="col-md-6 col-lg-3" key={produto.id}>
+                  <div
+                    className="col-md-6 col-lg-3"
+                    key={produto.id}
+                  >
                     <div
                       className="borda amplia card h-100 border-0 shadow-lg overflow-hidden"
                       style={{
                         background: "#111",
                         transition: "0.3s",
-                        border: "1px solid rgba(199, 68, 68, 0.14)",
+                        border:
+                          "1px solid rgba(199, 68, 68, 0.14)",
                       }}
                     >
-
                       <img
-                        src="https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcTbNGoTPkp0FCEaso75eZN-6C_qby-QJ1j8sZOGOhZ_t5GPTYUMVl0nXcCWIekiXL8hhUn-OQl6uXo3jHvZltf-aDgO7q2ekpnkGKbg_CRcDromkmvxgOsj1Q"
+                        src={produto.imagem}
                         className="card-img-top"
                         alt={produto.nome}
                         style={{
@@ -194,7 +237,6 @@ const totalPaginas = Math.ceil(
                           objectFit: "cover",
                         }}
                       />
-
 
                       <div className="card-body d-flex flex-column">
                         <h5 className="card-title text-white fw-bold">
@@ -220,7 +262,8 @@ const totalPaginas = Math.ceil(
                         </p>
 
                         <div className="mt-auto">
-                          <button
+                          <Link
+                            href="/compras"
                             className="corbtn btn w-100 text-white fw-semibold"
                             style={{
                               background:
@@ -229,63 +272,77 @@ const totalPaginas = Math.ceil(
                             }}
                           >
                             Ver produto
-                          </button>
+                          </Link>
                         </div>
                       </div>
                     </div>
                   </div>
                 ))}
-
-
-<nav className="mt-5">
-  <ul className="pagination justify-content-center">
-
-    <li className={`page-item ${paginaAtual === 1 ? "disabled" : ""}`}>
-      <button
-        className="page-link paginacao-btn"
-        onClick={() => setPaginaAtual(paginaAtual - 1)}
-      >
-        Anterior
-      </button>
-    </li>
-
-    {[...Array(totalPaginas)].map((_, index) => (
-      <li
-        key={index}
-        className={`page-item ${
-          paginaAtual === index + 1 ? "active" : ""
-        }`}
-      >
-        <button
-          className={
-            paginaAtual === index + 1
-              ? "page-link paginacao-btn-active"
-              : "page-link paginacao-btn"
-          }
-          onClick={() => setPaginaAtual(index + 1)}
-        >
-          {index + 1}
-        </button>
-      </li>
-    ))}
-
-    <li
-      className={`page-item ${
-        paginaAtual === totalPaginas ? "disabled" : ""
-      }`}
-    >
-      <button
-        className="page-link paginacao-btn"
-        onClick={() => setPaginaAtual(paginaAtual + 1)}
-      >
-        Próximo
-      </button>
-    </li>
-
-  </ul>
-</nav>
-
               </div>
+
+              <nav className="mt-5">
+                <ul className="pagination justify-content-center">
+                  <li
+                    className={`page-item ${
+                      paginaAtual === 1
+                        ? "disabled"
+                        : ""
+                    }`}
+                  >
+                    <button
+                      className="page-link paginacao-btn"
+                      onClick={() =>
+                        setPaginaAtual(paginaAtual - 1)
+                      }
+                    >
+                      Anterior
+                    </button>
+                  </li>
+
+                  {[...Array(totalPaginas)].map(
+                    (_, index) => (
+                      <li
+                        key={index}
+                        className={`page-item ${
+                          paginaAtual === index + 1
+                            ? "active"
+                            : ""
+                        }`}
+                      >
+                        <button
+                          className={
+                            paginaAtual === index + 1
+                              ? "page-link paginacao-btn-active"
+                              : "page-link paginacao-btn"
+                          }
+                          onClick={() =>
+                            setPaginaAtual(index + 1)
+                          }
+                        >
+                          {index + 1}
+                        </button>
+                      </li>
+                    )
+                  )}
+
+                  <li
+                    className={`page-item ${
+                      paginaAtual === totalPaginas
+                        ? "disabled"
+                        : ""
+                    }`}
+                  >
+                    <button
+                      className="page-link paginacao-btn"
+                      onClick={() =>
+                        setPaginaAtual(paginaAtual + 1)
+                      }
+                    >
+                      Próximo
+                    </button>
+                  </li>
+                </ul>
+              </nav>
             </div>
           </div>
         </div>
