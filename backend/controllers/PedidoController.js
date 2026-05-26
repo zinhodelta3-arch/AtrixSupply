@@ -401,5 +401,5 @@ class PedidoController {
     }
 }
 
-export default ProdutoController;
+export default PedidoController;
 

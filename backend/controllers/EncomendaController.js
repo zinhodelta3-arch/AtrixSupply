@@ -45,7 +45,7 @@ class EncomendaController {
 
             res.status(200).json({
                 sucesso: true,
-                dados: resultado.pedidos,
+                dados: resultado.encomendas,
                 paginacao: {
                     pagina: resultado.pagina, 
                     limite: resultado.limite, 
@@ -63,13 +63,13 @@ class EncomendaController {
         }
     }
 
-        // GET /pedidos/:id - Buscar pedido por ID
+        // GET /encomendas/:id - Buscar encomendas por ID
     static async buscarPorId(req, res) {
         try {
-            const { id_pedido } = req.params;
+            const { id_encomenda } = req.params;
 
             // Validação básica do ID
-            if (!id_pedido || isNaN(id_pedido)) {
+            if (!id_encomenda || isNaN(id_encomenda)) {
                 return res.status(400).json({
                     sucesso: false,
                     erro: 'ID inválido',
@@ -77,19 +77,19 @@ class EncomendaController {
                 });
             }
 
-            const pedido = await PedidosModel.buscarPorId(id_pedido);
+            const encomenda = await EncomendaModel.buscarPorId(id_encomenda);
 
-            if (!pedido) {
+            if (!encomenda) {
                 return res.status(404).json({
                     sucesso: false,
                     erro: 'Produto não encontrado',
-                    mensagem: `Produto com ID ${id_pedido} não foi encontrado`
+                    mensagem: `Produto com ID ${id_encomenda} não foi encontrado`
                 });
             }
 
             res.status(200).json({
                 sucesso: true,
-                dados: pedido
+                dados: encomenda
             });
         } catch (error) {
             console.error('Erro ao buscar produto:', error);
