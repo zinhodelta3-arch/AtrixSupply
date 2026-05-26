@@ -1,7 +1,6 @@
 import PedidosModel from '../models/PedidosModel.js';
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { removerArquivoAntigo } from '../middlewares/uploadMiddleware.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -64,7 +63,7 @@ class PedidoController {
         }
     }
 
-        // GET /produtos/:id - Buscar pedido por ID
+        // GET /pedidos/:id - Buscar pedido por ID
     static async buscarPorId(req, res) {
         try {
             const { id_pedido } = req.params;
@@ -327,7 +326,7 @@ class PedidoController {
                     });
                 }
 
-                dadosAtualizacao.data_entrega = parseFloat(date.toLocaleDateString('pt-BR'));
+                dadosAtualizacao.data_entrega = date.toLocaleDateString('pt-BR');
             }
 
             // Verificar se há dados para atualizar
@@ -358,13 +357,13 @@ class PedidoController {
         }
     }
 
-    // DELETE /produtos/:id - Excluir produto
+    // DELETE /pedidos/:id_pedido - Excluir pedido
     static async excluir(req, res) {
         try {
-            const { id_produto } = req.params;
+            const { id_pedido } = req.params;
 
             // Validação do ID
-            if (!id_produto || isNaN(id_produto)) {
+            if (!id_pedido || isNaN(id_pedido)) {
                 return res.status(400).json({
                     sucesso: false,
                     erro: 'ID inválido',
@@ -373,21 +372,16 @@ class PedidoController {
             }
 
             // Verificar se o produto existe
-            const produtoExistente = await ProdutoModel.buscarPorId(id_produto);
-            if (!produtoExistente) {
+            const pedidoExistente = await PedidosModel.buscarPorId(id_pedido);
+            if (!pedidoExistente) {
                 return res.status(404).json({
                     sucesso: false,
                     erro: 'Produto não encontrado',
-                    mensagem: `Produto com ID ${id_produto} não foi encontrado`
+                    mensagem: `Produto com ID ${id_pedido} não foi encontrado`
                 });
             }
 
-            // Remover imagem do produto se existir
-            if (produtoExistente.imagem) {
-                await removerArquivoAntigo(produtoExistente.imagem, 'imagem');
-            }
-
-            const resultado = await ProdutoModel.excluir(id_produto);
+            const resultado = await PedidosModel.excluir(id_pedido);
 
             res.status(200).json({
                 sucesso: true,
@@ -402,64 +396,6 @@ class PedidoController {
                 sucesso: false,
                 erro: 'Erro interno do servidor',
                 mensagem: 'Não foi possível excluir o produto'
-            });
-        }
-    }
-
-    // POST /produtos/upload - Upload de imagem para produto
-    static async uploadImagem(req, res) {
-        try {
-            const { produto_id } = req.body;
-
-            // Validações básicas
-            if (!produto_id || isNaN(produto_id)) {
-                return res.status(400).json({
-                    sucesso: false,
-                    erro: 'ID de produto inválido',
-                    mensagem: 'O ID do produto é obrigatório e deve ser um número válido'
-                });
-            }
-
-            if (!req.file) {
-                return res.status(400).json({
-                    sucesso: false,
-                    erro: 'Imagem não fornecida',
-                    mensagem: 'É necessário enviar uma imagem'
-                });
-            }
-
-            // Verificar se o produto existe
-            const produtoExistente = await ProdutoModel.buscarPorId(produto_id);
-            if (!produtoExistente) {
-                return res.status(404).json({
-                    sucesso: false,
-                    erro: 'Produto não encontrado',
-                    mensagem: `Produto com ID ${produto_id} não foi encontrado`
-                });
-            }
-
-            // Remover imagem antiga se existir
-            if (produtoExistente.imagem) {
-                await removerArquivoAntigo(produtoExistente.imagem, 'imagem');
-            }
-
-            // Atualizar produto com a nova imagem
-            await ProdutoModel.atualizar(produto_id, { imagem: req.file.filename });
-
-            res.status(200).json({
-                sucesso: true,
-                mensagem: 'Imagem enviada com sucesso',
-                dados: {
-                    nomeArquivo: req.file.filename,
-                    caminho: `/uploads/imagens/${req.file.filename}`
-                }
-            });
-        } catch (error) {
-            console.error('Erro ao fazer upload de imagem:', error);
-            res.status(500).json({
-                sucesso: false,
-                erro: 'Erro interno do servidor',
-                mensagem: 'Não foi possível fazer upload da imagem'
             });
         }
     }
