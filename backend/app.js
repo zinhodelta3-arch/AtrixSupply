@@ -9,6 +9,7 @@ import { fileURLToPath } from 'url';
 import produtoRotas from './routes/produtoRotas.js';
 import authRotas from './routes/authRotas.js';
 import usuarioRotas from './routes/usuarioRotas.js';
+import logisticaRotas from './routes/logisticaRotas.js';
 
 // Importar middlewares
 import { logMiddleware } from './middlewares/logMiddleware.js';
@@ -49,6 +50,7 @@ app.use(logMiddleware);
 app.use('/api/auth', authRotas);
 app.use('/api/produtos', produtoRotas);
 app.use('/api/usuarios', usuarioRotas);
+app.use('/api/logistica', logisticaRotas);
 
 // Rota raiz
 app.get('/', (req, res) => {
