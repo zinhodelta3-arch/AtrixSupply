@@ -108,15 +108,6 @@ class ProdutoModel {
         }
     }
 
-    // static async buscarPorCategoria(categoria) {
-    //     try {
-    //         return await read('produtos', `categoria = '${categoria}'`);
-    //     } catch (error) {
-    //         console.error('Erro ao buscar produtos por categoria:', error);
-    //         throw error;
-    //     }
-    // }
-
 
     static async buscarPorNome(nome_produto, limite, offset) {
          try {

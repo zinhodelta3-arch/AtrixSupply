@@ -23,6 +23,7 @@ ChartJS.register(
   Filler
 );
 
+
 export default function Dashboard() {
   const data = {
     labels: [
