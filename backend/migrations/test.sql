@@ -26,7 +26,7 @@ CREATE TABLE produtos (
 
 CREATE TABLE logistica (
     id_logistica INT AUTO_INCREMENT PRIMARY KEY,
-    id_dono INT NOT NULL,
+    id_dono INT NOT NULL ON DELETE CASCADE,
     nome_logistica VARCHAR(150) NOT NULL,
     veiculo ENUM(
         'caminhão', 'van', 'moto', 'carro', 'bicicleta', 'não selecionado') NOT NULL DEFAULT 'não selecionado',
@@ -41,8 +41,8 @@ CREATE TABLE logistica (
 
 CREATE TABLE encomendas (
     id_encomenda INT AUTO_INCREMENT PRIMARY KEY,
-    id_user INT NOT NULL,
-    id_fornecedor INT NULL,
+    id_user INT NOT NULL ON DELETE CASCADE,
+    id_fornecedor INT NULL ON DELETE CASCADE,
     pecas VARCHAR(255) NOT NULL,
     descricao TEXT,
     status ENUM(
@@ -50,7 +50,7 @@ CREATE TABLE encomendas (
     orcamento DECIMAL(10,2) NULL,
     data_com DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     data_entrega DATE NULL,
-    id_logistica INT NULL,
+    id_logistica INT NULL ON DELETE CASCADE,
 
     CONSTRAINT fk_encomenda_usuario
         FOREIGN KEY (id_user)
@@ -67,7 +67,7 @@ CREATE TABLE encomendas (
 
 CREATE TABLE orcamentos (
     id_orcamento INT AUTO_INCREMENT PRIMARY KEY,
-    id_encomenda INT NOT NULL
+    id_encomenda INT NOT NULL ON DELETE CASCADE
     nome_orcamento VARCHAR(255) NOT NULL,
     tipo_orcamento VARCHAR(255) NOT NULL,
     estimacao DECIMAL(10,2) NOT NULL,
@@ -80,8 +80,8 @@ CREATE TABLE orcamentos (
 
 CREATE TABLE pedidos (
     id_pedido INT AUTO_INCREMENT PRIMARY KEY,
-    id_user INT NOT NULL,
-    id_produto INT NOT NULL,
+    id_user INT NOT NULL ON DELETE CASCADE,
+    id_produto INT NOT NULL ON DELETE CASCADE,
     data_pedido DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     data_entrega DATE NULL,
 
