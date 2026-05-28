@@ -118,7 +118,36 @@ class PedidoController {
                 });
             }
 
-            const pedido = await PedidosModel.buscarPorIdUser(id_user);
+            let pagina = parseInt(req.query.pagina) || 1;
+            let limite = parseInt(req.query.limite) || 10;
+
+            if (pagina <= 0) {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'Página inválida',
+                    mensagem: 'A página deve ser um número maior que zero'
+                });
+            }
+            if (limite <= 0) {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'Limite inválido',
+                    mensagem: 'O limite deve ser um número maior que zero'
+                });
+            }
+
+            const limiteMaximo = parseInt(process.env.PAGINACAO_LIMITE_MAXIMO) || 100;
+            if (limite > limiteMaximo) {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'Limite inválido',
+                    mensagem: `O limite deve ser um número entre 1 e ${limiteMaximo}`
+                });
+            }
+
+            const offset = (pagina - 1) * limite;
+
+            const pedido = await PedidosModel.buscarPorIdUser(id_user, limite, offset);
 
             if (!pedido) {
                 return res.status(404).json({
@@ -308,10 +337,15 @@ class PedidoController {
                 });
             }
 
+            const hoje = new Date();
+            hoje.setHours(0,0,0,0);
+            const data_atual = hoje.toISOString().split('T')[0];
+
             // Preparar dados do pedido
             const dadosPedido = {
                 id_user: parseInt(id_user),
-                id_produto: parseInt(id_produto)
+                id_produto: parseInt(id_produto),
+                data_pedido: data_atual
             };
 
             const pedidoId = await PedidosModel.criar(dadosPedido);

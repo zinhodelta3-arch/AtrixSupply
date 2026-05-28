@@ -163,7 +163,7 @@ class EncomendaController {
     // POST /encomendas - Criar nova encomenda
     static async criar(req, res) {
         try {
-            const { id_user, id_logistica, pecas, descricao, status, orcamento, data_com, data_entrega } = req.body;
+            const { id_user, pecas, descricao} = req.body;
 
             // Validações manuais - coletar todos os erros
             const erros = [];
@@ -203,22 +203,13 @@ class EncomendaController {
                 })
             }
 
-
-            //validar status
-            // if (!status || status.trim() === ''){
-            //     erros.push({
-            //         campo: "Status",
-            //         descricao: "O status é obrigatório"
-            //     })
-            // }
-
             // Verificar se o user existe
             const userExistente = await UsuarioModel.buscarPorId(id_user);
             if (!userExistente) {
                 return res.status(404).json({
                     sucesso: false,
-                    erro: 'Produto não encontrado',
-                    mensagem: `Produto com ID ${id_user} não foi encontrado`
+                    erro: 'Usuário não encontrado',
+                    mensagem: `Usuário com ID ${id_user} não foi encontrado`
                 });
             }
 
@@ -231,6 +222,10 @@ class EncomendaController {
                 });
             }
 
+            const hoje = new Date();
+            hoje.setHours(0,0,0,0);
+            const data_atual = hoje.toISOString().split('T')[0];
+
             // Preparar dados da encomenda
             // id_user, id_logistica, pecas, descricao, status, orcamento, data_com, data_entrega
             const dadosEncomenda = {
@@ -238,9 +233,9 @@ class EncomendaController {
                 id_logistica: null,
                 pecas: pecas.trim(),
                 descricao: descricao.trim(),
-                status: status.trim(),
+                status: null,
                 orcamento: null,
-                data_com: null,
+                data_com: data_atual,
                 data_entrega: null
 
             };
@@ -291,7 +286,7 @@ class EncomendaController {
                 });
             }
 
-            // Verificar se o pedido existe
+            // Verificar a encomenda existe
             const encomendaExistente = await EncomendaModel.buscarPorId(id_encomenda);
             if (!encomendaExistente) {
                 return res.status(404).json({

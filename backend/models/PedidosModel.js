@@ -10,7 +10,7 @@ class PedidosModel {
             try {
                 const sql = 'SELECT * FROM pedidos ORDER BY id_pedido DESC LIMIT ? OFFSET ?';
 
-                const [produtos] = await connection.query(sql, [limite, offset]);
+                const [pedidos] = await connection.query(sql, [limite, offset]);
 
                 const [totalResult] = await connection.execute('SELECT COUNT(*) as total FROM produtos');
                 const total = totalResult[0].total;
@@ -19,7 +19,7 @@ class PedidosModel {
                 const totalPaginas = Math.ceil(total / limite);
 
                 return {
-                    produtos,
+                    pedidos,
                     total,
                     pagina: paginaAtual,
                     limite,
@@ -37,10 +37,10 @@ class PedidosModel {
     // Buscar pedido por ID
     static async buscarPorId(id_pedido) {
         try {
-            const rows = await read('produtos', `id_pedido = ${id_pedido}`);
+            const rows = await read('pedidos', `id_pedido = ${id_pedido}`);
             return rows[0] || null;
         } catch (error) {
-            console.error('Erro ao buscar produto por ID:', error);
+            console.error('Erro ao buscar pedido por ID:', error);
             throw error;
         }
     }
@@ -83,7 +83,7 @@ class PedidosModel {
 
             const connection = await getConnection();
             try {
-                const sql = 'SELECT p.* FROM pedidos p JOIN usuarios u ON u.id_user = p.id_user WHERE id_user = ?;';
+                const sql = 'SELECT p.* FROM pedidos p JOIN usuarios u ON u.id_user = p.id_user WHERE p.id_user = ? LIMIT ? OFFSET ?;';
 
                 const [pedidos] = await connection.query(sql, [id_user, limite, offset]);
 

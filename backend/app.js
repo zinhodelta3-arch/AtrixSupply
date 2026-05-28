@@ -11,6 +11,7 @@ import authRotas from './routes/authRotas.js';
 import usuarioRotas from './routes/usuarioRotas.js';
 import logisticaRotas from './routes/logisticaRotas.js';
 import pedidoRotas from './routes/pedidoRotas.js';
+import encomendaRotas from './routes/encomendaRotas.js';
 import orcamentoRotas from './routes/orcamentoRotas.js';
 
 // Importar middlewares
@@ -54,7 +55,8 @@ app.use('/api/produtos', produtoRotas);
 app.use('/api/usuarios', usuarioRotas);
 app.use('/api/logistica', logisticaRotas);
 app.use('/api/pedidos', pedidoRotas);
-app.use('/api/orcamentos', orcamentoRotas)
+app.use('/api/encomendas', encomendaRotas);
+app.use('/api/orcamentos', orcamentoRotas);
 
 // Rota raiz
 app.get('/', (req, res) => {

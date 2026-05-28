@@ -9,10 +9,7 @@ router.get('/', authMiddleware, PedidoController.listarTodos);
 router.get('/:id_pedido', authMiddleware, PedidoController.buscarPorId);
 router.get('/id_user/:id_user', authMiddleware, PedidoController.buscarPorIdUser);
 router.get('/nome_user/:nome_user', authMiddleware, PedidoController.buscarPorNome);
-
-// Rotas para Sr Vilo fazer:
-router.get('/:status', authMiddleware, PedidoController); //buscar por status
-router.patch('') // recomendação do Gemini é fazer um patch so para atualizar os status e outro so para mudar para "cancelar"
+router.get('/status/:status', authMiddleware, PedidoController.buscarPorStatus); 
 
 
 // Rotas protegidas POST, PUT & DELETE

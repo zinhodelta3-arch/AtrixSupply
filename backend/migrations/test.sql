@@ -82,8 +82,8 @@ CREATE TABLE pedidos (
     id_pedido INT AUTO_INCREMENT PRIMARY KEY,
     id_user INT NOT NULL,
     id_produto INT NOT NULL,
-    data_pedido DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    data_entrega DATETIME NULL,
+    data_pedido DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    data_entrega DATE NULL,
 
     status ENUM('pendente', 'processando', 'enviado', 'entregue', 'cancelado') NOT NULL DEFAULT 'pendente',
 
