@@ -481,3 +481,17 @@ INSERT INTO pedidos (
     '2026-05-19 17:00:00',
     'entregue'
 );
+
+INSERT INTO orcamentos (
+    id_encomenda, 
+    nome_orcamento, 
+    tipo_orcamento, 
+    estimacao, 
+    estado) 
+VALUES (
+    3,
+    "básico",
+    "versão barata, mas menos eficiente",
+    8000.00,
+    "invisivel"
+);
