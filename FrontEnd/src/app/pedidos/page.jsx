@@ -1,12 +1,18 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
+import "bootstrap/dist/js/bootstrap.bundle.min.js";
 
 import Image from "next/image";
-import { useState } from "react";
 
 export default function Pedidos() {
+  useEffect(() => {
+    import("bootstrap/dist/js/bootstrap.bundle.min.js");
+  }, []);
+
   const [pedidos, setPedidos] = useState([
     {
       id: "#94821",
@@ -14,41 +20,74 @@ export default function Pedidos() {
       status: "Em transporte",
       data: "19 Maio 2026",
       preco: "R$ 12.499,90",
-      cor: "#ffb300",
+      cor: "#ff8800",
+      imagem:
+        "https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcTbNGoTPkp0FCEaso75eZN-6C_qby-QJ1j8sZOGOhZ_t5GPTYUMVl0nXcCWIekiXL8hhUn-OQl6uXo3jHvZltf-aDgO7q2ekpnkGKbg_CRcDromkmvxgOsj1Q",
     },
+
     {
       id: "#94822",
       produto: "Ryzen 9 9950X",
       status: "Processando",
       data: "17 Maio 2026",
       preco: "R$ 4.299,90",
-      cor: "#ffcf40",
+      cor: "#ffc107",
+      imagem:
+        "https://encrypted-tbn1.gstatic.com/shopping?q=tbn:ANd9GcSEFj5Dx7K1c8K8W1xM3hWQ0g4yB9s6n4xg",
     },
+
     {
       id: "#94823",
       produto: "Water Cooler Elite",
       status: "Entregue",
       data: "10 Maio 2026",
       preco: "R$ 899,90",
-      cor: "#ffcf40",
+      cor: "#28c76f",
+      imagem:
+        "https://encrypted-tbn0.gstatic.com/shopping?q=tbn:ANd9GcQ8r5h5yV7W4x3g7K8c2",
     },
+
     {
       id: "#94824",
       produto: "Monitor Gamer 240Hz",
       status: "Em separação",
       data: "08 Maio 2026",
       preco: "R$ 2.199,90",
-      cor: "#ffb300",
+      cor: "#ff8800",
+      imagem:
+        "https://encrypted-tbn1.gstatic.com/shopping?q=tbn:ANd9GcQf1P7",
     },
+
     {
       id: "#94825",
       produto: "SSD NVME 2TB",
       status: "Entregue",
       data: "02 Maio 2026",
       preco: "R$ 1.049,90",
-      cor: "#ffcf40",
+      cor: "#28c76f",
+      imagem:
+        "https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcR8",
     },
   ]);
+
+  const [paginaAtual, setPaginaAtual] = useState(1);
+
+  const pedidosPorPagina = 4;
+
+  const ultimoPedido =
+    paginaAtual * pedidosPorPagina;
+
+  const primeiroPedido =
+    ultimoPedido - pedidosPorPagina;
+
+  const pedidosAtuais = pedidos.slice(
+    primeiroPedido,
+    ultimoPedido
+  );
+
+  const totalPaginas = Math.ceil(
+    pedidos.length / pedidosPorPagina
+  );
 
   function deletarPedido(id) {
     setPedidos((prev) =>
@@ -57,459 +96,439 @@ export default function Pedidos() {
   }
 
   return (
-    <div
-      className="d-flex justify-content-center align-items-center p-4"
+    <main
       style={{
+        background: "#000",
         minHeight: "100vh",
-        background: `
-          radial-gradient(circle at top left, rgba(255,215,120,.05), transparent 25%),
-          radial-gradient(circle at bottom right, rgba(192,1,42,.08), transparent 25%),
-          linear-gradient(
-            145deg,
-            #0c0d10 0%,
-            #121317 30%,
-            #181418 55%,
-            #1e1217 100%
-          )
-        `,
-        color: "white",
       }}
     >
-      <div
+      {/* HERO */}
+      <section
+        className="py-5 text-white"
         style={{
-          width: "100%",
-          maxWidth: "1200px",
-          height: "90vh",
-          background: `
-            linear-gradient(
-              145deg,
-              rgba(22,23,27,.96),
-              rgba(28,22,25,.96)
-            )
-          `,
-          borderRadius: "32px",
-          overflow: "hidden",
-          border: "1px solid rgba(255,215,120,.12)",
-          boxShadow: `
-            0 25px 60px rgba(221, 25, 25, 0.28),
-            0 0 30px rgba(235, 194, 13, 0.10)
-          `,
-          backdropFilter: "blur(16px)",
+          background:
+            "linear-gradient(to right, #c0012a, #ff8800)",
         }}
       >
-        <div className="row g-0 h-100">
-          {/* SIDEBAR */}
-          <div
-            className="col-lg-4"
-            style={{
-              background: `
-                linear-gradient(
-                  180deg,
-                 rgba(0, 0, 0, 0.88),
-                  rgba(255, 17, 0, 0.88),
-                  rgba(156, 0, 34, 0.65)
-                )
-              `,
-              borderRight:
-                "1px solid rgba(255,255,255,.05)",
-            }}
-          >
-            <div
-              className="d-flex flex-column align-items-center"
-              style={{
-                padding: "45px 30px",
-                height: "100%",
-              }}
-            >
-              {/* FOTO */}
+        <div className="container py-4">
+          <h1 className="display-4 fw-bold">
+            Meus Pedidos
+          </h1>
+
+          <p className="lead mt-3 col-lg-8">
+            Acompanhe seus pedidos,
+            entregas e informações das
+            suas compras em tempo real.
+          </p>
+        </div>
+      </section>
+
+      {/* CONTEÚDO */}
+      <section className="py-5">
+        <div className="container-fluid px-4">
+          <div className="row">
+            {/* SIDEBAR */}
+            <div className="col-lg-3 mb-4">
               <div
+                className="position-sticky p-4 rounded-4 shadow-lg"
                 style={{
-                  width: "180px",
-                  height: "180px",
-                  borderRadius: "28px",
-                  overflow: "hidden",
-                  position: "relative",
+                  top: "20px",
+                  background: "#111",
                   border:
-                    "3px solid rgba(255,255,255,.18)",
-                  boxShadow: `
-                    0 20px 40px rgba(0,0,0,.35),
-                    0 0 25px rgba(255,179,0,.25)
-                  `,
+                    "1px solid rgba(255,255,255,.14)",
                 }}
               >
-                <Image
-                  src="/core.png"
-                  alt="Usuário"
-                  fill
-                  priority
-                  sizes="180px"
-                  style={{
-                    objectFit: "cover",
-                  }}
-                />
-              </div>
-
-              {/* USER */}
-              <div
-                className="w-100 mt-4"
-                style={{
-                  background: "rgba(255,255,255,.04)",
-                  border:
-                    "1px solid rgba(255,255,255,.08)",
-                  borderRadius: "22px",
-                  padding: "22px",
-                  textAlign: "center",
-                  backdropFilter: "blur(10px)",
-                }}
-              >
-                <h3
-                  style={{
-                    color: "#fff4c4",
-                    fontWeight: "800",
-                    fontSize: "1.45rem",
-                    marginBottom: "5px",
-                  }}
-                >
-                  Henrique Vieira
-                </h3>
-
-                <span
-                  style={{
-                    color: "rgba(255,255,255,.75)",
-                    fontSize: ".95rem",
-                  }}
-                >
-                  Cliente Premium
-                </span>
-              </div>
-
-              {/* RESUMO */}
-              <div
-                className="w-100 mt-4"
-                style={{
-                  background: "rgba(255,255,255,.03)",
-                  border:
-                    "1px solid rgba(255,255,255,.06)",
-                  borderRadius: "22px",
-                  padding: "28px",
-                  backdropFilter: "blur(10px)",
-                }}
-              >
-                <h4
-                  style={{
-                    color: "#fff0a6",
-                    fontWeight: "700",
-                    marginBottom: "22px",
-                    textAlign: "center",
-                  }}
-                >
-                  Resumo
-                </h4>
-
-                <div className="d-flex flex-column gap-3">
-                  {[
-                    {
-                      titulo: "Pedidos",
-                      valor: pedidos.length,
-                    },
-                    {
-                      titulo: "Em andamento",
-                      valor: "03",
-                    },
-                    {
-                      titulo: "Finalizados",
-                      valor: "21",
-                    },
-                  ].map((item, index) => (
-                    <div
-                      key={index}
-                      style={{
-                        background:
-                          "rgba(255,255,255,.05)",
-                        border:
-                          "1px solid rgba(255,255,255,.05)",
-                        borderRadius: "18px",
-                        padding: "16px",
-                      }}
-                    >
-                      <p
-                        style={{
-                          margin: 0,
-                          color: "#ffe082",
-                          fontSize: ".82rem",
-                          marginBottom: "6px",
-                          fontWeight: "700",
-                          textTransform: "uppercase",
-                          letterSpacing: ".5px",
-                        }}
-                      >
-                        {item.titulo}
-                      </p>
-
-                      <span
-                        style={{
-                          fontSize: "1.35rem",
-                          fontWeight: "800",
-                          color: "white",
-                        }}
-                      >
-                        {item.valor}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* CONTEÚDO */}
-          <div className="col-lg-8">
-            <div
-              style={{
-                padding: "45px 38px",
-                height: "90vh",
-                display: "flex",
-                flexDirection: "column",
-              }}
-            >
-              {/* TOPO */}
-              <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
-                <div>
-                  <h1
+                {/* PERFIL */}
+                <div className="text-center">
+                  <div
                     style={{
-                      color: "#ffe082",
-                      fontWeight: "800",
-                      margin: 0,
-                      fontSize: "2.3rem",
+                      width: "130px",
+                      height: "130px",
+                      borderRadius: "24px",
+                      overflow: "hidden",
+                      margin: "0 auto",
+                      border:
+                        "2px solid rgba(255,255,255,.14)",
                     }}
                   >
-                    Meus Pedidos
-                  </h1>
+                    <Image
+                      src="/core.png"
+                      alt="Usuário"
+                      width={130}
+                      height={130}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  </div>
+
+                  <h4 className="text-white fw-bold mt-4">
+                    Henrique Vieira
+                  </h4>
 
                   <p
                     style={{
-                      color: "rgba(255,255,255,.58)",
-                      marginTop: "8px",
-                      marginBottom: 0,
+                      color: "#cfcfcf",
                     }}
                   >
-                    Acompanhe seus pedidos e status.
+                    Cliente Premium
                   </p>
                 </div>
 
+                {/* RESUMO */}
+                <div className="mt-4">
+                  <h5 className="text-white fw-bold mb-3">
+                    Resumo
+                  </h5>
+
+                  <div className="d-flex flex-column gap-3">
+                    {[
+                      {
+                        titulo: "Pedidos",
+                        valor: pedidos.length,
+                      },
+
+                      {
+                        titulo: "Em andamento",
+                        valor: "03",
+                      },
+
+                      {
+                        titulo: "Finalizados",
+                        valor: "21",
+                      },
+                    ].map((item, index) => (
+                      <div
+                        key={index}
+                        style={{
+                          background:
+                            "rgba(255,255,255,.03)",
+                          border:
+                            "1px solid rgba(255,255,255,.08)",
+                          borderRadius: "18px",
+                          padding: "18px",
+                        }}
+                      >
+                        <span
+                          style={{
+                            color: "#cfcfcf",
+                            fontSize: ".82rem",
+                            textTransform:
+                              "uppercase",
+                            letterSpacing: ".5px",
+                          }}
+                        >
+                          {item.titulo}
+                        </span>
+
+                        <h3
+                          style={{
+                            color: "white",
+                            marginTop: "8px",
+                            fontWeight: "700",
+                          }}
+                        >
+                          {item.valor}
+                        </h3>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* BUSCA */}
+                <div className="mt-4">
+                  <label className="form-label text-white">
+                    Buscar pedido
+                  </label>
+
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Digite o pedido..."
+                    style={{
+                      background: "#1c1c1c",
+                      border:
+                        "1px solid #3b3b3b",
+                      color: "#fff",
+                    }}
+                  />
+                </div>
+
+                {/* BOTÃO */}
                 <button
-                  className="btn"
+                  className="btn w-100 text-white fw-semibold mt-4"
                   style={{
                     background:
-                      "linear-gradient(90deg,#ffcf40,#ff9d00,#c0012a)",
-                    color: "white",
-                    padding: "14px 28px",
-                    borderRadius: "16px",
+                      "linear-gradient(to right, #c0012a, #ff8800)",
                     border: "none",
-                    fontWeight: "700",
-                    boxShadow:
-                      "0 12px 24px rgba(192,1,42,.22)",
+                    borderRadius: "14px",
+                    padding: "12px",
+                    transition: ".3s",
                   }}
                 >
                   Novo Pedido
                 </button>
               </div>
+            </div>
 
-              {/* SCROLL */}
-              <div
-                style={{
-                  overflowY: "auto",
-                  flex: 1,
-                  paddingRight: "6px",
-                }}
-              >
-                <div className="d-flex flex-column gap-4">
-                  {pedidos.map((pedido) => (
+            {/* PEDIDOS */}
+            <div className="col-lg-9">
+              <div className="row g-4">
+                {pedidosAtuais.map((pedido) => (
+                  <div
+                    className="col-12"
+                    key={pedido.id}
+                  >
                     <div
-                      key={pedido.id}
+                      className="card border-0 overflow-hidden shadow-lg"
                       style={{
-                        position: "relative",
-                        background: `
-                          linear-gradient(
-                            145deg,
-                            rgba(30,32,38,.95),
-                            rgba(38,24,29,.95)
-                          )
-                        `,
-                        borderRadius: "26px",
-                        padding: "30px",
+                        background: "#111",
                         border:
-                          "1px solid rgba(255,255,255,.05)",
-                        boxShadow: `
-                          inset 0 1px 0 rgba(255,255,255,.03),
-                          0 12px 30px rgba(0,0,0,.25)
-                        `,
-                        overflow: "hidden",
+                          "1px solid rgba(255,255,255,.14)",
+                        transition: ".3s",
                       }}
                     >
-                      {/* DELETE BUTTON */}
-                      <button
-                        onClick={() =>
-                          deletarPedido(pedido.id)
-                        }
-                        className="btn d-flex align-items-center justify-content-center"
-                        style={{
-                          position: "absolute",
-                          top: "20px",
-                          right: "20px",
-                          width: "42px",
-                          height: "42px",
-                          borderRadius: "14px",
-                          border:
-                            "1px solid rgba(255,255,255,.06)",
-                          background: `
-                            linear-gradient(
-                              145deg,
-                              rgba(255,255,255,.04),
-                              rgba(255,255,255,.02)
-                            )
-                          `,
-                          backdropFilter: "blur(10px)",
-                          color: "#ff758f",
-                          transition: "all .25s ease",
-                          boxShadow: `
-                            inset 0 1px 0 rgba(255,255,255,.03),
-                            0 10px 25px rgba(0,0,0,.20)
-                          `,
-                        }}
-                      >
-                        <i
-                          className="bi bi-trash3-fill"
-                          style={{
-                            fontSize: "1rem",
-                          }}
-                        />
-                      </button>
-
-                      <div className="row align-items-center">
-                        {/* PRODUTO */}
-                        <div className="col-md-5 mb-4 mb-md-0">
-                          <p
+                      <div className="row g-0">
+                        {/* IMAGEM */}
+                        <div className="col-md-3">
+                          <img
+                            src={pedido.imagem}
+                            alt={pedido.produto}
+                            className="w-100 h-100"
                             style={{
-                              color: pedido.cor,
-                              marginBottom: "10px",
-                              fontWeight: "700",
-                              textTransform: "uppercase",
-                              letterSpacing: "1px",
-                              fontSize: ".78rem",
+                              objectFit: "cover",
+                              minHeight: "250px",
                             }}
-                          >
-                            Pedido {pedido.id}
-                          </p>
-
-                          <h4
-                            style={{
-                              color: "white",
-                              fontWeight: "700",
-                              marginBottom: "12px",
-                              fontSize: "1.25rem",
-                            }}
-                          >
-                            {pedido.produto}
-                          </h4>
-
-                          <span
-                            style={{
-                              color:
-                                "rgba(255,255,255,.60)",
-                            }}
-                          >
-                            Data: {pedido.data}
-                          </span>
+                          />
                         </div>
 
-                        {/* STATUS */}
-                        <div className="col-md-3 mb-4 mb-md-0">
-                          <div
-                            style={{
-                              background:
-                                "rgba(255,255,255,.04)",
-                              border:
-                                "1px solid rgba(255,255,255,.05)",
-                              borderRadius: "18px",
-                              padding: "16px",
-                              textAlign: "center",
-                            }}
-                          >
-                            <p
-                              style={{
-                                color: pedido.cor,
-                                marginBottom: "7px",
-                                fontSize: ".78rem",
-                                fontWeight: "700",
-                                textTransform: "uppercase",
-                                letterSpacing: ".8px",
-                              }}
-                            >
-                              Status
-                            </p>
+                        {/* CONTEÚDO */}
+                        <div className="col-md-9">
+                          <div className="card-body h-100 d-flex flex-column">
+                            {/* TOPO */}
+                            <div className="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                              <div>
+                                <p
+                                  style={{
+                                    color: pedido.cor,
+                                    fontWeight: "700",
+                                    marginBottom: "8px",
+                                    letterSpacing:
+                                      ".5px",
+                                  }}
+                                >
+                                  Pedido {pedido.id}
+                                </p>
 
-                            <span
-                              style={{
-                                color: "white",
-                                fontWeight: "600",
-                              }}
-                            >
-                              {pedido.status}
-                            </span>
+                                <h3 className="text-white fw-bold">
+                                  {pedido.produto}
+                                </h3>
+
+                                <p
+                                  style={{
+                                    color: "#cfcfcf",
+                                  }}
+                                >
+                                  Data do pedido:{" "}
+                                  {pedido.data}
+                                </p>
+                              </div>
+
+                              {/* DELETE */}
+                              <button
+                                onClick={() =>
+                                  deletarPedido(
+                                    pedido.id
+                                  )
+                                }
+                                className="btn"
+                                style={{
+                                  background:
+                                    "rgba(255,255,255,.05)",
+                                  border:
+                                    "1px solid rgba(255,255,255,.08)",
+                                  color: "#ff5a5a",
+                                  width: "45px",
+                                  height: "45px",
+                                  borderRadius: "12px",
+                                }}
+                              >
+                                <i className="bi bi-trash-fill"></i>
+                              </button>
+                            </div>
+
+                            {/* INFO */}
+                            <div className="row mt-4">
+                              <div className="col-md-4 mb-3">
+                                <div
+                                  style={{
+                                    background:
+                                      "rgba(255,255,255,.03)",
+                                    border:
+                                      "1px solid rgba(255,255,255,.08)",
+                                    borderRadius:
+                                      "16px",
+                                    padding: "18px",
+                                  }}
+                                >
+                                  <span
+                                    style={{
+                                      color:
+                                        "#cfcfcf",
+                                      fontSize:
+                                        ".8rem",
+                                      display:
+                                        "block",
+                                      marginBottom:
+                                        "8px",
+                                      textTransform:
+                                        "uppercase",
+                                    }}
+                                  >
+                                    Status
+                                  </span>
+
+                                  <h6
+                                    style={{
+                                      margin: 0,
+                                      fontWeight:
+                                        "700",
+                                      color:
+                                        pedido.cor,
+                                    }}
+                                  >
+                                    {pedido.status}
+                                  </h6>
+                                </div>
+                              </div>
+
+                              <div className="col-md-4 mb-3">
+                                <div
+                                  style={{
+                                    background:
+                                      "rgba(255,255,255,.03)",
+                                    border:
+                                      "1px solid rgba(255,255,255,.08)",
+                                    borderRadius:
+                                      "16px",
+                                    padding: "18px",
+                                  }}
+                                >
+                                  <span
+                                    style={{
+                                      color:
+                                        "#cfcfcf",
+                                      fontSize:
+                                        ".8rem",
+                                      display:
+                                        "block",
+                                      marginBottom:
+                                        "8px",
+                                      textTransform:
+                                        "uppercase",
+                                    }}
+                                  >
+                                    Valor
+                                  </span>
+
+                                  <h6
+                                    style={{
+                                      margin: 0,
+                                      fontWeight:
+                                        "700",
+                                      color:
+                                        "#5ba100dc",
+                                    }}
+                                  >
+                                    {pedido.preco}
+                                  </h6>
+                                </div>
+                              </div>
+
+                              <div className="col-md-4 mb-3">
+                                <div
+                                  style={{
+                                    background:
+                                      "rgba(255,255,255,.03)",
+                                    border:
+                                      "1px solid rgba(255,255,255,.08)",
+                                    borderRadius:
+                                      "16px",
+                                    padding: "18px",
+                                  }}
+                                >
+                                  <span
+                                    style={{
+                                      color:
+                                        "#cfcfcf",
+                                      fontSize:
+                                        ".8rem",
+                                      display:
+                                        "block",
+                                      marginBottom:
+                                        "8px",
+                                      textTransform:
+                                        "uppercase",
+                                    }}
+                                  >
+                                    Entrega
+                                  </span>
+
+                                  <h6
+                                    className="text-white"
+                                    style={{
+                                      margin: 0,
+                                      fontWeight:
+                                        "700",
+                                    }}
+                                  >
+                                    Em andamento
+                                  </h6>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* BOTÕES */}
+                            <div className="mt-auto d-flex gap-3 flex-wrap">
+                              <button
+                                className="btn text-white fw-semibold"
+                                style={{
+                                  background:
+                                    "linear-gradient(to right, #940533, #ff8800)",
+                                  border: "none",
+                                  borderRadius:
+                                    "12px",
+                                  padding:
+                                    "12px 18px",
+                                }}
+                              >
+                                Ver detalhes
+                              </button>
+
+                              <button
+                                className="btn btn-outline-light"
+                                style={{
+                                  borderRadius:
+                                    "12px",
+                                  padding:
+                                    "12px 18px",
+                                }}
+                              >
+                                Rastrear
+                              </button>
+                            </div>
                           </div>
-                        </div>
-
-                        {/* PREÇO */}
-                        <div className="col-md-2 mb-4 mb-md-0">
-                          <p
-                            style={{
-                              color: "#ffcf40",
-                              marginBottom: "8px",
-                              fontWeight: "700",
-                              fontSize: ".78rem",
-                              textTransform: "uppercase",
-                              letterSpacing: ".8px",
-                            }}
-                          >
-                            Valor
-                          </p>
-
-                          <span
-                            style={{
-                              color: "white",
-                              fontWeight: "700",
-                              fontSize: "1.05rem",
-                            }}
-                          >
-                            {pedido.preco}
-                          </span>
-                        </div>
-
-                        {/* DETALHES */}
-                        <div className="col-md-2 d-flex justify-content-md-end">
-                          <button
-                            className="btn"
-                            style={{
-                              background:
-                                "rgba(255,255,255,.04)",
-                              border:
-                                "1px solid rgba(255,179,0,.16)",
-                              color: "#ffe082",
-                              borderRadius: "14px",
-                              padding: "12px 18px",
-                              fontWeight: "700",
-                              transition: ".2s",
-                            }}
-                          >
-                            Detalhes
-                          </button>
                         </div>
                       </div>
                     </div>
-                  ))}
+                  </div>
+                ))}
 
-                  {pedidos.length === 0 && (
+                {/* SEM PEDIDOS */}
+                {pedidos.length === 0 && (
+                  <div className="col-12">
                     <div
                       className="d-flex flex-column justify-content-center align-items-center"
                       style={{
@@ -545,16 +564,110 @@ export default function Pedidos() {
                             "rgba(255,255,255,.55)",
                         }}
                       >
-                        Todos os pedidos foram removidos.
+                        Todos os pedidos foram
+                        removidos.
                       </p>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
+
+                {/* PAGINAÇÃO */}
+                <nav className="mt-4">
+                  <ul className="pagination justify-content-center">
+                    <li
+                      className={`page-item ${
+                        paginaAtual === 1
+                          ? "disabled"
+                          : ""
+                      }`}
+                    >
+                      <button
+                        className="page-link"
+                        onClick={() =>
+                          setPaginaAtual(
+                            paginaAtual - 1
+                          )
+                        }
+                        style={{
+                          background: "#000",
+                          color: "white",
+                          border:
+                            "1px solid white",
+                        }}
+                      >
+                        Anterior
+                      </button>
+                    </li>
+
+                    {[...Array(totalPaginas)].map(
+                      (_, index) => (
+                        <li
+                          key={index}
+                          className={`page-item ${
+                            paginaAtual ===
+                            index + 1
+                              ? "active"
+                              : ""
+                          }`}
+                        >
+                          <button
+                            onClick={() =>
+                              setPaginaAtual(
+                                index + 1
+                              )
+                            }
+                            className="page-link"
+                            style={{
+                              background:
+                                paginaAtual ===
+                                index + 1
+                                  ? "linear-gradient(to right, #c0012a, #ff8800)"
+                                  : "#000",
+
+                              color: "white",
+
+                              border:
+                                "1px solid white",
+                            }}
+                          >
+                            {index + 1}
+                          </button>
+                        </li>
+                      )
+                    )}
+
+                    <li
+                      className={`page-item ${
+                        paginaAtual ===
+                        totalPaginas
+                          ? "disabled"
+                          : ""
+                      }`}
+                    >
+                      <button
+                        className="page-link"
+                        onClick={() =>
+                          setPaginaAtual(
+                            paginaAtual + 1
+                          )
+                        }
+                        style={{
+                          background: "#000",
+                          color: "white",
+                          border:
+                            "1px solid white",
+                        }}
+                      >
+                        Próximo
+                      </button>
+                    </li>
+                  </ul>
+                </nav>
               </div>
             </div>
           </div>
         </div>
-      </div> 
-    </div>
+      </section>
+    </main>
   );
 }

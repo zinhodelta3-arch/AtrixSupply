@@ -1,55 +1,3 @@
-:root {
-  --background: #000000;
-  --foreground: #ededed;
-
-  --color1: #940533;
-  --color2: #c0012a;
-  --color3: #f5061d;
-  --color4: #ff8800;
-  --color5: #ffb300;
-}
-
-/* =========================
-   BASE
-========================= */
-html {
-  height: 100%;
-}
-
-body {
-  min-height: 100vh; /* ocupa a tela toda */
-  display: flex;
-  flex-direction: column;
-  max-width: 100vw;
-  overflow-x: hidden;
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-main {
-  flex: 1; /* empurra o footer pra baixo */
-}
-
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
-}
-
 /* ==========================================================================
    1. BASE E REGRAS GERAIS DA NAVBAR
    ========================================================================== */
@@ -58,7 +6,7 @@ a {
 }
 
 .photoLogo {
-  width: 35px;
+  width: 40px;
   height: 40px;
   object-fit: contain;
 }
@@ -171,7 +119,7 @@ a {
   position: absolute;
   top: -3px;
   right: -3px;
-  background: #ebc90d;
+  background: #ffb300;
   color: #0f0f11;
   font-size: 0.65rem;
   font-weight: 700;
@@ -220,7 +168,7 @@ a {
 }
 
 .profile-dropdown a:hover {
-  background: rgba(255, 12, 12, 0.08);
+  background: rgba(255, 255, 255, 0.08);
   color: #ffb300;
 }
 
@@ -233,7 +181,7 @@ a {
    4. ABA LATERAL DO CARRINHO (OFFCANVAS VISUAL COMPRA)
    ========================================================================== */
 .custom-cart-sidebar {
-  background: linear-gradient(145deg, rgba(28, 29, 31, 0.932) 0%, rgba(17, 15, 17, 0.932) 100%) !important;
+  background: linear-gradient(145deg, rgba(12, 13, 16, 0.98) 0%, rgba(24, 20, 24, 0.98) 100%) !important;
   border-left: 1px solid rgba(255, 215, 120, 0.10) !important;
   box-shadow: -15px 0 50px rgba(221, 25, 25, 0.15), -5px 0 20px rgba(235, 194, 13, 0.05) !important;
   width: 420px !important;
@@ -255,35 +203,19 @@ a {
   -webkit-text-fill-color: transparent;
 }
 
-/* Área rolável interna para os itens do carrinho */
-.cart-items-wrapper {
-  max-height: 60vh;
-  overflow-y: auto;
-  padding-right: 5px;
-}
-
-.cart-items-wrapper::-webkit-scrollbar {
-  width: 5px;
-}
-
-.cart-items-wrapper::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-}
-
 /* Cards internos dos itens adicionados */
 .cart-item-card {
-  background: rgba(24, 23, 21, 0.74);
-  border: 1px solid rgba(247, 48, 21, 0.842);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 20px;
   padding: 16px;
-  margin-top: 10px;
+  margin-top: 5px;
   transition: 0.3s ease;
 }
 
 .cart-item-card:hover {
-  border-color: rgba(224, 165, 26, 0.945);
-  background: rgba(20, 20, 20, 0.808);
+  border-color: rgba(255, 215, 120, 0.15);
+  background: rgba(255, 255, 255, 0.05);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 }
 
@@ -317,42 +249,25 @@ a {
   font-size: 1.1rem;
 }
 
-/* BOTÃO DE REMOVER PRODUTO (VERMELHO E VISÍVEL) */
 .cart-item-remove-btn {
-  color: var(--color3); /* Vermelho vivo (#f5061d) para total visibilidade inicial */
-  font-size: 1.2rem;
-  background: transparent;
-  border: none;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  cursor: pointer;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 1.15rem;
+  transition: 0.2s ease;
 }
 
 .cart-item-remove-btn:hover {
-  color: #e7be07 !important; /* Ícone fica branco no hover */
-  background: var(--color2); /* Fundo preenche com o vermelho escuro (#c0012a) */
-  transform: scale(1.1) rotate(90deg); /* Efeito dinâmico de rotação e zoom */
-  box-shadow: 0 0 12px rgba(245, 6, 29, 0.6); /* Brilho neon vermelho */
-}
-
-.cart-item-remove-btn:active {
-  transform: scale(0.95);
+  color: #c0012a;
+  transform: scale(1.1);
 }
 
 /* Rodapé e Botão de Checkout com o degradê tricolor */
 .sidebar-premium-footer {
-  border-top: 1px solid rgba(255, 49, 49, 0.1) !important;
-  padding-top: 0px;
+  border-top: 1px solid rgba(255, 215, 120, 0.10) !important;
+  padding-top: 24px;
 }
 
 .tracking-label {
   letter-spacing: 1px;
-  color: #ffe082 !important; /* Altera a cor do texto do Subtotal */
 }
 
 .sidebar-total-price {
@@ -365,7 +280,7 @@ a {
   background: linear-gradient(90deg, #ffcf40, #ff9d00, #c0012a) !important;
   color: white !important;
   border: none !important;
-  padding: 14px !important;
+  padding: 18px !important;
   border-radius: 18px !important;
   font-weight: 700 !important;
   font-size: 1.05rem !important;
@@ -378,14 +293,6 @@ a {
   transform: translateY(-2px);
   box-shadow: 0 18px 36px rgba(192, 1, 42, 0.4) !important;
   filter: brightness(1.1);
-}
-
-.btn-premium-checkout:disabled {
-  background: #2e2e32 !important;
-  color: #727278 !important;
-  box-shadow: none !important;
-  cursor: not-allowed;
-  transform: none !important;
 }
 
 /* ==========================================================================
@@ -408,110 +315,4 @@ a {
   .navbar-collapse {
     width: 100%;
   }
-}
-
-/* =========================
-   FOOTER
-========================= */
-.footer-custom {
-  margin-top: auto;
-  position: relative;
-  overflow: hidden;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  background:
-    linear-gradient(
-      90deg,
-      rgba(158, 56, 88, 0.55),
-      rgba(192, 1, 42, 0.50),
-      rgba(245, 6, 29, 0.45),
-      rgba(255, 136, 0, 0.40),
-      rgba(255, 179, 0, 0.35)
-    ),
-    rgba(15, 15, 17, 0.96);
-  border-top: 1px solid rgba(255, 255, 255, 0.10);
-  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.25);
-  color: white;
-}
-
-/* Camada extra pra profundidade do Footer */
-.footer-custom::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    90deg,
-    rgba(148, 5, 51, 0.20),
-    rgba(255, 136, 0, 0.12)
-  );
-  pointer-events: none;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  color: white;
-}
-
-.footer-custom .container {
-  padding-top: 4rem;
-  padding-bottom: 1.5rem;
-}
-
-.footer-text {
-  line-height: 1.8;
-  opacity: 0.9;
-  margin: 0;
-}
-
-.footer-link {
-  color: rgba(255, 255, 255, 0.9);
-  text-decoration: none;
-  transition: 0.25s ease;
-  width: fit-content;
-}
-
-.footer-link:hover {
-  color: white;
-  transform: translateX(4px);
-}
-
-.social-icon {
-  width: 46px;
-  height: 46px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  text-decoration: none;
-  font-size: 1.1rem;
-  transition: 0.3s ease;
-}
-
-.social-icon:hover {
-  background: rgba(255, 255, 255, 0.95);
-  color: #c0012a;
-  transform: translateY(-4px);
-}
-
-.footer-divider {
-  border-color: rgba(255, 255, 255, 0.08);
-}
-
-.footer-copy {
-  font-size: 0.92rem;
-  opacity: 0.8;
-}
-
-html,
-body,
-#__next {
-  background-color: #0a0a0a !important;
-}
-
-main,
-section,
-div {
-  background-color: transparent;
 }
