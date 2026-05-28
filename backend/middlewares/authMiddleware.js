@@ -69,6 +69,29 @@ const adminMiddleware = (req, res, next) => {
     next();
 };
 
+
+// Middleware para verificar se o usuário não é fornecedor
+const clientMiddleware = (req, res, next) => {
+    if (req.usuario.tipo === 'fornecedores') {
+        return res.status(403).json({ 
+            erro: 'Acesso negado',
+            mensagem: 'Apenas clientes comuns ou administradores podem acessar este recurso'
+        });
+    }
+    next();
+};
+
+// Middleware para verificar se o usuário não é fornecedor
+const supplierMiddleware = (req, res, next) => {
+    if (req.usuario.tipo === 'comum') {
+        return res.status(403).json({ 
+            erro: 'Acesso negado',
+            mensagem: 'Apenas fornecedores ou administradores podem acessar este recurso'
+        });
+    }
+    next();
+};
+
 const selfMiddleware = (req, res, next) => {
     if (req.usuario.id_user !== req.params.id_user) {
         return res.status(403).json({ 
@@ -79,5 +102,5 @@ const selfMiddleware = (req, res, next) => {
     next();
 };
 
-export { authMiddleware, adminMiddleware, selfMiddleware };
+export { authMiddleware, adminMiddleware, clientMiddleware, supplierMiddleware, selfMiddleware };
 

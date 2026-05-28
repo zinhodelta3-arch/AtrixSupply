@@ -163,7 +163,7 @@ class EncomendaController {
     // POST /encomendas - Criar nova encomenda
     static async criar(req, res) {
         try {
-            const { id_user, pecas, descricao} = req.body;
+            const { id_user, pecas, descricao } = req.body;
 
             // Validações manuais - coletar todos os erros
             const erros = [];
@@ -185,7 +185,7 @@ class EncomendaController {
             } else if(pecas.trim().length>=150){
                 erros.push({
                     campo: 'formato do nome da peça',
-                    mensagem: 'Formato inválido: use até 50 caracteres'
+                    mensagem: 'Formato inválido: use até 150 caracteres'
                 })
             }
 
@@ -196,7 +196,7 @@ class EncomendaController {
                     campo: 'Descrição',
                     mensagem: 'a descrição é obrigatória'
                 })
-            } else if(descricao.trim() >= 500){
+            } else if(descricao.trim().length >= 500){
                 erros.push({
                     campo: "Descrição",
                     mensagem: "A descrição suporta até 500 caracteres"
@@ -265,17 +265,7 @@ class EncomendaController {
     static async atualizar(req, res) {
         try {
             const { id_encomenda } = req.params;
-            const { pecas, descricao, status } = req.body;
-
-            // validação do status
-
-            if (!status || status.trim() !== 'pendente'){
-                return res.status(400).json({
-                    sucesso: false, 
-                    erro: 'Edição Inválida',
-                    mensagem: 'A encomenda não pode ser editada'
-                })
-            }
+            const { pecas, descricao } = req.body;
 
             // Validação do ID
             if (!id_encomenda || isNaN(id_encomenda)) {
@@ -294,6 +284,15 @@ class EncomendaController {
                     erro: 'Encomenda não encontrado',
                     mensagem: `Encomenda com ID ${id_encomenda} não foi encontrada`
                 });
+            }
+
+            //validar status
+            if (!encomendaExistente.status || encomendaExistente.status.trim() !== 'pendente'){
+                return res.status(400).json({
+                    sucesso: false, 
+                    erro: 'Edição Inválida',
+                    mensagem: 'A encomenda não pode ser editada'
+                })
             }
 
             // Preparar dados para atualização
@@ -373,17 +372,8 @@ class EncomendaController {
     static async atualizarCheck(req, res) {
         try {
             const { id_encomenda } = req.params;
-            const { id_logistica, status, orcamento, data_entrega } = req.body;
+            const { id_logistica, orcamento } = req.body;
 
-            // validação do status
-
-            if (!status || status.trim() !== 'em_andamento'){
-                return res.status(400).json({
-                    sucesso: false, 
-                    erro: 'Edição Inválida',
-                    mensagem: 'A encomenda não pode ser editada'
-                })
-            }
 
             // Validação do ID
             if (!id_encomenda || isNaN(id_encomenda)) {
@@ -424,6 +414,17 @@ class EncomendaController {
 
             // Preparar dados para atualização
             const dadosAtualizacao = {};
+            const hoje = new Date();
+
+            //validar status
+
+            if (!encomendaExistente.status || encomendaExistente.status.trim() !== 'pendente'){
+                return res.status(400).json({
+                    sucesso: false, 
+                    erro: 'Edição Inválida',
+                    mensagem: 'A encomenda não pode ser editada'
+                })
+            }
 
             //validar orçamento
 
@@ -437,6 +438,86 @@ class EncomendaController {
                 }
                 dadosAtualizacao.orcamento = parseInt(orcamento);
             }
+
+            //gerar nova data de entrega
+            dadosAtualizacao.data_entrega = hoje.getDate() + 20;
+
+
+            // Verificar se há dados para atualizar
+            if (Object.keys(dadosAtualizacao).length === 0) {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'Nenhum dado para atualizar',
+                    mensagem: 'Forneça pelo menos um campo para atualizar'
+                });
+            }
+
+            const resultado = await EncomendaModel.atualizar(id_encomenda, dadosAtualizacao);
+
+            res.status(200).json({
+                sucesso: true,
+                mensagem: 'Produto atualizado com sucesso',
+                dados: {
+                    linhasAfetadas: resultado.affectedRows || 1
+                }
+            });
+        } catch (error) {
+            console.error('Erro ao atualizar produto:', error);
+            res.status(500).json({
+                sucesso: false,
+                erro: 'Erro interno do servidor',
+                mensagem: 'Não foi possível atualizar o produto'
+            });
+        }
+    }
+
+    // PUT /pedido/processo/:id - Atualizar encomenda (pós-compra)
+    // id_user, id_logistica, pecas, descricao, status, orcamento, data_com, data_entrega
+    static async atualizarApos(req, res) {
+        try {
+            const { id_encomenda } = req.params;
+            const { id_logistica, data_entrega } = req.body;
+
+            // Validação do ID
+            if (!id_encomenda || isNaN(id_encomenda)) {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'ID encomenda inválido',
+                    mensagem: 'O ID da encomenda deve ser um número válido'
+                });
+            }
+
+            //validar id_logistica
+            if (!id_logistica || isNaN(id_logistica) || id_logistica < 0){
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'ID logística inválido',
+                    mensagem: 'O ID da logística deve ser um número válido'
+                })
+            }
+
+            // Verificar se a encomenda existe
+            const encomendaExistente = await EncomendaModel.buscarPorId(id_encomenda);
+            if (!encomendaExistente) {
+                return res.status(404).json({
+                    sucesso: false,
+                    erro: 'Produto não encontrado',
+                    mensagem: `Pedido com ID ${id_encomenda} não foi encontrado`
+                });
+            }
+
+            // Verificar se a logística existe
+            const logisticaExistente = await LogisticaModel.buscarPorId(id_logistica);
+            if (!logisticaExistente) {
+                return res.status(404).json({
+                    sucesso: false,
+                    erro: 'Produto não encontrado',
+                    mensagem: `Produto com ID ${id_logistica} não foi encontrado`
+                });
+            }
+
+            // Preparar dados para atualização
+            const dadosAtualizacao = {};
 
             //validar data de entrega
             if (data_entrega !== undefined) {
@@ -462,6 +543,7 @@ class EncomendaController {
 
                 dadosAtualizacao.data_entrega = date.toISOString().split('T')[0];
             }
+
 
             // Verificar se há dados para atualizar
             if (Object.keys(dadosAtualizacao).length === 0) {

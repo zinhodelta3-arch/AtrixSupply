@@ -1,23 +1,20 @@
 import express from 'express';
 import OrcamentoController from '../controllers/OrcamentoController.js';
-import { authMiddleware } from '../middlewares/authMiddleware.js';
+import { authMiddleware, supplierMiddleware } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
 // Rotas protegidas GET
-router.get('/', authMiddleware, OrcamentoController.listarTodos);
-router.get('/nome/:nome_orcamento', authMiddleware, OrcamentoController.buscarPorNome);
-
-//rever esse aqui, pois talvez não seja necessario a busca por encomenda
-router.get('/encomenda/:id_encomenda', authMiddleware, OrcamentoController.buscarPorEncomenda);
-
-router.get('/estado/:estado', authMiddleware, OrcamentoController.buscarPorEstado);
-router.get('/:id_orcamento', authMiddleware, OrcamentoController.buscarPorId); // Sempre por último para evitar conflitos
+router.get('/', authMiddleware, supplierMiddleware, OrcamentoController.listarTodos);
+router.get('/nome/:nome_orcamento', authMiddleware, supplierMiddleware, OrcamentoController.buscarPorNome);
+router.get('/encomenda/:id_encomenda', authMiddleware, supplierMiddleware, OrcamentoController.buscarPorEncomenda);
+router.get('/estado/:estado', authMiddleware, supplierMiddleware, OrcamentoController.buscarPorEstado);
+router.get('/:id_orcamento', authMiddleware, supplierMiddleware, OrcamentoController.buscarPorId); 
 
 // Rotas protegidas POST, PUT & DELETE
-router.post('/', authMiddleware, OrcamentoController.criar);
-router.put('/:id_orcamento', authMiddleware, OrcamentoController.atualizar);
-router.delete('/:id_orcamento', authMiddleware, OrcamentoController.excluir);
+router.post('/', authMiddleware, supplierMiddleware, OrcamentoController.criar);
+router.put('/:id_orcamento', authMiddleware, supplierMiddleware, OrcamentoController.atualizar);
+router.delete('/:id_orcamento', authMiddleware, supplierMiddleware, OrcamentoController.excluir);
 
 // Rotas OPTIONS para CORS (preflight requests)
 router.options('/', (req, res) => {

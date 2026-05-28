@@ -1,6 +1,6 @@
 import express from 'express';
 import EncomendaController from '../controllers/EncomendaController.js';
-import { authMiddleware } from '../middlewares/authMiddleware.js';
+import { authMiddleware, supplierMiddleware } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
@@ -13,8 +13,7 @@ router.get('/:id_encomenda', authMiddleware, EncomendaController.buscarPorId);
 router.post('/', authMiddleware, EncomendaController.criar);
 router.put('/user/:id_encomenda', authMiddleware, EncomendaController.atualizar);
 router.put('/processo/:id_encomenda', authMiddleware, EncomendaController.atualizarCheck);
-
-// Rota para atualizar dados de orçamento, logística e data de entrega
+router.put('/processo/:id_encomenda', authMiddleware, supplierMiddleware, EncomendaController.atualizarApos);
 router.delete('/:id_encomenda', authMiddleware, EncomendaController.excluir);
 
 // Rotas OPTIONS para CORS (preflight requests)

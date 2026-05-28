@@ -62,7 +62,7 @@ app.use('/api/orcamentos', orcamentoRotas);
 app.get('/', (req, res) => {
     res.json({
         sucesso: true,
-        mensagem: 'API de Produtos - Sistema de Gestão',
+        mensagem: 'API Projeto Integrador - AtrixSupply, sistema de encomendas e e-commerce',
         versao: '0.1.0',
         rotas: {
             autenticacao: '/api/auth',

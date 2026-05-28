@@ -104,7 +104,7 @@ class PedidoController {
     }
 
 
-        // GET /pedidos/id_user/:id_user- Buscar pedido por ID do usuário
+        // GET /pedidos/id_user/:id_user - Buscar pedido por ID do usuário
     static async buscarPorIdUser(req, res) {
         try {
             const { id_user } = req.params;
@@ -234,6 +234,15 @@ class PedidoController {
             let status = req.params.status || '*';
             let pagina = parseInt(req.query.pagina) || 1;
             let limite = parseInt(req.query.limite) || 10;
+            let statusValidos = ['carrinho', 'pendente', 'processando', 'enviado', 'entregue', 'cancelado'];
+
+            if (!statusValidos.includes(status.toLowerCase().trim())){
+                return res.status(400).json({
+                    sucesso: false,
+                    erro:  "status inválido",
+                    mensagem: "Formato inválido de status inserido"
+                })
+            }
 
             if (pagina <= 0) {
                 return res.status(400).json({
@@ -368,8 +377,57 @@ class PedidoController {
         }
     }
     
+    // PUT /pedido/:id - Atualizar pedido (a caminho)
+    static async atualizar(req, res) {
+        try {
+            const { id_pedido } = req.params;
 
-    // PUT /pedido/:id - Atualizar pedido
+            // Validação do ID
+            if (!id_pedido || isNaN(id_pedido)) {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'ID inválido',
+                    mensagem: 'O ID deve ser um número válido'
+                });
+            }
+
+            // Verificar se o pedido existe
+            const pedidoExistente = await PedidosModel.buscarPorId(id_pedido);
+            if (!pedidoExistente) {
+                return res.status(404).json({
+                    sucesso: false,
+                    erro: 'Pedido não encontrado',
+                    mensagem: `Pedido com ID ${id_pedido} não foi encontrado`
+                });
+            }
+
+            // Preparar dados para atualização
+            const dadosAtualizacao = {};
+            const hoje = new Date();
+
+            dadosAtualizacao.status = 'enviado';
+            dadosAtualizacao.data_entrega = hoje.getDate() + 20;
+
+            const resultado = await PedidosModel.atualizar(id_pedido, dadosAtualizacao);
+
+            res.status(200).json({
+                sucesso: true,
+                mensagem: 'Pedido atualizado com sucesso',
+                dados: {
+                    linhasAfetadas: resultado.affectedRows || 1
+                }
+            });
+        } catch (error) {
+            console.error('Erro ao atualizar pedido:', error);
+            res.status(500).json({
+                sucesso: false,
+                erro: 'Erro interno do servidor',
+                mensagem: 'Não foi possível atualizar o pedido'
+            });
+        }
+    }
+
+    // PUT /pedido/:id - Atualizar pedido (admin)
     static async atualizar(req, res) {
         try {
             const { id_pedido } = req.params;

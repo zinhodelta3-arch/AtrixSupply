@@ -68,9 +68,38 @@ class ProdutoController {
     static async buscarPorCategoria(req, res) {
         try {
             
-            let categoria = req.params.categoria || 'geral'; //validar categoria dps
+            const categoria = req.params.categoria || 'geral';
+            let categoriaValidada = categoria.toLowerCase().trim().split(' ').join('_'); 
             let pagina = parseInt(req.query.pagina) || 1;
             let limite = parseInt(req.query.limite) || 10;
+            const defaultCategorias = [
+                'geral', 
+                'automacao_industrial', 
+                'eletrica_industrial', 
+                'fixacao_industrial', 
+                'instrumentacao_e_medicao',
+                'lubrificacao_e_manutencao',
+                'maquinas_industriais',
+                'motores_e_acionamentos',
+                'pecas_mecanicas',
+                'pneumatica_e_hidraulica',
+                'seguranca_industrial_(epi)',
+                'solda_e_metalurgia'
+            ];
+            
+            if (!categoriaValidada || categoriaValidada === ''){
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: "categoria obrigatória",
+                    mensagem: "A categoria é obrigatória para essa operação"
+                })
+            } else if(!defaultCategorias.includes(categoriaValidada)){
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: "categoria inexistente",
+                    mensagem: "Categoria não encontrada"
+                })
+            }
 
             if (pagina <= 0) {
                 return res.status(400).json({
@@ -98,7 +127,7 @@ class ProdutoController {
 
             const offset = (pagina - 1) * limite;
 
-            const resultado = await ProdutoModel.buscarPorCategoria(categoria, limite, offset); 
+            const resultado = await ProdutoModel.buscarPorCategoria(categoriaValidada, limite, offset); 
 
             res.status(200).json({
                 sucesso: true,
@@ -220,6 +249,21 @@ class ProdutoController {
     static async criar(req, res) {
         try {
             const { nome_produto, descricao, preco, categoria, estoque, fornecedor  } = req.body;
+            let categoriaValidada = categoria.toLowerCase().trim().split(' ').join('_'); 
+            const defaultCategorias = [
+                'geral', 
+                'automacao_industrial', 
+                'eletrica_industrial', 
+                'fixacao_industrial', 
+                'instrumentacao_e_medicao',
+                'lubrificacao_e_manutencao',
+                'maquinas_industriais',
+                'motores_e_acionamentos',
+                'pecas_mecanicas',
+                'pneumatica_e_hidraulica',
+                'seguranca_industrial_(epi)',
+                'solda_e_metalurgia'
+            ];
 
             // Validações manuais - coletar todos os erros
             const erros = [];
@@ -252,6 +296,20 @@ class ProdutoController {
                     campo: 'preco',
                     mensagem: 'Preço deve ser um número positivo'
                 });
+            }
+
+            if (!categoriaValidada || categoriaValidada === ''){
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: "categoria obrigatória",
+                    mensagem: "A categoria é obrigatória para essa operação"
+                })
+            } else if(!defaultCategorias.includes(categoriaValidada)){
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: "categoria inexistente",
+                    mensagem: "Categoria não encontrada"
+                })
             }
 
             //validar estoque
@@ -330,6 +388,21 @@ class ProdutoController {
         try {
             const { id_produto } = req.params;
             const { nome_produto, descricao, preco, categoria, estoque, fornecedor } = req.body;
+            let categoriaValidada = categoria.toLowerCase().trim().split(' ').join('_'); 
+            const defaultCategorias = [
+                'geral', 
+                'automacao_industrial', 
+                'eletrica_industrial', 
+                'fixacao_industrial', 
+                'instrumentacao_e_medicao',
+                'lubrificacao_e_manutencao',
+                'maquinas_industriais',
+                'motores_e_acionamentos',
+                'pecas_mecanicas',
+                'pneumatica_e_hidraulica',
+                'seguranca_industrial_(epi)',
+                'solda_e_metalurgia'
+            ];
 
             // Validação do ID
             if (!id_produto || isNaN(id_produto)) {
@@ -379,11 +452,28 @@ class ProdutoController {
                 dadosAtualizacao.descricao = descricao ? descricao.trim() : 'Ainda sem descrição';
             }
 
-            if (categoria !== undefined) {
-                dadosAtualizacao.categoria = categoria ? categoria.trim() : 'Geral';
-            }
-
+        
             //nome_produto, descricao, preco, categoria, estoque, imagem, fornecedor
+
+            if (categoria !== undefined){
+                if (categoriaValidada !== undefined){
+                    if (!categoriaValidada || categoriaValidada === ''){
+                        return res.status(400).json({
+                            sucesso: false,
+                            erro: "categoria obrigatória",
+                            mensagem: "A categoria é obrigatória para essa operação"
+                        })
+                    } else if(!defaultCategorias.includes(categoriaValidada)){
+                        return res.status(400).json({
+                            sucesso: false,
+                            erro: "categoria inexistente",
+                            mensagem: "Categoria não encontrada"
+                        })
+                    }
+                    dadosAtualizacao.categoria = categoriaValidada ? categoria.trim() : 'Geral';
+
+                }
+            }
 
             if (estoque !== undefined) {
                 if (isNaN(estoque) || estoque < 0) {

@@ -1,122 +1,4 @@
-CREATE TABLE usuarios (
-    id_user INT AUTO_INCREMENT PRIMARY KEY,
-    nome_user VARCHAR(150) NOT NULL,
-    cnpj VARCHAR(18) UNIQUE,
-    endereco VARCHAR(255),
-    foto VARCHAR(255),
-    empresa VARCHAR(150),
-    cargo VARCHAR(100),
-    descricao TEXT,
-    tipo ENUM('fornecedor','administrador', 'comum') NOT NULL DEFAULT 'comum',
-    email VARCHAR(150) NOT NULL UNIQUE,
-    senha VARCHAR(255) NOT NULL,
-    cep VARCHAR(9) 
-);
-
-CREATE TABLE produtos (
-    id_produto INT AUTO_INCREMENT PRIMARY KEY,
-    nome_produto VARCHAR(150) NOT NULL,
-    preco DECIMAL(10,2) NOT NULL,
-    descricao TEXT,
-    estoque INT NOT NULL DEFAULT 0,
-    imagem varchar(255),
-    fornecedor varchar(150),
-    categoria varchar(150)
-);
-
-CREATE TABLE logistica (
-    id_logistica INT AUTO_INCREMENT PRIMARY KEY,
-    id_dono INT NOT NULL,
-    nome_logistica VARCHAR(150) NOT NULL,
-    veiculo ENUM(
-        'caminhao', 'van', 'moto', 'carro', 'bicicleta', 'nao_selecionado') NOT NULL DEFAULT 'nao_selecionado',
-	disponibilidade ENUM(
-        'disponivel', 'ocupado', 'manutencao') NOT NULL DEFAULT 'disponivel',
-    destino VARCHAR(255) NULL,
-    
-	CONSTRAINT fk_logistica_dono
-	FOREIGN KEY (id_dono)
-	REFERENCES usuarios(id_user) ON UPDATE CASCADE ON DELETE CASCADE
-);
-
-CREATE TABLE encomendas (
-    id_encomenda INT AUTO_INCREMENT PRIMARY KEY,
-    id_user INT NOT NULL,
-    id_fornecedor INT NULL,
-    pecas VARCHAR(255) NOT NULL,
-    descricao TEXT,
-    status ENUM(
-        'pendente', 'em_andamento', 'finalizado', 'cancelado') NOT NULL DEFAULT 'pendente',
-    orcamento DECIMAL(10,2) NULL,
-    data_com DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    data_entrega DATE NULL,
-    id_logistica INT NULL,
-
-    CONSTRAINT fk_encomenda_usuario
-        FOREIGN KEY (id_user)
-        REFERENCES usuarios(id_user) ON UPDATE CASCADE ON DELETE CASCADE,
-
-    CONSTRAINT fk_encomenda_fornecedor
-        FOREIGN KEY (id_fornecedor)
-        REFERENCES usuarios(id_user) ON UPDATE CASCADE ON DELETE CASCADE,
-
-    CONSTRAINT fk_encomenda_logistica
-        FOREIGN KEY (id_logistica)
-        REFERENCES logistica(id_logistica) ON UPDATE CASCADE ON DELETE CASCADE
-);
-
-CREATE TABLE orcamentos (
-    id_orcamento INT AUTO_INCREMENT PRIMARY KEY,
-    id_encomenda INT NOT NULL,
-    nome_orcamento VARCHAR(255) NOT NULL,
-    tipo_orcamento VARCHAR(255) NOT NULL,
-    estimacao DECIMAL(10,2) NOT NULL,
-    estado ENUM('visivel', 'invisivel', 'escolhida') NOT NULL DEFAULT 'invisivel',
-
-    CONSTRAINT fk_orcamento_encomenda
-        FOREIGN KEY (id_encomenda)
-        REFERENCES encomendas(id_encomenda) ON UPDATE CASCADE ON DELETE CASCADE
-);
-
-CREATE TABLE pedidos (
-    id_pedido INT AUTO_INCREMENT PRIMARY KEY,
-    id_user INT NOT NULL,
-    id_produto INT NOT NULL,
-    data_pedido DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    data_entrega DATE NULL,
-
-    status ENUM('carrinho', 'pendente', 'processando', 'enviado', 'entregue', 'cancelado') NOT NULL DEFAULT 'pendente',
-
-    CONSTRAINT fk_pedido_user
-        FOREIGN KEY (id_user)
-        REFERENCES usuarios(id_user) ON UPDATE CASCADE ON DELETE CASCADE,
-
-    CONSTRAINT fk_pedido_produto
-        FOREIGN KEY (id_produto)
-        REFERENCES produtos(id_produto) ON UPDATE CASCADE ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS logs (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    id_usuarios INT,
-    rota VARCHAR(255) NOT NULL,
-    metodo VARCHAR(10) NOT NULL,
-    ip_address VARCHAR(45),
-    user_agent TEXT,
-    status_code INT,
-    tempo_resposta_ms INT,
-    data_hora DATETIME DEFAULT CURRENT_TIMESTAMP,
-    dados_requisicao JSON,
-    dados_resposta JSON,
-    FOREIGN KEY (id_usuarios) REFERENCES usuarios(id_user) ON DELETE SET NULL
-    );
-    
-CREATE INDEX idx_logs_id_usuario ON logs(id_usuarios);
-CREATE INDEX idx_logs_data_hora ON logs(data_hora);
-CREATE INDEX idx_logs_rota ON logs(rota);
-CREATE INDEX idx_logs_metodo ON logs(metodo);
-CREATE INDEX idx_logs_status_code ON logs(status_code);
-
+USE projeto;
 
 INSERT INTO usuarios (
     nome_user,
@@ -412,7 +294,7 @@ INSERT INTO encomendas (
     'Pedido de parafusos de aço inox',
     'pendente',
     300.00,
-    '2026-05-15 14:00:00',
+    '2026-05-15',
     NULL,
     2
 );
@@ -434,8 +316,8 @@ INSERT INTO encomendas (
     'Solicitação de orçamento para painéis solares',
     'finalizado',
     18999.90,
-    '2026-04-20 11:15:00',
-    '2026-05-01 16:00:00',
+    '2026-04-20 ',
+    '2026-05-01',
     3
 );
 
@@ -449,8 +331,8 @@ INSERT INTO pedidos (
 ) VALUES (
     2,
     1,
-    '2026-05-11 10:00:00',
-    '2026-05-20 15:30:00',
+    '2026-05-11',
+    '2026-05-20',
     'enviado'
 );
 
@@ -463,7 +345,7 @@ INSERT INTO pedidos (
 ) VALUES (
     1,
     3,
-    '2026-05-14 09:45:00',
+    '2026-05-14',
     NULL,
     'processando'
 );
@@ -477,8 +359,8 @@ INSERT INTO pedidos (
 ) VALUES (
     3,
     2,
-    '2026-05-18 13:20:00',
-    '2026-05-19 17:00:00',
+    '2026-05-18',
+    '2026-05-19',
     'entregue'
 );
 
