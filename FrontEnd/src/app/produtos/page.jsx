@@ -118,10 +118,18 @@ const totalPaginas = Math.ceil(
                     }}
                   >
                     <option>Todas</option>
-                    <option>Motores</option>
-                    <option>Rolamentos</option>
-                    <option>Engrenagens</option>
-                    <option>Painéis</option>
+                    <option>Automação Industrial</option>
+                    <option>Elétrica Industrial</option>
+                    <option>Ferramentas Industriais</option>
+                    <option>Fixação Industrial</option>
+                    <option>Instrumentação e Medição</option>
+                    <option>Lubrificação e Manutenção</option>
+                    <option>Máquinas Industriais</option>
+                    <option>Motores e Acionamentos</option>
+                    <option>Peças Mecânicas</option>
+                    <option>Pneumática e Hidráulica</option>
+                    <option>Segurança Industrial (EPI)</option>
+                    <option>Solda e Metalurgia</option>
                   </select>
                 </div>
 
@@ -188,14 +196,15 @@ const totalPaginas = Math.ceil(
                       <link rel="stylesheet" href="" />
 
                       <img
-                        src="https://static.kiaga.com.br/public/kiaga/imagens/produtos/prego-polido-com-cabeca-conica-corpo-liso-e-ponta-tipo-diamante-pequeno-72314.jpg"
+                        src="Imagem do produto aqui"
                         className="card-img-top"
-                        alt={produto.nome}
+                        alt={produto.img}
                         style={{
                           height: "220px",
                           objectFit: "cover",
                         }}
                       />
+
 
                       <div className="card-body d-flex flex-column">
                         <h5 className="card-title text-white fw-bold">
@@ -209,6 +218,15 @@ const totalPaginas = Math.ceil(
                           }}
                         >
                           {produto.descricao}
+                        </p>
+
+                        <p
+                          className="card-text mt-2 tam"
+                          style={{
+                            color: "#ffee8b",
+                          }}
+                        >
+                          {produto.categoria}
                         </p>
 
                         <p
