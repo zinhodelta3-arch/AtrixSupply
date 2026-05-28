@@ -1,4 +1,5 @@
 import LogisticaModel from '../models/LogisticaModel.js';
+import UsuarioModel from '../models/UsuarioModel.js';
 
 // Controller para operações de logística
 class LogisticaController {
@@ -16,6 +17,7 @@ class LogisticaController {
                     mensagem: 'A página deve ser um número maior que zero'
                 });
             }
+
             if (limite <= 0) {
                 return res.status(400).json({
                     sucesso: false,
@@ -33,16 +35,16 @@ class LogisticaController {
                 });
             }
 
-            const resultado = await LogisticaModel.listarTodos(pagina, limite); 
+            const resultado = await LogisticaModel.listarTodos(pagina, limite);
 
             res.status(200).json({
                 sucesso: true,
                 dados: resultado.logistica,
                 paginacao: {
-                    pagina: resultado.pagina, 
-                    limite: resultado.limite, 
-                    total: resultado.total,   
-                    totalPaginas: resultado.totalPaginas 
+                    pagina: resultado.pagina,
+                    limite: resultado.limite,
+                    total: resultado.total,
+                    totalPaginas: resultado.totalPaginas
                 }
             });
         } catch (error) {
@@ -63,16 +65,16 @@ class LogisticaController {
             let limite = parseInt(req.query.limite) || 10;
             const offset = (pagina - 1) * limite;
 
-            const resultado = await LogisticaModel.buscarPorVeiculo(veiculo, limite, offset); 
+            const resultado = await LogisticaModel.buscarPorVeiculo(veiculo, limite, offset);
 
             res.status(200).json({
                 sucesso: true,
                 dados: resultado.logistica,
                 paginacao: {
-                    pagina: resultado.pagina, 
-                    limite: resultado.limite, 
-                    total: resultado.total,   
-                    totalPaginas: resultado.totalPaginas 
+                    pagina: resultado.pagina,
+                    limite: resultado.limite,
+                    total: resultado.total,
+                    totalPaginas: resultado.totalPaginas
                 }
             });
         } catch (error) {
@@ -93,16 +95,16 @@ class LogisticaController {
             let limite = parseInt(req.query.limite) || 10;
             const offset = (pagina - 1) * limite;
 
-            const resultado = await LogisticaModel.buscarPorDisponibilidade(disponibilidade, limite, offset); 
+            const resultado = await LogisticaModel.buscarPorDisponibilidade(disponibilidade, limite, offset);
 
             res.status(200).json({
                 sucesso: true,
                 dados: resultado.logistica,
                 paginacao: {
-                    pagina: resultado.pagina, 
-                    limite: resultado.limite, 
-                    total: resultado.total,   
-                    totalPaginas: resultado.totalPaginas 
+                    pagina: resultado.pagina,
+                    limite: resultado.limite,
+                    total: resultado.total,
+                    totalPaginas: resultado.totalPaginas
                 }
             });
         } catch (error) {
@@ -123,16 +125,16 @@ class LogisticaController {
             let limite = parseInt(req.query.limite) || 10;
             const offset = (pagina - 1) * limite;
 
-            const resultado = await LogisticaModel.buscarPorNome(nome_logistica, limite, offset); 
+            const resultado = await LogisticaModel.buscarPorNome(nome_logistica, limite, offset);
 
             res.status(200).json({
                 sucesso: true,
                 dados: resultado.logistica,
                 paginacao: {
-                    pagina: resultado.pagina, 
-                    limite: resultado.limite, 
-                    total: resultado.total,   
-                    totalPaginas: resultado.totalPaginas 
+                    pagina: resultado.pagina,
+                    limite: resultado.limite,
+                    total: resultado.total,
+                    totalPaginas: resultado.totalPaginas
                 }
             });
         } catch (error) {
@@ -185,35 +187,79 @@ class LogisticaController {
     // POST /logistica - Criar nova logistica
     static async criar(req, res) {
         try {
-            const { id_dono, nome_logistica, veiculo, disponibilidade, destino } = req.body;
+            const { id_dono, nome_logistica, veiculo, disponibilidade, destino } = req.body || {};
             const erros = [];
 
             // Validar id_dono
-            if (!id_dono || isNaN(id_dono)) {
-                erros.push({ campo: 'id_dono', mensagem: 'ID do dono é obrigatório e deve ser numérico' });
+            if (!id_dono || isNaN(id_dono) || parseInt(id_dono) <= 0) {
+                erros.push({
+                    campo: 'id_dono',
+                    mensagem: 'ID do dono é obrigatório e deve ser numérico'
+                });
             }
 
             // Validar nome_logistica
-            if (!nome_logistica || nome_logistica.trim() === '') {
-                erros.push({ campo: 'nome_logistica', mensagem: 'Nome da logística é obrigatório' });
+            if (typeof nome_logistica !== 'string' || nome_logistica.trim() === '') {
+                erros.push({
+                    campo: 'nome_logistica',
+                    mensagem: 'Nome da logística é obrigatório'
+                });
             } else if (nome_logistica.trim().length > 150) {
-                erros.push({ campo: 'nome_logistica', mensagem: 'O nome deve ter no máximo 150 caracteres' });
+                erros.push({
+                    campo: 'nome_logistica',
+                    mensagem: 'O nome deve ter no máximo 150 caracteres'
+                });
             }
 
-            // Validar veículo (ENUM)
+            // Validar veículo
             const veiculosValidos = ['caminhão', 'van', 'moto', 'carro', 'bicicleta', 'não selecionado'];
-            if (veiculo && !veiculosValidos.includes(veiculo.toLowerCase())) {
-                erros.push({ campo: 'veiculo', mensagem: 'Veículo inválido' });
+
+            if (veiculo !== undefined && veiculo !== null && veiculo !== '') {
+                if (typeof veiculo !== 'string' || !veiculosValidos.includes(veiculo.toLowerCase())) {
+                    erros.push({
+                        campo: 'veiculo',
+                        mensagem: 'Veículo inválido'
+                    });
+                }
             }
 
-            // Validar disponibilidade (ENUM)
+            // Validar disponibilidade
             const disponibilidadesValidas = ['disponivel', 'ocupado', 'manutencao'];
-            if (disponibilidade && !disponibilidadesValidas.includes(disponibilidade.toLowerCase())) {
-                erros.push({ campo: 'disponibilidade', mensagem: 'Disponibilidade inválida' });
+
+            if (disponibilidade !== undefined && disponibilidade !== null && disponibilidade !== '') {
+                if (typeof disponibilidade !== 'string' || !disponibilidadesValidas.includes(disponibilidade.toLowerCase())) {
+                    erros.push({
+                        campo: 'disponibilidade',
+                        mensagem: 'Disponibilidade inválida'
+                    });
+                }
+            }
+
+            // Validar destino
+            if (destino !== undefined && destino !== null && typeof destino !== 'string') {
+                erros.push({
+                    campo: 'destino',
+                    mensagem: 'Destino deve ser um texto válido'
+                });
             }
 
             if (erros.length > 0) {
-                return res.status(400).json({ sucesso: false, erro: 'Dados inválidos', detalhes: erros });
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'Dados inválidos',
+                    detalhes: erros
+                });
+            }
+
+            // Verificar se o dono existe
+            const donoExistente = await UsuarioModel.buscarPorId(id_dono);
+
+            if (!donoExistente) {
+                return res.status(404).json({
+                    sucesso: false,
+                    erro: 'Dono não encontrado',
+                    mensagem: `Usuário com ID ${id_dono} não foi encontrado`
+                });
             }
 
             const dadosLogistica = {
@@ -229,7 +275,10 @@ class LogisticaController {
             res.status(201).json({
                 sucesso: true,
                 mensagem: 'Logística criada com sucesso',
-                dados: { id_logistica: logisticaId, ...dadosLogistica }
+                dados: {
+                    id_logistica: logisticaId,
+                    ...dadosLogistica
+                }
             });
         } catch (error) {
             console.error('Erro ao criar logistica:', error);
@@ -245,42 +294,94 @@ class LogisticaController {
     static async atualizar(req, res) {
         try {
             const { id_logistica } = req.params;
-            const { nome_logistica, veiculo, disponibilidade, destino } = req.body;
+            const { nome_logistica, veiculo, disponibilidade, destino } = req.body || {};
 
             if (!id_logistica || isNaN(id_logistica)) {
-                return res.status(400).json({ sucesso: false, erro: 'ID inválido', mensagem: 'O ID deve ser um número válido' });
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'ID inválido',
+                    mensagem: 'O ID deve ser um número válido'
+                });
             }
 
             const logisticaExistente = await LogisticaModel.buscarPorId(id_logistica);
+
             if (!logisticaExistente) {
-                return res.status(404).json({ sucesso: false, erro: 'Não encontrado', mensagem: `Registro com ID ${id_logistica} não encontrado` });
+                return res.status(404).json({
+                    sucesso: false,
+                    erro: 'Não encontrado',
+                    mensagem: `Registro com ID ${id_logistica} não encontrado`
+                });
             }
 
             const dadosAtualizacao = {};
 
             if (nome_logistica !== undefined) {
-                if (nome_logistica.trim() === '') return res.status(400).json({ sucesso: false, erro: 'Nome inválido' });
+                if (typeof nome_logistica !== 'string' || nome_logistica.trim() === '') {
+                    return res.status(400).json({
+                        sucesso: false,
+                        erro: 'Nome inválido',
+                        mensagem: 'Nome da logística deve ser um texto válido'
+                    });
+                }
+
+                if (nome_logistica.trim().length > 150) {
+                    return res.status(400).json({
+                        sucesso: false,
+                        erro: 'Nome inválido',
+                        mensagem: 'O nome deve ter no máximo 150 caracteres'
+                    });
+                }
+
                 dadosAtualizacao.nome_logistica = nome_logistica.trim();
             }
 
             if (veiculo !== undefined) {
                 const veiculosValidos = ['caminhão', 'van', 'moto', 'carro', 'bicicleta', 'não selecionado'];
-                if (!veiculosValidos.includes(veiculo.toLowerCase())) return res.status(400).json({ sucesso: false, erro: 'Veículo inválido' });
+
+                if (typeof veiculo !== 'string' || !veiculosValidos.includes(veiculo.toLowerCase())) {
+                    return res.status(400).json({
+                        sucesso: false,
+                        erro: 'Veículo inválido',
+                        mensagem: 'Forneça um veículo válido'
+                    });
+                }
+
                 dadosAtualizacao.veiculo = veiculo.toLowerCase();
             }
 
             if (disponibilidade !== undefined) {
                 const disponibilidadesValidas = ['disponivel', 'ocupado', 'manutencao'];
-                if (!disponibilidadesValidas.includes(disponibilidade.toLowerCase())) return res.status(400).json({ sucesso: false, erro: 'Disponibilidade inválida' });
+
+                if (typeof disponibilidade !== 'string' || !disponibilidadesValidas.includes(disponibilidade.toLowerCase())) {
+                    return res.status(400).json({
+                        sucesso: false,
+                        erro: 'Disponibilidade inválida',
+                        mensagem: 'Forneça uma disponibilidade válida'
+                    });
+                }
+
                 dadosAtualizacao.disponibilidade = disponibilidade.toLowerCase();
             }
 
             if (destino !== undefined) {
+                if (destino !== null && typeof destino !== 'string') {
+                    return res.status(400).json({
+                        sucesso: false,
+                        erro: 'Destino inválido',
+                        mensagem: 'Destino deve ser um texto válido'
+                    });
+                }
+
                 dadosAtualizacao.destino = destino ? destino.trim() : null;
             }
 
             if (Object.keys(dadosAtualizacao).length === 0) {
-                return res.status(400).json({ sucesso: false, erro: 'Nenhum dado', mensagem: 'Forneça pelo menos um campo para atualizar' });
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'Nenhum dado',
+                    mensagem: 'Forneça pelo menos um campo para atualizar'
+                });
             }
 
             const resultado = await LogisticaModel.atualizar(id_logistica, dadosAtualizacao);
@@ -288,7 +389,9 @@ class LogisticaController {
             res.status(200).json({
                 sucesso: true,
                 mensagem: 'Logística atualizada com sucesso',
-                dados: { linhasAfetadas: resultado.affectedRows || 1 }
+                dados: {
+                    linhasAfetadas: resultado.affectedRows || 1
+                }
             });
         } catch (error) {
             console.error('Erro ao atualizar logistica:', error);
@@ -314,6 +417,7 @@ class LogisticaController {
             }
 
             const logisticaExistente = await LogisticaModel.buscarPorId(id_logistica);
+
             if (!logisticaExistente) {
                 return res.status(404).json({
                     sucesso: false,
@@ -327,7 +431,9 @@ class LogisticaController {
             res.status(200).json({
                 sucesso: true,
                 mensagem: 'Registro de logística excluído com sucesso',
-                dados: { linhasAfetadas: resultado || 1 }
+                dados: {
+                    linhasAfetadas: resultado || 1
+                }
             });
         } catch (error) {
             console.error('Erro ao excluir logistica:', error);
