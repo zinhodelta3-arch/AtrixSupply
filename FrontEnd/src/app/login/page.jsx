@@ -1,12 +1,60 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import * as THREE from "three";
 import Link from "next/link";
 
 export default function Login() {
   const mountRef = useRef(null);
+
+  const router = useRouter();
+  const [nome_user, setUsuario] = useState("");
+  const [senha, setSenha ] = useState("");
+  const [erro, setErro] = useState("");
+
+
+  function fazerLogin(e) {
+    e.preventDefault();
+
+    setLoading(true);
+    setErro("");
+
+    fetch("http://localhost:3001/api/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        nome_user: nome_user,
+        senha: senha,
+      }),
+    })
+      .then((res) => {
+        return res.json().then((data) => {
+          if (!res.ok) {
+            throw new Error(data.mensagem || "Erro ao fazer login");
+          }
+
+          return data;
+        });
+      })
+      .then((data) => {
+        console.log("Login feito:", data);
+
+        // Se sua API retornar token
+        if (data.token) {
+          localStorage.setItem("token", data.token);
+        }
+
+        // Redireciona depois do login
+        router.push("/");
+      })
+      .catch((error) => {
+        setErro(error.message);
+      })
+  }
 
   useEffect(() => {
     // ... (mesmo código Three.js)
@@ -82,7 +130,7 @@ export default function Login() {
               Login
             </h1>
           </div>
-
+              <form onSubmit={fazerLogin}>
           <div className="mb-3">
             <label className="form-label">Usuário</label>
             <input
@@ -96,13 +144,15 @@ export default function Login() {
                 color: "white",
                 backdropFilter: "blur(4px)",
               }}
+              value={nome_user}
+              onChange={(e) => setUsuario(e.target.value)}
             />
           </div>
 
           <div className="mb-3">
             <label className="form-label">Senha</label>
             <input
-              type="password"
+              type="password "
               className="form-control"
               placeholder="Digite sua senha"
               style={{
@@ -112,6 +162,8 @@ export default function Login() {
                 color: "white",
                 backdropFilter: "blur(4px)",
               }}
+              value={senha}
+              onChange={(e) => setSenha(e.target.value)}
             />
           </div>
 
@@ -129,7 +181,7 @@ export default function Login() {
           >
             Entrar
           </button>
-
+            </form>
           <p
             className="text-center mt-3 d-flex flex-column gap-2"
             style={{ color: "#ccc", fontSize: "14px" }}

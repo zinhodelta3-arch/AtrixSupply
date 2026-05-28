@@ -1,0 +1,54 @@
+.borda {
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
+}
+
+.amplia {
+  transition: 0.3s ease;
+}
+
+.amplia:hover {
+  transform: translateY(-8px);
+  border: 1px solid rgba(255, 136, 0, 0.6) !important;
+  box-shadow:
+    0 0 15px rgba(255, 136, 0, 0.25),
+    0 0 30px rgba(192, 1, 42, 0.15);
+}
+
+.corbtn {
+  transition: 0.3s ease;
+}
+
+.corbtn:hover {
+  background: linear-gradient(
+    to right,
+     #b30127, #ff8411
+  ) !important;
+  box-shadow:
+    0 0 12px rgba(255, 136, 0, 0.555),
+    0 0 20px rgba(212, 1, 47, 0.35);
+}
+
+.paginacao-btn {
+  background-color: #000 !important;
+  color: white !important;
+  border: 1px solid white !important;
+  transition: 0.3s;
+}
+
+.paginacao-btn:hover {
+  background: linear-gradient(to right, #940533, #ff8800) !important;
+  border-color: transparent !important;
+  color: white !important;
+}
+
+.paginacao-btn-active {
+  background: linear-gradient(to right, #c0012a, #ff8800) !important;
+  color: white !important;
+  border: 1px solid white !important;
+}
+
+.tam {
+  font-size: 12px;
+}
+

@@ -6,7 +6,7 @@ const router = express.Router();
 
 // Rotas de usuários (pública)
 
-router.get('/:id_user', authMiddleware, AuthController.buscarUsuarioPorId);
+router.get('/:id_user', AuthController.buscarUsuarioPorId);
 
 // Rotas de usuários (selfCheck)
 
