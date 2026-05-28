@@ -105,9 +105,9 @@ export default function Pedidos() {
               background: `
                 linear-gradient(
                   180deg,
-                  rgba(255,179,0,.88),
-                  rgba(255,136,0,.45),
-                  rgba(192,1,42,.65)
+                 rgba(0, 0, 0, 0.88),
+                  rgba(255, 17, 0, 0.88),
+                  rgba(156, 0, 34, 0.65)
                 )
               `,
               borderRight:

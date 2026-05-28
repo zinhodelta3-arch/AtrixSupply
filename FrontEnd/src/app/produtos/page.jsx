@@ -18,6 +18,7 @@ export default function Produtos() {
       id: 1,
       nome: "Motor Industrial X200",
       descricao: "Motor de alta performance para uso industrial.",
+      preco: "R$ 2.499,90",
       imagem:
         "https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcTbNGoTPkp0FCEaso75eZN-6C_qby-QJ1j8sZOGOhZ_t5GPTYUMVl0nXcCWIekiXL8hhUn-OQl6uXo3jHvZltf-aDgO7q2ekpnkGKbg_CRcDromkmvxgOsj1Q",
     },
@@ -26,6 +27,7 @@ export default function Produtos() {
       id: 2,
       nome: "Rolamento Premium",
       descricao: "Rolamento resistente para máquinas pesadas.",
+      preco: "R$ 899,90",
       imagem:
         "https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcTbNGoTPkp0FCEaso75eZN-6C_qby-QJ1j8sZOGOhZ_t5GPTYUMVl0nXcCWIekiXL8hhUn-OQl6uXo3jHvZltf-aDgO7q2ekpnkGKbg_CRcDromkmvxgOsj1Q",
     },
@@ -34,6 +36,7 @@ export default function Produtos() {
       id: 3,
       nome: "Painel Elétrico",
       descricao: "Painel moderno para automação industrial.",
+      preco: "R$ 3.199,90",
       imagem:
         "https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcTbNGoTPkp0FCEaso75eZN-6C_qby-QJ1j8sZOGOhZ_t5GPTYUMVl0nXcCWIekiXL8hhUn-OQl6uXo3jHvZltf-aDgO7q2ekpnkGKbg_CRcDromkmvxgOsj1Q",
     },
@@ -42,6 +45,7 @@ export default function Produtos() {
       id: 4,
       nome: "Engrenagem Reforçada",
       descricao: "Engrenagem reforçada para equipamentos industriais.",
+      preco: "R$ 1.249,90",
       imagem:
         "https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcTbNGoTPkp0FCEaso75eZN-6C_qby-QJ1j8sZOGOhZ_t5GPTYUMVl0nXcCWIekiXL8hhUn-OQl6uXo3jHvZltf-aDgO7q2ekpnkGKbg_CRcDromkmvxgOsj1Q",
     },
@@ -50,6 +54,7 @@ export default function Produtos() {
       id: 5,
       nome: "Compressor Turbo",
       descricao: "Compressor potente para ambientes industriais.",
+      preco: "R$ 4.899,90",
       imagem:
         "https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcTbNGoTPkp0FCEaso75eZN-6C_qby-QJ1j8sZOGOhZ_t5GPTYUMVl0nXcCWIekiXL8hhUn-OQl6uXo3jHvZltf-aDgO7q2ekpnkGKbg_CRcDromkmvxgOsj1Q",
     },
@@ -58,6 +63,7 @@ export default function Produtos() {
       id: 6,
       nome: "Bomba Hidráulica",
       descricao: "Alta eficiência para sistemas hidráulicos.",
+      preco: "R$ 2.199,90",
       imagem:
         "https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcTbNGoTPkp0FCEaso75eZN-6C_qby-QJ1j8sZOGOhZ_t5GPTYUMVl0nXcCWIekiXL8hhUn-OQl6uXo3jHvZltf-aDgO7q2ekpnkGKbg_CRcDromkmvxgOsj1Q",
     },
@@ -67,9 +73,11 @@ export default function Produtos() {
 
   const produtosPorPagina = 12;
 
-  const ultimoProduto = paginaAtual * produtosPorPagina;
+  const ultimoProduto =
+    paginaAtual * produtosPorPagina;
 
-  const primeiroProduto = ultimoProduto - produtosPorPagina;
+  const primeiroProduto =
+    ultimoProduto - produtosPorPagina;
 
   const produtosAtuais = produtos.slice(
     primeiroProduto,
@@ -87,6 +95,7 @@ export default function Produtos() {
         minHeight: "100vh",
       }}
     >
+      {/* HERO */}
       <section
         className="py-5 text-white"
         style={{
@@ -100,15 +109,20 @@ export default function Produtos() {
           </h1>
 
           <p className="lead mt-3 col-lg-8">
-            Encontre peças industriais, componentes técnicos e soluções
-            específicas para sua empresa com rapidez e segurança.
+            Encontre peças industriais,
+            componentes técnicos e soluções
+            específicas para sua empresa com
+            rapidez e segurança.
           </p>
         </div>
       </section>
 
+      {/* PRODUTOS */}
       <section className="py-5">
         <div className="container-fluid px-4">
           <div className="row">
+
+            {/* FILTROS */}
             <div className="col-lg-3 mb-4">
               <div
                 className="p-4 rounded-4 shadow-lg position-sticky"
@@ -134,7 +148,8 @@ export default function Produtos() {
                     placeholder="Digite o nome..."
                     style={{
                       background: "#1c1c1c",
-                      border: "1px solid #3b3b3b",
+                      border:
+                        "1px solid #3b3b3b",
                       color: "#fff",
                     }}
                   />
@@ -149,7 +164,8 @@ export default function Produtos() {
                     className="form-select"
                     style={{
                       background: "#1c1c1c",
-                      border: "1px solid #3b3b3b",
+                      border:
+                        "1px solid #3b3b3b",
                       color: "#fff",
                     }}
                   >
@@ -206,8 +222,10 @@ export default function Produtos() {
               </div>
             </div>
 
+            {/* GRID PRODUTOS */}
             <div className="col-lg-9">
               <div className="row g-4">
+
                 {produtosAtuais.map((produto) => (
                   <div
                     className="col-md-6 col-lg-3"
@@ -246,9 +264,18 @@ export default function Produtos() {
                           {produto.descricao}
                         </p>
 
+                        <p
+                          className="card-text mt-2 fw-bold"
+                          style={{
+                            color: "#5ba100dc",
+                          }}
+                        >
+                          {produto.preco}
+                        </p>
+
                         <div className="mt-auto">
                           <Link
-                            href={`/compras/`}
+                            href="/compras"
                             className="corbtn btn w-100 text-white fw-semibold"
                             style={{
                               background:
@@ -263,10 +290,13 @@ export default function Produtos() {
                     </div>
                   </div>
                 ))}
+
               </div>
 
+              {/* PAGINAÇÃO */}
               <nav className="mt-5">
                 <ul className="pagination justify-content-center">
+
                   <li
                     className={`page-item ${
                       paginaAtual === 1
@@ -277,7 +307,9 @@ export default function Produtos() {
                     <button
                       className="page-link paginacao-btn"
                       onClick={() =>
-                        setPaginaAtual(paginaAtual - 1)
+                        setPaginaAtual(
+                          paginaAtual - 1
+                        )
                       }
                     >
                       Anterior
@@ -289,19 +321,23 @@ export default function Produtos() {
                       <li
                         key={index}
                         className={`page-item ${
-                          paginaAtual === index + 1
+                          paginaAtual ===
+                          index + 1
                             ? "active"
                             : ""
                         }`}
                       >
                         <button
                           className={
-                            paginaAtual === index + 1
+                            paginaAtual ===
+                            index + 1
                               ? "page-link paginacao-btn-active"
                               : "page-link paginacao-btn"
                           }
                           onClick={() =>
-                            setPaginaAtual(index + 1)
+                            setPaginaAtual(
+                              index + 1
+                            )
                           }
                         >
                           {index + 1}
@@ -312,7 +348,8 @@ export default function Produtos() {
 
                   <li
                     className={`page-item ${
-                      paginaAtual === totalPaginas
+                      paginaAtual ===
+                      totalPaginas
                         ? "disabled"
                         : ""
                     }`}
@@ -320,12 +357,15 @@ export default function Produtos() {
                     <button
                       className="page-link paginacao-btn"
                       onClick={() =>
-                        setPaginaAtual(paginaAtual + 1)
+                        setPaginaAtual(
+                          paginaAtual + 1
+                        )
                       }
                     >
                       Próximo
                     </button>
                   </li>
+
                 </ul>
               </nav>
             </div>

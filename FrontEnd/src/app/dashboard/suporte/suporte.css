@@ -1,0 +1,18 @@
+.paginacao-btn {
+  background-color: #000 !important;
+  color: white !important;
+  border: 1px solid white !important;
+  transition: 0.3s;
+}
+
+.paginacao-btn:hover {
+  background: linear-gradient(to right, #940533, #ff8800) !important;
+  border-color: transparent !important;
+  color: white !important;
+}
+
+.paginacao-btn-active {
+  background: linear-gradient(to right, #c0012a, #ff8800) !important;
+  color: white !important;
+  border: 1px solid white !important;
+}
