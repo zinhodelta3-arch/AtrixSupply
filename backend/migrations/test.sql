@@ -26,23 +26,23 @@ CREATE TABLE produtos (
 
 CREATE TABLE logistica (
     id_logistica INT AUTO_INCREMENT PRIMARY KEY,
-    id_dono INT NOT NULL ON DELETE CASCADE,
+    id_dono INT NOT NULL,
     nome_logistica VARCHAR(150) NOT NULL,
     veiculo ENUM(
-        'caminhão', 'van', 'moto', 'carro', 'bicicleta', 'não selecionado') NOT NULL DEFAULT 'não selecionado',
+        'caminhao', 'van', 'moto', 'carro', 'bicicleta', 'nao_selecionado') NOT NULL DEFAULT 'nao_selecionado',
 	disponibilidade ENUM(
         'disponivel', 'ocupado', 'manutencao') NOT NULL DEFAULT 'disponivel',
     destino VARCHAR(255) NULL,
     
 	CONSTRAINT fk_logistica_dono
 	FOREIGN KEY (id_dono)
-	REFERENCES usuarios(id_user)
+	REFERENCES usuarios(id_user) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE TABLE encomendas (
     id_encomenda INT AUTO_INCREMENT PRIMARY KEY,
-    id_user INT NOT NULL ON DELETE CASCADE,
-    id_fornecedor INT NULL ON DELETE CASCADE,
+    id_user INT NOT NULL,
+    id_fornecedor INT NULL,
     pecas VARCHAR(255) NOT NULL,
     descricao TEXT,
     status ENUM(
@@ -50,24 +50,24 @@ CREATE TABLE encomendas (
     orcamento DECIMAL(10,2) NULL,
     data_com DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     data_entrega DATE NULL,
-    id_logistica INT NULL ON DELETE CASCADE,
+    id_logistica INT NULL,
 
     CONSTRAINT fk_encomenda_usuario
         FOREIGN KEY (id_user)
-        REFERENCES usuarios(id_user),
+        REFERENCES usuarios(id_user) ON UPDATE CASCADE ON DELETE CASCADE,
 
     CONSTRAINT fk_encomenda_fornecedor
         FOREIGN KEY (id_fornecedor)
-        REFERENCES usuarios(id_user),
+        REFERENCES usuarios(id_user) ON UPDATE CASCADE ON DELETE CASCADE,
 
     CONSTRAINT fk_encomenda_logistica
         FOREIGN KEY (id_logistica)
-        REFERENCES logistica(id_logistica)
+        REFERENCES logistica(id_logistica) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE TABLE orcamentos (
     id_orcamento INT AUTO_INCREMENT PRIMARY KEY,
-    id_encomenda INT NOT NULL ON DELETE CASCADE
+    id_encomenda INT NOT NULL,
     nome_orcamento VARCHAR(255) NOT NULL,
     tipo_orcamento VARCHAR(255) NOT NULL,
     estimacao DECIMAL(10,2) NOT NULL,
@@ -75,13 +75,13 @@ CREATE TABLE orcamentos (
 
     CONSTRAINT fk_orcamento_encomenda
         FOREIGN KEY (id_encomenda)
-        REFERENCES encomendas(id_encomenda)
+        REFERENCES encomendas(id_encomenda) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE TABLE pedidos (
     id_pedido INT AUTO_INCREMENT PRIMARY KEY,
-    id_user INT NOT NULL ON DELETE CASCADE,
-    id_produto INT NOT NULL ON DELETE CASCADE,
+    id_user INT NOT NULL,
+    id_produto INT NOT NULL,
     data_pedido DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     data_entrega DATE NULL,
 
@@ -89,11 +89,11 @@ CREATE TABLE pedidos (
 
     CONSTRAINT fk_pedido_user
         FOREIGN KEY (id_user)
-        REFERENCES usuarios(id_user),
+        REFERENCES usuarios(id_user) ON UPDATE CASCADE ON DELETE CASCADE,
 
     CONSTRAINT fk_pedido_produto
         FOREIGN KEY (id_produto)
-        REFERENCES produtos(id_produto)
+        REFERENCES produtos(id_produto) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS logs (
