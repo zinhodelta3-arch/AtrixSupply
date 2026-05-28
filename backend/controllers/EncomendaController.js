@@ -233,7 +233,7 @@ class EncomendaController {
                 id_logistica: null,
                 pecas: pecas.trim(),
                 descricao: descricao.trim(),
-                status: null,
+                status: 'pendente',
                 orcamento: null,
                 data_com: data_atual,
                 data_entrega: null
@@ -260,7 +260,7 @@ class EncomendaController {
         }
     }
 
-    // PUT /pedido/:id - Atualizar pedido (user)
+    // PUT /encomendas/user/:id - Atualizar pedido (user)
     // id_user, id_logistica, pecas, descricao, status, orcamento, data_com, data_entrega
     static async atualizar(req, res) {
         try {
@@ -269,7 +269,7 @@ class EncomendaController {
 
             // validação do status
 
-            if (!status || status.trim() !== 'em_andamento'){
+            if (!status || status.trim() !== 'pendente'){
                 return res.status(400).json({
                     sucesso: false, 
                     erro: 'Edição Inválida',
@@ -291,8 +291,8 @@ class EncomendaController {
             if (!encomendaExistente) {
                 return res.status(404).json({
                     sucesso: false,
-                    erro: 'Produto não encontrado',
-                    mensagem: `Pedido com ID ${id_encomenda} não foi encontrado`
+                    erro: 'Encomenda não encontrado',
+                    mensagem: `Encomenda com ID ${id_encomenda} não foi encontrada`
                 });
             }
 
@@ -329,7 +329,7 @@ class EncomendaController {
             }
 
             // Verificar se há erros
-            if (Object.keys(erros).length === 0) {
+            if (Object.keys(erros).length > 0) {
                 return res.status(400).json({
                     sucesso: false,
                     erro: erros,
@@ -353,22 +353,22 @@ class EncomendaController {
 
             res.status(200).json({
                 sucesso: true,
-                mensagem: 'Produto atualizado com sucesso',
+                mensagem: 'Encomenda atualizada com sucesso',
                 dados: {
                     linhasAfetadas: resultado.affectedRows || 1
                 }
             });
         } catch (error) {
-            console.error('Erro ao atualizar produto:', error);
+            console.error('Erro ao atualizar encomenda:', error);
             res.status(500).json({
                 sucesso: false,
                 erro: 'Erro interno do servidor',
-                mensagem: 'Não foi possível atualizar o produto'
+                mensagem: 'Não foi possível atualizar a encomenda'
             });
         }
     }
 
-    // PUT /pedido/:id - Atualizar pedido (user)
+    // PUT /pedido/processo/:id - Atualizar pedido (processo)
     // id_user, id_logistica, pecas, descricao, status, orcamento, data_com, data_entrega
     static async atualizarCheck(req, res) {
         try {
@@ -428,14 +428,14 @@ class EncomendaController {
             //validar orçamento
 
             if (orcamento !== undefined) {
-                if (isNaN(orcamento) || estoque < 0) {
+                if (isNaN(orcamento) || orcamento < 0) {
                     return res.status(400).json({
                         sucesso: false,
                         erro: 'Orçamento inválido',
                         mensagem: 'O orçamento deve ser um número maior ou igual que zero'
                     });
                 }
-                dadosAtualizacao.estoque = parseInt(estoque);
+                dadosAtualizacao.orcamento = parseInt(orcamento);
             }
 
             //validar data de entrega

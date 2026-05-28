@@ -6,12 +6,15 @@ const router = express.Router();
 
 // Rotas protegidas GET
 router.get('/', authMiddleware, EncomendaController.listarTodos);
-router.get('/nome/:pecas', authMiddleware, EncomendaController.buscarPorNome);
-router.get('/:id_encomenda', authMiddleware, EncomendaController.buscarPorId);
+router.get('/pecas/:pecas', authMiddleware, EncomendaController.buscarPorNome);
+router.get('/:id_encomenda', authMiddleware, EncomendaController.buscarPorId); 
 
-// Rotas protegidas POST, PUT & DELETE
+// Rotas protegidas POST, PUT, PATCH & DELETE
 router.post('/', authMiddleware, EncomendaController.criar);
-router.put('/:id_encomenda', authMiddleware, EncomendaController.atualizar);
+router.put('/user/:id_encomenda', authMiddleware, EncomendaController.atualizar);
+router.put('/processo/:id_encomenda', authMiddleware, EncomendaController.atualizarCheck);
+
+// Rota para atualizar dados de orçamento, logística e data de entrega
 router.delete('/:id_encomenda', authMiddleware, EncomendaController.excluir);
 
 // Rotas OPTIONS para CORS (preflight requests)
@@ -22,9 +25,16 @@ router.options('/', (req, res) => {
     res.status(200).send();
 });
 
-router.options('/nome/:pecas', (req, res) => {
+router.options('/pecas/:pecas', (req, res) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.status(200).send();
+});
+
+router.options('/check/:id_encomenda', (req, res) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'PATCH, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     res.status(200).send();
 });
@@ -37,3 +47,4 @@ router.options('/:id_encomenda', (req, res) => {
 });
 
 export default router;
+

@@ -48,9 +48,9 @@ class EncomendaModel {
     // Criar nova encomenda
     static async criar(dadosEncomenda) {
         try {
-            return await create('pedidos', dadosEncomenda);
+            return await create('encomendas', dadosEncomenda);
         } catch (error) {
-            console.error('Erro ao criar produto:', error);
+            console.error('Erro ao criar encomenda:', error);
             throw error;
         }
     }
@@ -58,7 +58,7 @@ class EncomendaModel {
     // Atualizar produto
     static async atualizar(id_encomenda, dadosEncomenda) {
         try {
-            return await update('pedidos', dadosEncomenda, `id_encomenda = ${id_encomenda}`);
+            return await update('encomendas', dadosEncomenda, `id_encomenda = ${id_encomenda}`);
         } catch (error) {
             console.error('Erro ao atualizar produto:', error);
             throw error;
@@ -82,7 +82,7 @@ class EncomendaModel {
 
             const connection = await getConnection();
             try {
-                const sql = 'SELECT * FROM encomendas JOIN WHERE pecas LIKE ?;';
+                const sql = 'SELECT * FROM encomendas WHERE pecas LIKE ?;';
 
                 const nome = `%${pecas}%`;
 

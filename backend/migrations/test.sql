@@ -43,13 +43,13 @@ CREATE TABLE encomendas (
     id_encomenda INT AUTO_INCREMENT PRIMARY KEY,
     id_user INT NOT NULL,
     id_fornecedor INT NULL,
-    pecas INT NOT NULL,
+    pecas VARCHAR(255) NOT NULL,
     descricao TEXT,
     status ENUM(
         'pendente', 'em_andamento', 'finalizado', 'cancelado') NOT NULL DEFAULT 'pendente',
     orcamento DECIMAL(10,2) NULL,
-    data_com DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    data_entrega DATETIME NULL,
+    data_com DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    data_entrega DATE NULL,
     id_logistica INT NULL,
 
     CONSTRAINT fk_encomenda_usuario
@@ -85,7 +85,7 @@ CREATE TABLE pedidos (
     data_pedido DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     data_entrega DATE NULL,
 
-    status ENUM('pendente', 'processando', 'enviado', 'entregue', 'cancelado') NOT NULL DEFAULT 'pendente',
+    status ENUM('carrinho', 'pendente', 'processando', 'enviado', 'entregue', 'cancelado') NOT NULL DEFAULT 'pendente',
 
     CONSTRAINT fk_pedido_user
         FOREIGN KEY (id_user)
@@ -386,12 +386,12 @@ INSERT INTO encomendas (
 ) VALUES (
     2,
     1,
-    50,
+    'Motor GW-3300T Wired Conections Yoga Limited',
     'Encomenda de motores elétricos industriais',
-    'em_andamento',
-    125000.00,
-    '2026-05-10 09:30:00',
-    '2026-05-25 18:00:00',
+    'pendente',
+    null,
+    '2026-05-10',
+    '2026-05-25',
     1
 );
 
