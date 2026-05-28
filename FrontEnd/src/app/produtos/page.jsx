@@ -17,6 +17,7 @@ export default function Produtos() {
       nome: "Nome do produto",
       descricao: "Descrição do produto",
       preco: "R$",
+      categoria: "Categoria do produto",
       imagem: "Imagem do produto",
     },
 
@@ -53,7 +54,7 @@ const totalPaginas = Math.ceil(
         className="py-5 text-white"
         style={{
           background:
-            "linear-gradient(135deg, #940533, #c0012a, #f5061d)",
+            "linear-gradient(to right, #c0012a, #ff8800)",
         }}
       >
         <div className="container py-4">
@@ -184,9 +185,10 @@ const totalPaginas = Math.ceil(
                         border: "1px solid rgba(199, 68, 68, 0.14)",
                       }}
                     >
+                      <link rel="stylesheet" href="" />
 
                       <img
-                        src="https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcTbNGoTPkp0FCEaso75eZN-6C_qby-QJ1j8sZOGOhZ_t5GPTYUMVl0nXcCWIekiXL8hhUn-OQl6uXo3jHvZltf-aDgO7q2ekpnkGKbg_CRcDromkmvxgOsj1Q"
+                        src="https://static.kiaga.com.br/public/kiaga/imagens/produtos/prego-polido-com-cabeca-conica-corpo-liso-e-ponta-tipo-diamante-pequeno-72314.jpg"
                         className="card-img-top"
                         alt={produto.nome}
                         style={{
@@ -194,7 +196,6 @@ const totalPaginas = Math.ceil(
                           objectFit: "cover",
                         }}
                       />
-
 
                       <div className="card-body d-flex flex-column">
                         <h5 className="card-title text-white fw-bold">
@@ -219,18 +220,7 @@ const totalPaginas = Math.ceil(
                           {produto.preco}
                         </p>
 
-                        <div className="mt-auto">
-                          <button
-                            className="corbtn btn w-100 text-white fw-semibold"
-                            style={{
-                              background:
-                                "linear-gradient(to right, #940533, #ff8800)",
-                              border: "none",
-                            }}
-                          >
-                            Ver produto
-                          </button>
-                        </div>
+                        
                       </div>
                     </div>
                   </div>
