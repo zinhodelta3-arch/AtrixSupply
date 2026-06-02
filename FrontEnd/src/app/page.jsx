@@ -194,7 +194,7 @@ export default function Home() {
         <section
           className="py-5 position-relative"
           style={{
-            background: "linear-gradient(to right, #ff0000, #ff7a00)"
+            background: "linear-gradient(to right, #c0012a, #ff8800)"
           }}
         >
           <div className="container position-relative">
@@ -287,6 +287,11 @@ export default function Home() {
           </div>
         </section>
       </main>
+      <br/>
+      <br/>
+      <br/>
+      <br/>
+      <br/>
     </>
   );
 }

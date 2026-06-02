@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
+import "./pedidos.css";
 
 import Image from "next/image";
 
@@ -20,7 +21,7 @@ export default function Pedidos() {
       status: "Em transporte",
       data: "19 Maio 2026",
       preco: "R$ 12.499,90",
-      cor: "#ff8800",
+      cor: "#00c3ff",
       imagem:
         "https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcTbNGoTPkp0FCEaso75eZN-6C_qby-QJ1j8sZOGOhZ_t5GPTYUMVl0nXcCWIekiXL8hhUn-OQl6uXo3jHvZltf-aDgO7q2ekpnkGKbg_CRcDromkmvxgOsj1Q",
     },
@@ -33,7 +34,7 @@ export default function Pedidos() {
       preco: "R$ 4.299,90",
       cor: "#ffc107",
       imagem:
-        "https://encrypted-tbn1.gstatic.com/shopping?q=tbn:ANd9GcSEFj5Dx7K1c8K8W1xM3hWQ0g4yB9s6n4xg",
+        "https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcTbNGoTPkp0FCEaso75eZN-6C_qby-QJ1j8sZOGOhZ_t5GPTYUMVl0nXcCWIekiXL8hhUn-OQl6uXo3jHvZltf-aDgO7q2ekpnkGKbg_CRcDromkmvxgOsj1Q",
     },
 
     {
@@ -44,7 +45,7 @@ export default function Pedidos() {
       preco: "R$ 899,90",
       cor: "#28c76f",
       imagem:
-        "https://encrypted-tbn0.gstatic.com/shopping?q=tbn:ANd9GcQ8r5h5yV7W4x3g7K8c2",
+        "https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcTbNGoTPkp0FCEaso75eZN-6C_qby-QJ1j8sZOGOhZ_t5GPTYUMVl0nXcCWIekiXL8hhUn-OQl6uXo3jHvZltf-aDgO7q2ekpnkGKbg_CRcDromkmvxgOsj1Q",
     },
 
     {
@@ -55,24 +56,31 @@ export default function Pedidos() {
       preco: "R$ 2.199,90",
       cor: "#ff8800",
       imagem:
-        "https://encrypted-tbn1.gstatic.com/shopping?q=tbn:ANd9GcQf1P7",
-    },
-
-    {
-      id: "#94825",
-      produto: "SSD NVME 2TB",
-      status: "Entregue",
-      data: "02 Maio 2026",
-      preco: "R$ 1.049,90",
-      cor: "#28c76f",
-      imagem:
-        "https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcR8",
-    },
+        "https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcTbNGoTPkp0FCEaso75eZN-6C_qby-QJ1j8sZOGOhZ_t5GPTYUMVl0nXcCWIekiXL8hhUn-OQl6uXo3jHvZltf-aDgO7q2ekpnkGKbg_CRcDromkmvxgOsj1Q",
+    },  
   ]);
+
+  const [pedidoParaExcluir, setPedidoParaExcluir] =
+  useState(null);
+
+  const [buscaProduto, setBuscaProduto] = useState("");
+  const [statusSelecionado, setStatusSelecionado] = useState("Todos");
+
+  const pedidosFiltrados = pedidos.filter((pedido) => {
+  const nomeMatch = pedido.produto
+    .toLowerCase()
+    .includes(buscaProduto.toLowerCase());
+
+  const statusMatch =
+    statusSelecionado === "Todos" ||
+    pedido.status === statusSelecionado;
+
+  return nomeMatch && statusMatch;
+});
 
   const [paginaAtual, setPaginaAtual] = useState(1);
 
-  const pedidosPorPagina = 4;
+  const pedidosPorPagina = 6;
 
   const ultimoPedido =
     paginaAtual * pedidosPorPagina;
@@ -80,14 +88,14 @@ export default function Pedidos() {
   const primeiroPedido =
     ultimoPedido - pedidosPorPagina;
 
-  const pedidosAtuais = pedidos.slice(
-    primeiroPedido,
-    ultimoPedido
-  );
+  const pedidosAtuais = pedidosFiltrados.slice(
+  primeiroPedido,
+  ultimoPedido
+);
 
-  const totalPaginas = Math.ceil(
-    pedidos.length / pedidosPorPagina
-  );
+const totalPaginas = Math.ceil(
+  pedidosFiltrados.length / pedidosPorPagina
+);
 
   function deletarPedido(id) {
     setPedidos((prev) =>
@@ -173,7 +181,7 @@ export default function Pedidos() {
                       color: "#cfcfcf",
                     }}
                   >
-                    Cliente Premium
+                    Cliente
                   </p>
                 </div>
 
@@ -236,25 +244,53 @@ export default function Pedidos() {
                     ))}
                   </div>
                 </div>
+                <br/>
+                <br/>
 
                 {/* BUSCA */}
-                <div className="mt-4">
-                  <label className="form-label text-white">
-                    Buscar pedido
-                  </label>
+                <div className="mb-3">
+  <label className="form-label text-white">
+    Buscar produto
+  </label>
 
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Digite o pedido..."
-                    style={{
-                      background: "#1c1c1c",
-                      border:
-                        "1px solid #3b3b3b",
-                      color: "#fff",
-                    }}
-                  />
-                </div>
+  <input
+    type="text"
+    className="form-control"
+    placeholder="Digite o nome do produto..."
+    value={buscaProduto}
+    onChange={(e) => setBuscaProduto(e.target.value)}
+    style={{
+      background: "#151518",
+      border: "1px solid rgba(255,255,255,0.06)",
+      color: "#fff",
+    }}
+  />
+</div>
+
+<div className="mb-4">
+  <label className="form-label text-white">
+    Status do pedido
+  </label>
+
+  <select
+    className="form-select"
+    value={statusSelecionado}
+    onChange={(e) =>
+      setStatusSelecionado(e.target.value)
+    }
+    style={{
+      background: "#151518",
+      border: "1px solid rgba(255,255,255,0.06)",
+      color: "#fff",
+    }}
+  >
+    <option>Todos</option>
+    <option>Processando</option>
+    <option>Em separação</option>
+    <option>Em transporte</option>
+    <option>Entregue</option>
+  </select>
+</div>
 
                 {/* BOTÃO */}
                 <button
@@ -294,14 +330,15 @@ export default function Pedidos() {
                         {/* IMAGEM */}
                         <div className="col-md-3">
                           <img
-                            src={pedido.imagem}
-                            alt={pedido.produto}
-                            className="w-100 h-100"
-                            style={{
-                              objectFit: "cover",
-                              minHeight: "250px",
-                            }}
-                          />
+  src={pedido.imagem}
+  alt={pedido.produto}
+  className="w-100"
+  style={{
+    objectFit: "cover",
+    height: "320px",
+    borderRadius: "12px",
+  }}
+/>
                         </div>
 
                         {/* CONTEÚDO */}
@@ -338,25 +375,21 @@ export default function Pedidos() {
 
                               {/* DELETE */}
                               <button
-                                onClick={() =>
-                                  deletarPedido(
-                                    pedido.id
-                                  )
-                                }
-                                className="btn"
-                                style={{
-                                  background:
-                                    "rgba(255,255,255,.05)",
-                                  border:
-                                    "1px solid rgba(255,255,255,.08)",
-                                  color: "#ff5a5a",
-                                  width: "45px",
-                                  height: "45px",
-                                  borderRadius: "12px",
-                                }}
-                              >
-                                <i className="bi bi-trash-fill"></i>
-                              </button>
+  className="btn"
+  data-bs-toggle="modal"
+  data-bs-target="#modalExcluir"
+  onClick={() => setPedidoParaExcluir(pedido)}
+  style={{
+    background: "rgba(255,255,255,.05)",
+    border: "1px solid rgba(255,255,255,.08)",
+    color: "#ff5a5a",
+    width: "45px",
+    height: "45px",
+    borderRadius: "12px",
+  }}
+>
+  <i className="bi bi-trash-fill"></i>
+</button>
                             </div>
 
                             {/* INFO */}
@@ -527,7 +560,7 @@ export default function Pedidos() {
                 ))}
 
                 {/* SEM PEDIDOS */}
-                {pedidos.length === 0 && (
+                {pedidosFiltrados.length === 0 && (
                   <div className="col-12">
                     <div
                       className="d-flex flex-column justify-content-center align-items-center"
@@ -564,110 +597,143 @@ export default function Pedidos() {
                             "rgba(255,255,255,.55)",
                         }}
                       >
-                        Todos os pedidos foram
-                        removidos.
+                        Tente pesquisar por outro nome.
                       </p>
                     </div>
                   </div>
                 )}
 
                 {/* PAGINAÇÃO */}
-                <nav className="mt-4">
-                  <ul className="pagination justify-content-center">
-                    <li
-                      className={`page-item ${
-                        paginaAtual === 1
-                          ? "disabled"
-                          : ""
-                      }`}
-                    >
-                      <button
-                        className="page-link"
-                        onClick={() =>
-                          setPaginaAtual(
-                            paginaAtual - 1
-                          )
-                        }
-                        style={{
-                          background: "#000",
-                          color: "white",
-                          border:
-                            "1px solid white",
-                        }}
-                      >
-                        Anterior
-                      </button>
-                    </li>
+                <nav className="mt-5">
+  <ul className="pagination justify-content-center">
 
-                    {[...Array(totalPaginas)].map(
-                      (_, index) => (
-                        <li
-                          key={index}
-                          className={`page-item ${
-                            paginaAtual ===
-                            index + 1
-                              ? "active"
-                              : ""
-                          }`}
-                        >
-                          <button
-                            onClick={() =>
-                              setPaginaAtual(
-                                index + 1
-                              )
-                            }
-                            className="page-link"
-                            style={{
-                              background:
-                                paginaAtual ===
-                                index + 1
-                                  ? "linear-gradient(to right, #c0012a, #ff8800)"
-                                  : "#000",
+    <li className={`page-item ${paginaAtual === 1 ? "disabled" : ""}`}>
+      <button
+        className="page-link paginacao-btn"
+        onClick={() => setPaginaAtual(paginaAtual - 1)}
+      >
+        Anterior
+      </button>
+    </li>
 
-                              color: "white",
+    {[...Array(totalPaginas)].map((_, index) => (
+      <li
+        key={index}
+        className={`page-item ${
+          paginaAtual === index + 1 ? "active" : ""
+        }`}
+      >
+        <button
+          className={
+            paginaAtual === index + 1
+              ? "page-link paginacao-btn-active"
+              : "page-link paginacao-btn"
+          }
+          onClick={() => setPaginaAtual(index + 1)}
+        >
+          {index + 1}
+        </button>
+      </li>
+    ))}
 
-                              border:
-                                "1px solid white",
-                            }}
-                          >
-                            {index + 1}
-                          </button>
-                        </li>
-                      )
-                    )}
+    <li
+      className={`page-item ${
+        paginaAtual === totalPaginas ? "disabled" : ""
+      }`}
+    >
+      <button
+        className="page-link paginacao-btn"
+        onClick={() => setPaginaAtual(paginaAtual + 1)}
+      >
+        Próximo
+      </button>
+    </li>
 
-                    <li
-                      className={`page-item ${
-                        paginaAtual ===
-                        totalPaginas
-                          ? "disabled"
-                          : ""
-                      }`}
-                    >
-                      <button
-                        className="page-link"
-                        onClick={() =>
-                          setPaginaAtual(
-                            paginaAtual + 1
-                          )
-                        }
-                        style={{
-                          background: "#000",
-                          color: "white",
-                          border:
-                            "1px solid white",
-                        }}
-                      >
-                        Próximo
-                      </button>
-                    </li>
-                  </ul>
-                </nav>
+  </ul>
+</nav>
               </div>
             </div>
           </div>
         </div>
       </section>
+      <div
+  className="modal fade"
+  id="modalExcluir"
+  tabIndex="-1"
+  aria-hidden="true"
+>
+  <div className="modal-dialog modal-dialog-centered">
+    <div
+      className="modal-content border-0"
+      style={{
+        background: "#111",
+        borderRadius: "24px",
+      }}
+    >
+      <div className="modal-body p-4 text-center">
+
+        <i
+          className="bi bi-exclamation-triangle-fill"
+          style={{
+            fontSize: "4rem",
+            color: "#ff8800",
+          }}
+        ></i>
+
+        <h3 className="text-white fw-bold mt-3">
+          Confirmar exclusão
+        </h3>
+
+        <p
+          style={{
+            color: "#cfcfcf",
+          }}
+        >
+          Tem certeza que deseja excluir o pedido:
+          <br />
+
+          <span
+            style={{
+              color: "#fff",
+              fontWeight: "700",
+            }}
+          >
+            {pedidoParaExcluir?.id}
+          </span>
+          ?
+        </p>
+
+        <div className="d-flex gap-3 mt-4">
+
+          <button
+            className="btn btn-outline-light w-50"
+            data-bs-dismiss="modal"
+          >
+            Cancelar
+          </button>
+
+          <button
+            className="btn w-50 text-white"
+            style={{
+              background:
+                "linear-gradient(to right, #c0012a, #ff4d4d)",
+              border: "none",
+            }}
+            data-bs-dismiss="modal"
+            onClick={() =>
+              deletarPedido(
+                pedidoParaExcluir.id
+              )
+            }
+          >
+            Excluir
+          </button>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
     </main>
   );
 }
