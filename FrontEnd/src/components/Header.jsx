@@ -1,16 +1,45 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation"; // Importado usePathname
+import Image from "next/image";
+import { useEffect, useState } from "react";
 
 export default function Header() {
+  const router = useRouter();
+  const pathname = usePathname(); // Ativado para monitorar a troca de páginas
+  
+  const [loading, setLoading] = useState(true);
+  const [usuario, setUsuario] = useState(null); 
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       import("bootstrap/dist/js/bootstrap.bundle.min.js");
     }
-  }, []);
 
-  // TODOS OS PRODUTOS AGORA USAM A IMAGEM "engrenagem.png"
+    try {
+      const usuarioStorage = localStorage.getItem("usuario");
+      if (usuarioStorage) {
+        const userParsed = JSON.parse(usuarioStorage);
+        setUsuario(userParsed);
+      } else {
+        setUsuario(null); 
+      }
+    } catch (error) {
+      console.error("Erro ao ler dados do usuário:", error);
+      setUsuario(null);
+    } finally {
+      setLoading(false); 
+    }
+  }, [pathname]); // <<< Roda o efeito toda vez que a URL/página mudar
+
+  const handleLogout = (e) => {
+    e.preventDefault(); 
+    localStorage.removeItem("usuario");
+    setUsuario(null); 
+    router.push("/login"); 
+  };
+
   const [cartItems, setCartItems] = useState([
     { 
       id: 1, 
@@ -48,6 +77,10 @@ export default function Header() {
 
   const subtotal = cartItems.reduce((acc, item) => acc + (item.price * item.qty), 0);
   const subtotalFormatado = subtotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+  if (loading) {
+    return null;
+  }
 
   return (
     <>
@@ -91,8 +124,23 @@ export default function Header() {
                   <i className="bi bi-person-fill"></i>
                 </div>
                 <div className="profile-dropdown">
-                  <Link href="/login">Entrar</Link>
-                  <Link href="/cadastro">Cadastrar</Link>
+                  {!usuario ? (
+                    <>
+                      <Link href="/login">Entrar</Link>
+                      <Link href="/cadastro">Cadastrar</Link>
+                    </>
+                  ) : (
+                    <>
+                      {/* Exibe o nome do usuário logado se existir */}
+                      {usuario.nome_user && (
+                        <span className="dropdown-user-name" style={{ padding: "10px 15px", display: "block", fontWeight: "bold", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+                          Olá, {usuario.nome_user}
+                        </span>
+                      )}
+                      <Link href="/perfil">Perfil</Link>
+                      <Link onClick={handleLogout} href="#">Logout</Link>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -113,18 +161,28 @@ export default function Header() {
             {/* CENTRO: Links de Navegação */}
             <div className="collapse navbar-collapse order-lg-2" id="navbarNav">
               <ul className="navbar-nav navbar-center gap-lg-4">
+                
                 <li className="nav-item">
                   <Link className="nav-link" href="/produtos">Produtos</Link>
                 </li>
-                <li className="nav-item">
-                  <Link className="nav-link" href="/pedidos">Pedidos</Link>
-                </li>
-                <li className="nav-item">
-                  <Link className="nav-link" href="/encomendas">Encomendas</Link>
-                </li>
-                <li className="nav-item">
-                  <Link className="nav-link" href="/logistica">Logística</Link>
-                </li>
+                
+                {/* Se o usuário estiver logado, exibe as opções restritas */}
+                {usuario && (
+                  <>
+                    <li className="nav-item">
+                      <Link className="nav-link" href="/pedidos">Pedidos</Link>
+                    </li>
+                    <li className="nav-item">
+                      <Link className="nav-link" href="/encomendas">Encomendas</Link>
+                    </li>
+                    <li className="nav-item">
+                      <Link className="nav-link" href="/logistica">Orçamentos</Link>
+                    </li>
+                    <li className="nav-item">
+                      <Link className="nav-link" href="/logistica">Logística</Link>
+                    </li>
+                  </>
+                )}
               </ul>
             </div>
 
@@ -142,8 +200,6 @@ export default function Header() {
         </div>
         
         <div className="offcanvas-body d-flex flex-column justify-content-between">
-          
-          {/* LISTAGEM DE PEDIDOS ROLÁVEL */}
           <div className="cart-items-wrapper">
             {cartItems.length === 0 ? (
               <div className="text-center text-muted mt-5">
@@ -171,7 +227,6 @@ export default function Header() {
             )}
           </div>
 
-          {/* RESUMO E CHECKOUT */}
           <div className="sidebar-premium-footer">
             <div className="d-flex justify-content-between mb-4 align-items-center mt-3">
               <span className="text-muted text-uppercase fw-bold small tracking-label">Subtotal</span>
