@@ -4,61 +4,32 @@ import { useEffect, useState } from "react";
 
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
-import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "./pedidos.css";
 
 import Image from "next/image";
 
 export default function Pedidos() {
+
+  const [pedidos, setPedidos] = useState([]);
+
   useEffect(() => {
     import("bootstrap/dist/js/bootstrap.bundle.min.js");
-  }, []);
+    async function carregarPedidos() {
+      try {
+        const response = await fetch(
+          "http://localhost:3001/api/pedidos"
+        );
 
-  const [pedidos, setPedidos] = useState([
-    {
-      id: "#94821",
-      produto: "RTX 4090 ASUS ROG",
-      status: "Em transporte",
-      data: "19 Maio 2026",
-      preco: "R$ 12.499,90",
-      cor: "#00c3ff",
-      imagem:
-        "https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcTbNGoTPkp0FCEaso75eZN-6C_qby-QJ1j8sZOGOhZ_t5GPTYUMVl0nXcCWIekiXL8hhUn-OQl6uXo3jHvZltf-aDgO7q2ekpnkGKbg_CRcDromkmvxgOsj1Q",
-    },
+        const data = await response.json();
 
-    {
-      id: "#94822",
-      produto: "Ryzen 9 9950X",
-      status: "Processando",
-      data: "17 Maio 2026",
-      preco: "R$ 4.299,90",
-      cor: "#ffc107",
-      imagem:
-        "https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcTbNGoTPkp0FCEaso75eZN-6C_qby-QJ1j8sZOGOhZ_t5GPTYUMVl0nXcCWIekiXL8hhUn-OQl6uXo3jHvZltf-aDgO7q2ekpnkGKbg_CRcDromkmvxgOsj1Q",
-    },
+        setPedidos(Array.isArray(data.dados) ? data.dados : []);
+      } catch (erro) {
+        console.error(erro);
+      }
+    }
 
-    {
-      id: "#94823",
-      produto: "Water Cooler Elite",
-      status: "Entregue",
-      data: "10 Maio 2026",
-      preco: "R$ 899,90",
-      cor: "#28c76f",
-      imagem:
-        "https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcTbNGoTPkp0FCEaso75eZN-6C_qby-QJ1j8sZOGOhZ_t5GPTYUMVl0nXcCWIekiXL8hhUn-OQl6uXo3jHvZltf-aDgO7q2ekpnkGKbg_CRcDromkmvxgOsj1Q",
-    },
-
-    {
-      id: "#94824",
-      produto: "Monitor Gamer 240Hz",
-      status: "Em separação",
-      data: "08 Maio 2026",
-      preco: "R$ 2.199,90",
-      cor: "#ff8800",
-      imagem:
-        "https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcTbNGoTPkp0FCEaso75eZN-6C_qby-QJ1j8sZOGOhZ_t5GPTYUMVl0nXcCWIekiXL8hhUn-OQl6uXo3jHvZltf-aDgO7q2ekpnkGKbg_CRcDromkmvxgOsj1Q",
-    },  
-  ]);
+    carregarPedidos();
+  },  []); 
 
   const [pedidoParaExcluir, setPedidoParaExcluir] =
   useState(null);
