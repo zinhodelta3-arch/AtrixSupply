@@ -1,8 +1,8 @@
 import express from 'express';
 import cors from 'cors';
-import helmet from 'helmet'; //segurança
-import dotenv from 'dotenv'; //desenvolvimento
-import path from 'path'; //ccminho de rotas
+import helmet from 'helmet'; // segurança
+import dotenv from 'dotenv'; // desenvolvimento
+import path from 'path'; // caminho de rotas
 import { fileURLToPath } from 'url';
 
 // Importar rotas
@@ -43,7 +43,7 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-//  Servir arquivos estáticos
+// Servir arquivos estáticos
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Middleware para log de requisições (salva no banco de dados)
@@ -58,7 +58,7 @@ app.use('/api/pedidos', pedidoRotas);
 app.use('/api/encomendas', encomendaRotas);
 app.use('/api/orcamentos', orcamentoRotas);
 
-// Rota raiz
+// Rota raiz com documentação atualizada do ecossistema AtrixSupply
 app.get('/', (req, res) => {
     res.json({
         sucesso: true,
@@ -66,19 +66,35 @@ app.get('/', (req, res) => {
         versao: '0.1.0',
         rotas: {
             autenticacao: '/api/auth',
-            produtos: '/api/produtos'
+            produtos: '/api/produtos',
+            encomendas: '/api/encomendas',
+            pedidos: '/api/pedidos',
+            logistica: '/api/logistica',
+            orcamentos: '/api/orcamentos'
         },
         documentacao: {
-            login: 'POST /api/auth/login',
-            registrar: 'POST /api/auth/registrar',
-            perfil: 'GET /api/auth/perfil',
-            listarProdutos: 'GET /api/produtos',
-            buscarProduto: 'GET /api/produtos/:id',
-            buscarProdutoPorNome: 'GET /api/produtos/nome/:nome',
-            buscarProdutoPorCategoria: 'GET /api/produtos/categoria/:categoria',
-            criarProduto: 'POST /api/produtos',
-            atualizarProduto: 'PUT /api/produtos/:id',
-            excluirProduto: 'DELETE /api/produtos/:id'
+            produtos: {
+                listar: 'GET /api/produtos',
+                buscarPorId: 'GET /api/produtos/:id',
+                criar: 'POST /api/produtos',
+                atualizar: 'PUT /api/produtos/:id',
+                excluir: 'DELETE /api/produtos/:id'
+            },
+            encomendas: {
+                listarTodas: 'GET /api/encomendas',
+                buscarPorId: 'GET /api/encomendas/:id_encomenda',
+                buscarPorPecas: 'GET /api/encomendas/pecas/:pecas',
+                criar: 'POST /api/encomendas',
+                atualizarUsuario: 'PUT /api/encomendas/user/:id_encomenda',
+                triagemCheck: 'PUT /api/encomendas/processo/check/:id_encomenda',
+                conclusaoFornecedor: 'PUT /api/encomendas/processo/apos/:id_encomenda',
+                excluir: 'DELETE /api/encomendas/:id_encomenda'
+            },
+            autenticacao: {
+                login: 'POST /api/auth/login',
+                registrar: 'POST /api/auth/registrar',
+                perfil: 'GET /api/auth/perfil'
+            }
         }
     });
 });
@@ -98,9 +114,8 @@ app.use(errorMiddleware);
 // Iniciar servidor
 app.listen(PORT, () => {
     console.log(`Acesse: http://localhost:${PORT}`);
-    console.log(`API de Produtos - Sistema de Gestão`);
+    console.log(`AtrixSupply API - Sistema de Gestão Ativo`);
     console.log(`Ambiente: ${process.env.NODE_ENV || 'development'}`);
 });
 
 export default app;
-
