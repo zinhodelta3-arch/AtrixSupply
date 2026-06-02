@@ -42,7 +42,7 @@ export default function Dashboard() {
         
         // Verifica se é administrador DEPOIS de pegar os dados
         if (userParsed.tipo !== 'administrador') {
-          router.push('/not-found');
+          router.push('/');
         } else {
           setUsuario(userParsed);
           setLoading(false); // Libera a tela do Dashboard

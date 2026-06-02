@@ -1,65 +1,76 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
-import * as THREE from "three";
+import { useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation"; // ✅ Importado para redirecionamento
+import { useRouter } from "next/navigation";
+
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
 
 export default function Login() {
   const mountRef = useRef(null);
   const router = useRouter();
 
-  // ✅ Estados para os inputs, carregamento e mensagens de erro
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState("");
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    // ... (seu código Three.js aqui)
-  }, []);
+  const lerJsonComSeguranca = async (response) => {
+    try {
+      return await response.json();
+    } catch {
+      return {};
+    }
+  };
 
-  // ✅ Função que gerencia o envio do formulário
   const handleLogin = async (e) => {
-    e.preventDefault(); // Evita o recarregamento da página
+    e.preventDefault();
+
     setErro("");
     setLoading(true);
 
     try {
-      // Substitua pela URL base da sua API
-      const port = process.env.PORT;
-      const apiUrl = `http://localhost:${port}` || "http://localhost:3001";
-      
-      const response = await fetch(`${apiUrl}/api/auth/login`, {
+      const response = await fetch(`${API_URL}/api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, senha }),
+        body: JSON.stringify({
+          email,
+          senha,
+        }),
       });
 
-      const data = await response.json();
+      const data = await lerJsonComSeguranca(response);
 
-      if (response.ok && data.sucesso) {
-        // ✅ Salva o token JWT e os dados do usuário (ajuste conforme a necessidade do seu app)
-        localStorage.setItem("token", data.dados.token);
-        localStorage.setItem("usuario", JSON.stringify(data.dados.usuario));
-        
-        // ✅ Redireciona para a página principal ou dashboard
-        if(localStorage.usuario.tipo === 'administrador'){
-          router.push("/dashboard"); 
-        } else{
+      if (response.ok && (data.sucesso || data.success)) {
+        const token = data.dados?.token;
+        const usuario = data.dados?.usuario;
+
+        if (!token || !usuario) {
+          setErro("Resposta do servidor incompleta. Token ou usuário não recebido.");
+          return;
+        }
+
+        localStorage.setItem("token", token);
+        localStorage.setItem("usuario", JSON.stringify(usuario));
+
+        const tipoUsuario = usuario.tipo?.toLowerCase();
+
+        if (tipoUsuario === "administrador" || tipoUsuario === "admin") {
+          router.push("/dashboard");
+        } else {
           router.push("/");
         }
-        
-      } else {
-        // Mostra a mensagem de erro vinda do backend
-        setErro(data.mensagem || "Erro ao realizar login.");
+
+        return;
       }
+
+      setErro(data.mensagem || data.erro || "Email ou senha inválidos.");
     } catch (error) {
-      console.error("Erro na requisição:", error);
-      setErro("Erro de conexão com o servidor. Tente novamente mais tarde.");
+      console.error("Erro na requisição de login:", error);
+      setErro("Erro de conexão com o servidor. Verifique se o backend está ligado na porta 3001.");
     } finally {
       setLoading(false);
     }
@@ -74,10 +85,15 @@ export default function Login() {
         overflow: "hidden",
       }}
     >
-      {/* Three.js canvas mount */}
-      <div ref={mountRef} style={{ position: "absolute", inset: 0, zIndex: 0 }} />
+      <div
+        ref={mountRef}
+        style={{
+          position: "absolute",
+          inset: 0,
+          zIndex: 0,
+        }}
+      />
 
-      {/* Radial vignette overlay */}
       <div
         style={{
           position: "absolute",
@@ -88,12 +104,14 @@ export default function Login() {
         }}
       />
 
-      {/* Bootstrap container para centralizar o card */}
       <div
         className="d-flex justify-content-center align-items-center"
-        style={{ minHeight: "100vh", position: "relative", zIndex: 2 }}
+        style={{
+          minHeight: "100vh",
+          position: "relative",
+          zIndex: 2,
+        }}
       >
-        {/* Login card */}
         <div
           style={{
             backgroundColor: "rgba(148, 5, 50, 0.4)",
@@ -124,6 +142,7 @@ export default function Login() {
                 }}
               />
             </div>
+
             <h1
               style={{
                 color: "#ffb300",
@@ -136,25 +155,30 @@ export default function Login() {
             </h1>
           </div>
 
-          {/* ✅ Transformado em <form> para suportar o evento onSubmit (Enter no teclado) */}
           <form onSubmit={handleLogin}>
-            
-            {/* Exibição condicional de erro */}
             {erro && (
-              <div className="alert alert-danger p-2 text-center" style={{ fontSize: "14px", borderRadius: "10px" }}>
+              <div
+                className="alert alert-danger p-2 text-center"
+                style={{
+                  fontSize: "14px",
+                  borderRadius: "10px",
+                }}
+              >
                 {erro}
               </div>
             )}
 
             <div className="mb-3">
-              <label className="form-label">Email</label> {/* ✅ Alterado de Usuário para Email */}
+              <label className="form-label">Email</label>
+
               <input
-                type="email" // ✅ Melhorado para validação nativa de email
+                type="email"
                 className="form-control"
                 placeholder="Digite seu email"
-                value={email} // ✅ Vinculado ao estado
-                onChange={(e) => setEmail(e.target.value)} // ✅ Atualiza o estado
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
+                autoComplete="email"
                 style={{
                   borderRadius: "10px",
                   border: "1px solid rgba(245, 6, 29, 0.6)",
@@ -167,13 +191,15 @@ export default function Login() {
 
             <div className="mb-3">
               <label className="form-label">Senha</label>
+
               <input
                 type="password"
                 className="form-control"
                 placeholder="Digite sua senha"
-                value={senha} // ✅ Vinculado ao estado
-                onChange={(e) => setSenha(e.target.value)} // ✅ Atualiza o estado
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
                 required
+                autoComplete="current-password"
                 style={{
                   borderRadius: "10px",
                   border: "1px solid rgba(245, 6, 29, 0.6)",
@@ -185,9 +211,9 @@ export default function Login() {
             </div>
 
             <button
-              type="submit" // ✅ Alterado para submit
+              type="submit"
               className="btn w-100 mt-1"
-              disabled={loading} // ✅ Desabilita o botão enquanto carrega
+              disabled={loading}
               style={{
                 backgroundColor: "#ffb300",
                 color: "#1a0a0a",
@@ -195,7 +221,8 @@ export default function Login() {
                 fontWeight: "bold",
                 fontSize: "16px",
                 boxShadow: "0 0 20px rgba(255,179,0,0.35)",
-                opacity: loading ? 0.7 : 1, // Feedback visual de carregamento
+                opacity: loading ? 0.7 : 1,
+                cursor: loading ? "not-allowed" : "pointer",
               }}
             >
               {loading ? "Entrando..." : "Entrar"}
@@ -204,14 +231,25 @@ export default function Login() {
 
           <p
             className="text-center mt-3 d-flex flex-column gap-2"
-            style={{ color: "#ccc", fontSize: "14px" }}
+            style={{
+              color: "#ccc",
+              fontSize: "14px",
+            }}
           >
             <span>
               Não tem conta?{" "}
-              <Link href="/cadastro" style={{ color: "#0d6efd", textDecoration: "none", fontWeight: "bold" }}>
+              <Link
+                href="/cadastro"
+                style={{
+                  color: "#0d6efd",
+                  textDecoration: "none",
+                  fontWeight: "bold",
+                }}
+              >
                 Cadastre-se
               </Link>
             </span>
+
             <span>Esqueceu sua senha?</span>
           </p>
         </div>

@@ -5,6 +5,73 @@ import { JWT_CONFIG } from '../config/jwt.js';
 
 // Controller para operações de autenticação e gerenciamento de usuários
 class AuthController {
+
+      static async validarDuplicatasUsuario({ email, cnpjLimpo, cepLimpo, ignorarIdUser = null }) {
+        const resultado = await UsuarioModel.listarTodos(1, 100000);
+        const usuarios = resultado.usuarios || [];
+
+        const idIgnorado = ignorarIdUser ? parseInt(ignorarIdUser) : null;
+
+        const usuarioComEmail = usuarios.find((usuario) => {
+            return (
+                usuario.email?.toLowerCase() === email?.trim().toLowerCase() &&
+                usuario.id_user !== idIgnorado
+            );
+        });
+
+        if (usuarioComEmail) {
+            return {
+                status: 409,
+                resposta: {
+                    sucesso: false,
+                    erro: 'Email já cadastrado',
+                    mensagem: 'Este email já está sendo usado por outro usuário'
+                }
+            };
+        }
+
+        const usuarioComCnpj = usuarios.find((usuario) => {
+            const cnpjUsuario = String(usuario.cnpj || '').replace(/\D/g, '');
+
+            return (
+                cnpjUsuario === cnpjLimpo &&
+                usuario.id_user !== idIgnorado
+            );
+        });
+
+        if (usuarioComCnpj) {
+            return {
+                status: 409,
+                resposta: {
+                    sucesso: false,
+                    erro: 'CNPJ já cadastrado',
+                    mensagem: 'Este CNPJ já está sendo usado por outro usuário'
+                }
+            };
+        }
+
+        const usuarioComCep = usuarios.find((usuario) => {
+            const cepUsuario = String(usuario.cep || '').replace(/\D/g, '');
+
+            return (
+                cepUsuario === cepLimpo &&
+                usuario.id_user !== idIgnorado
+            );
+        });
+
+        if (usuarioComCep) {
+            return {
+                status: 409,
+                resposta: {
+                    sucesso: false,
+                    erro: 'CEP já cadastrado',
+                    mensagem: 'Este CEP já está sendo usado por outro usuário'
+                }
+            };
+        }
+
+        return null;
+    }
     
     // POST /auth/login - Fazer login
     static async login(req, res) {
@@ -172,13 +239,14 @@ class AuthController {
                 });
             }
 
-            const usuarioExistente = await UsuarioModel.buscarPorEmail(email);
-            if (usuarioExistente) {
-                return res.status(409).json({
-                    sucesso: false,
-                    erro: 'Email já cadastrado',
-                    mensagem: 'Este email já está sendo usado por outro usuário'
-                });
+            const duplicata = await AuthController.validarDuplicatasUsuario({
+                email,
+                cnpjLimpo,
+                cepLimpo
+            });
+
+            if (duplicata) {
+                return res.status(duplicata.status).json(duplicata.resposta);
             }
 
             const saltRounds = 10;
@@ -411,13 +479,14 @@ class AuthController {
                 });
             }
 
-            const usuarioExistente = await UsuarioModel.buscarPorEmail(email);
-            if (usuarioExistente) {
-                return res.status(409).json({
-                    sucesso: false,
-                    erro: 'Email já cadastrado',
-                    mensagem: 'Este email já está sendo usado por outro usuário'
-                });
+            const duplicata = await AuthController.validarDuplicatasUsuario({
+                email,
+                cnpjLimpo,
+                cepLimpo
+            });
+
+            if (duplicata) {
+                return res.status(duplicata.status).json(duplicata.resposta);
             }
 
             const saltRounds = 10;
@@ -470,13 +539,14 @@ class AuthController {
                 });
             }
 
-            const usuarioExistente = await UsuarioModel.buscarPorId(id_user);
-            if (!usuarioExistente) {
-                return res.status(404).json({
-                    sucesso: false,
-                    erro: 'Usuário não encontrado',
-                    mensagem: `Usuário com ID ${id_user} não foi encontrado`
-                });
+            const duplicata = await AuthController.validarDuplicatasUsuario({
+                email,
+                cnpjLimpo,
+                cepLimpo
+            });
+
+            if (duplicata) {
+                return res.status(duplicata.status).json(duplicata.resposta);
             }
 
             const dadosAtualizacao = {};
