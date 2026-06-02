@@ -1,299 +1,1360 @@
 "use client";
 
 import "bootstrap/dist/css/bootstrap.min.css";
+import "bootstrap-icons/font/bootstrap-icons.css";
+
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
+
+const ROTAS_USUARIOS = [
+  `${API_URL}/api/usuarios`,
+  `${API_URL}/usuarios`,
+  `${API_URL}/api/auth`,
+  `${API_URL}/auth`,
+];
+
+const pageBackground = `
+  radial-gradient(circle at top left, rgba(255,179,0,.06), transparent 25%),
+  radial-gradient(circle at bottom right, rgba(192,1,42,.10), transparent 25%),
+  linear-gradient(
+    145deg,
+    #0c0d10 0%,
+    #121317 30%,
+    #181418 55%,
+    #1d1218 100%
+  )
+`;
+
+const panelStyle = {
+  background: `
+    linear-gradient(
+      145deg,
+      rgba(22,23,27,.96),
+      rgba(28,22,25,.96)
+    )
+  `,
+  borderRadius: "30px",
+  border: "1px solid rgba(255,215,120,.10)",
+  boxShadow: `
+    0 25px 60px rgba(221,25,25,.18),
+    0 0 25px rgba(235,194,13,.06)
+  `,
+};
+
+const inputStyle = {
+  background: "rgba(255,255,255,.04)",
+  border: "1px solid rgba(255,255,255,.08)",
+  color: "white",
+  borderRadius: "16px",
+  padding: "13px 15px",
+};
+
+const buttonGradient = {
+  background: "linear-gradient(90deg,#ffcf40,#ff9d00,#c0012a)",
+  color: "white",
+  border: "none",
+  borderRadius: "16px",
+  fontWeight: "800",
+  boxShadow: "0 16px 34px rgba(192,1,42,.24)",
+};
+
+function obterToken() {
+  if (typeof window === "undefined") return "";
+
+  return (
+    localStorage.getItem("token") ||
+    localStorage.getItem("authToken") ||
+    localStorage.getItem("jwt") ||
+    ""
+  );
+}
+
+function decodificarToken(token) {
+  try {
+    if (!token || !token.includes(".")) return null;
+
+    const payload = token.split(".")[1];
+    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+
+    const json = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((char) => {
+          return "%" + ("00" + char.charCodeAt(0).toString(16)).slice(-2);
+        })
+        .join("")
+    );
+
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+
+function obterUsuarioLocal() {
+  if (typeof window === "undefined") return null;
+
+  const chaves = ["usuario", "user", "dadosUsuario", "authUser"];
+
+  for (const chave of chaves) {
+    const valor = localStorage.getItem(chave);
+
+    if (!valor) continue;
+
+    try {
+      return JSON.parse(valor);
+    } catch {
+      continue;
+    }
+  }
+
+  const token = obterToken();
+
+  return decodificarToken(token);
+}
+
+function obterIdUsuario(usuario) {
+  return (
+    usuario?.id_user ||
+    usuario?.id_usuario ||
+    usuario?.id ||
+    usuario?.userId ||
+    usuario?.idUser ||
+    usuario?.dados?.id_user ||
+    usuario?.dados?.id_usuario ||
+    usuario?.dados?.id ||
+    usuario?.dados?.userId ||
+    usuario?.dados?.idUser ||
+    usuario?.usuario?.id_user ||
+    usuario?.usuario?.id_usuario ||
+    usuario?.usuario?.id ||
+    ""
+  );
+}
+
+function montarHeaders() {
+  const token = obterToken();
+
+  return {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
+
+async function tratarResposta(response) {
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const detalhes = Array.isArray(data?.detalhes)
+      ? data.detalhes.map((item) => item.mensagem).join(" | ")
+      : null;
+
+    throw new Error(
+      detalhes ||
+        data?.mensagem ||
+        data?.erro ||
+        "Não foi possível concluir a operação."
+    );
+  }
+
+  return data;
+}
+
+async function buscarUsuarioPorId(idUsuario) {
+  let ultimoErro = null;
+
+  for (const baseUrl of ROTAS_USUARIOS) {
+    try {
+      const response = await fetch(`${baseUrl}/${idUsuario}`, {
+        method: "GET",
+        headers: montarHeaders(),
+      });
+
+      if (response.status === 404) {
+        ultimoErro = new Error(`Rota não encontrada em ${baseUrl}/${idUsuario}`);
+        continue;
+      }
+
+      const data = await tratarResposta(response);
+
+      return {
+        usuario: data?.dados || null,
+        baseUrl,
+      };
+    } catch (error) {
+      ultimoErro = error;
+
+      if (
+        error.message?.includes("Credenciais") ||
+        error.message?.includes("token") ||
+        error.message?.includes("autoriz")
+      ) {
+        break;
+      }
+    }
+  }
+
+  throw ultimoErro || new Error("Não foi possível localizar a rota de usuários.");
+}
+
+async function atualizarUsuarioPorId(idUsuario, body, rotaPreferida) {
+  const rotas = rotaPreferida
+    ? [rotaPreferida, ...ROTAS_USUARIOS.filter((rota) => rota !== rotaPreferida)]
+    : ROTAS_USUARIOS;
+
+  let ultimoErro = null;
+
+  for (const baseUrl of rotas) {
+    try {
+      const response = await fetch(`${baseUrl}/${idUsuario}`, {
+        method: "PUT",
+        headers: montarHeaders(),
+        body: JSON.stringify(body),
+      });
+
+      if (response.status === 404) {
+        ultimoErro = new Error(`Rota de atualização não encontrada em ${baseUrl}/${idUsuario}`);
+        continue;
+      }
+
+      const data = await tratarResposta(response);
+
+      return {
+        data,
+        baseUrl,
+      };
+    } catch (error) {
+      ultimoErro = error;
+
+      if (!error.message?.includes("Rota")) {
+        break;
+      }
+    }
+  }
+
+  throw ultimoErro || new Error("Não foi possível atualizar o usuário.");
+}
+
+function formatarTipo(tipo) {
+  switch (tipo) {
+    case "admin":
+      return "Administrador";
+    case "administrador":
+      return "Administrador";
+    case "fornecedor":
+      return "Fornecedor";
+    case "comum":
+      return "Usuário comum";
+    default:
+      return "Não informado";
+  }
+}
+
+function getCorTipo(tipo) {
+  switch (tipo) {
+    case "admin":
+    case "administrador":
+      return "#ffcf40";
+    case "fornecedor":
+      return "#5cff95";
+    case "comum":
+      return "#8ab4ff";
+    default:
+      return "#ffcf40";
+  }
+}
+
+function formatarDocumento(valor) {
+  if (!valor) return "Não informado";
+
+  const limpo = String(valor).replace(/\D/g, "");
+
+  if (limpo.length !== 14) return valor;
+
+  return limpo.replace(
+    /^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,
+    "$1.$2.$3/$4-$5"
+  );
+}
+
+function formatarCep(valor) {
+  if (!valor) return "Não informado";
+
+  const limpo = String(valor).replace(/\D/g, "");
+
+  if (limpo.length !== 8) return valor;
+
+  return limpo.replace(/^(\d{5})(\d{3})$/, "$1-$2");
+}
+
+function pegarIniciais(nome) {
+  if (!nome) return "US";
+
+  const partes = nome.trim().split(" ").filter(Boolean);
+
+  if (partes.length === 1) {
+    return partes[0].slice(0, 2).toUpperCase();
+  }
+
+  return `${partes[0][0]}${partes[partes.length - 1][0]}`.toUpperCase();
+}
 
 export default function Perfil() {
-  return (
-    <div
-      className="d-flex justify-content-center align-items-center p-4"
-      style={{
-        minHeight: "100vh",
-        background: `
-          radial-gradient(circle at top left, rgba(255,215,120,.05), transparent 25%),
-          radial-gradient(circle at bottom right, rgba(192,1,42,.08), transparent 25%),
-          linear-gradient(
-            145deg,
-            #0c0d10 0%,
-            #121317 30%,
-            #181418 55%,
-            #1e1217 100%
-          )
-        `,
-        color: "white",
-      }}
-    >
-      <div
+  const router = useRouter();
+
+  const [perfil, setPerfil] = useState(null);
+  const [rotaUsuariosAtiva, setRotaUsuariosAtiva] = useState(null);
+
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState(null);
+  const [feedback, setFeedback] = useState(null);
+
+  const [modalAberto, setModalAberto] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+  const [formErro, setFormErro] = useState(null);
+
+  const [formData, setFormData] = useState({
+    nome_user: "",
+    email: "",
+    empresa: "",
+    cargo: "",
+    endereco: "",
+    cnpj: "",
+    cep: "",
+    senha: "",
+  });
+
+  useEffect(() => {
+    import("bootstrap/dist/js/bootstrap.bundle.min.js");
+  }, []);
+
+  useEffect(() => {
+    carregarPerfil();
+  }, []);
+
+  async function carregarPerfil() {
+    try {
+      setCarregando(true);
+      setErro(null);
+
+      const usuarioLocal = obterUsuarioLocal();
+      const idUsuario = obterIdUsuario(usuarioLocal);
+
+      if (!idUsuario) {
+        router.replace("/login");
+        return;
+      }
+
+      const { usuario, baseUrl } = await buscarUsuarioPorId(idUsuario);
+
+      if (!usuario) {
+        throw new Error("Perfil não encontrado.");
+      }
+
+      setPerfil(usuario);
+      setRotaUsuariosAtiva(baseUrl);
+
+      if (typeof window !== "undefined") {
+        localStorage.setItem("usuario", JSON.stringify(usuario));
+      }
+    } catch (error) {
+      console.error("Erro ao carregar perfil:", error);
+      setErro(error.message || "Não foi possível carregar o perfil.");
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  function abrirModalEdicao() {
+    if (!perfil) return;
+
+    setFormData({
+      nome_user: perfil.nome_user || "",
+      email: perfil.email || "",
+      empresa: perfil.empresa || "",
+      cargo: perfil.cargo || "",
+      endereco: perfil.endereco || "",
+      cnpj: perfil.cnpj || "",
+      cep: perfil.cep || "",
+      senha: "",
+    });
+
+    setFormErro(null);
+    setFeedback(null);
+    setModalAberto(true);
+  }
+
+  function fecharModal() {
+    if (salvando) return;
+
+    setModalAberto(false);
+    setFormErro(null);
+  }
+
+  function atualizarCampo(campo, valor) {
+    setFormData((prev) => ({
+      ...prev,
+      [campo]: valor,
+    }));
+  }
+
+  async function salvarPerfil(event) {
+    event.preventDefault();
+
+    try {
+      setSalvando(true);
+      setFormErro(null);
+      setFeedback(null);
+
+      if (!perfil?.id_user) {
+        setFormErro("ID do usuário não encontrado.");
+        return;
+      }
+
+      if (!formData.nome_user.trim()) {
+        setFormErro("O nome é obrigatório.");
+        return;
+      }
+
+      if (!formData.email.trim()) {
+        setFormErro("O email é obrigatório.");
+        return;
+      }
+
+      if (!formData.empresa.trim()) {
+        setFormErro("A empresa é obrigatória.");
+        return;
+      }
+
+      if (!formData.cargo.trim()) {
+        setFormErro("O cargo é obrigatório.");
+        return;
+      }
+
+      if (!formData.endereco.trim()) {
+        setFormErro("O endereço é obrigatório.");
+        return;
+      }
+
+      if (!formData.cnpj.trim()) {
+        setFormErro("O CNPJ é obrigatório.");
+        return;
+      }
+
+      if (!formData.cep.trim()) {
+        setFormErro("O CEP é obrigatório.");
+        return;
+      }
+
+      const body = {
+        nome_user: formData.nome_user.trim(),
+        email: formData.email.trim(),
+        empresa: formData.empresa.trim(),
+        cargo: formData.cargo.trim(),
+        endereco: formData.endereco.trim(),
+        cnpj: formData.cnpj.trim(),
+        cep: formData.cep.trim(),
+      };
+
+      if (formData.senha.trim()) {
+        body.senha = formData.senha.trim();
+      }
+
+      const { data, baseUrl } = await atualizarUsuarioPorId(
+        perfil.id_user,
+        body,
+        rotaUsuariosAtiva
+      );
+
+      setRotaUsuariosAtiva(baseUrl);
+      setFeedback(data?.mensagem || "Perfil atualizado com sucesso.");
+
+      await carregarPerfil();
+
+      setModalAberto(false);
+      setFormData((prev) => ({
+        ...prev,
+        senha: "",
+      }));
+    } catch (error) {
+      console.error("Erro ao salvar perfil:", error);
+      setFormErro(error.message || "Não foi possível atualizar o perfil.");
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  const tipoCor = getCorTipo(perfil?.tipo);
+  const iniciais = pegarIniciais(perfil?.nome_user);
+
+  const resumoConta = useMemo(() => {
+    if (!perfil) return [];
+
+    return [
+      {
+        titulo: "Tipo",
+        valor: formatarTipo(perfil.tipo),
+        icon: "bi-shield-check",
+        cor: getCorTipo(perfil.tipo),
+      },
+      {
+        titulo: "Empresa",
+        valor: perfil.empresa || "Não informado",
+        icon: "bi-buildings",
+        cor: "#ffcf40",
+      },
+      {
+        titulo: "Cargo",
+        valor: perfil.cargo || "Não informado",
+        icon: "bi-person-badge",
+        cor: "#ff8800",
+      },
+    ];
+  }, [perfil]);
+
+  const informacoesPrincipais = useMemo(() => {
+    if (!perfil) return [];
+
+    return [
+      {
+        titulo: "Email",
+        descricao: "Contato principal da conta",
+        valor: perfil.email || "Não informado",
+        icon: "bi-envelope",
+      },
+      {
+        titulo: "Endereço",
+        descricao: "Local vinculado ao cadastro",
+        valor: perfil.endereco || "Não informado",
+        icon: "bi-geo-alt",
+      },
+      {
+        titulo: "CNPJ",
+        descricao: "Documento empresarial",
+        valor: formatarDocumento(perfil.cnpj),
+        icon: "bi-file-earmark-text",
+      },
+      {
+        titulo: "CEP",
+        descricao: "Código postal cadastrado",
+        valor: formatarCep(perfil.cep),
+        icon: "bi-mailbox",
+      },
+    ];
+  }, [perfil]);
+
+  if (carregando) {
+    return (
+      <main
+        className="d-flex justify-content-center align-items-center text-white"
         style={{
-          width: "100%",
-          maxWidth: "1080px",
-          background: `
-            linear-gradient(
-              145deg,
-              rgba(22,23,27,.96),
-              rgba(28,22,25,.96)
-            )
-          `,
-          borderRadius: "28px",
-          overflow: "hidden",
-          border: "1px solid rgba(255,215,120,.14)",
-          boxShadow: `
-            0 20px 50px rgba(221, 25, 25, 0.45),
-            0 0 30px rgba(235, 194, 13, 0.43)
-          `,
-          backdropFilter: "blur(12px)",
+          minHeight: "100vh",
+          background: "linear-gradient(145deg,#0c0d10,#121317,#1e1217)",
         }}
       >
-        <div className="row g-0">
-          {/* LADO ESQUERDO */}
-          <div
-            className="col-lg-5"
+        <div className="text-center">
+          <div className="spinner-border text-warning mb-3" />
+
+          <h4 className="fw-bold">Carregando perfil...</h4>
+
+          <p className="text-secondary mb-0">
+            Buscando suas informações na API.
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  if (erro) {
+    return (
+      <main
+        className="d-flex justify-content-center align-items-center text-white p-4"
+        style={{
+          minHeight: "100vh",
+          background: "linear-gradient(145deg,#0c0d10,#121317,#1e1217)",
+        }}
+      >
+        <div
+          className="text-center"
+          style={{
+            maxWidth: "560px",
+            background: "rgba(22,23,27,.96)",
+            border: "1px solid rgba(255,215,120,.14)",
+            borderRadius: "24px",
+            padding: "35px",
+          }}
+        >
+          <i
+            className="bi bi-exclamation-triangle"
             style={{
-              background: `
-                linear-gradient(
-                  180deg,
-                  #ffb300cc,
-                  #ff88008c,
-                  #f5061e93
-                )
-              `,
-              borderRight:
-                "1px solid rgba(255,255,255,.06)",
+              fontSize: "3rem",
+              color: "#ffb300",
+            }}
+          />
+
+          <h3 className="fw-bold mt-3">Não foi possível carregar o perfil</h3>
+
+          <p className="text-secondary mt-3">{erro}</p>
+
+          <div
+            className="text-start mt-4"
+            style={{
+              background: "rgba(255,255,255,.04)",
+              border: "1px solid rgba(255,255,255,.08)",
+              borderRadius: "18px",
+              padding: "18px",
+              color: "rgba(255,255,255,.7)",
+              fontSize: ".92rem",
+              lineHeight: "1.7",
             }}
           >
-            <div
-              className="d-flex flex-column align-items-center"
+            Verifique se o router foi registrado como{" "}
+            <strong>/api/usuarios</strong>, <strong>/usuarios</strong>,{" "}
+            <strong>/api/auth</strong> ou <strong>/auth</strong>, e se o token
+            está salvo no localStorage.
+          </div>
+
+          <button
+            type="button"
+            className="btn mt-4"
+            onClick={carregarPerfil}
+            style={{
+              ...buttonGradient,
+              padding: "12px 22px",
+            }}
+          >
+            Tentar novamente
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main
+      style={{
+        minHeight: "100vh",
+        background: pageBackground,
+        color: "white",
+        overflow: "hidden",
+      }}
+    >
+      <header
+        className="px-4 px-lg-5 py-4 d-flex justify-content-between align-items-center flex-wrap gap-3"
+        style={{
+          borderBottom: "1px solid rgba(255,255,255,.05)",
+          backdropFilter: "blur(10px)",
+        }}
+      >
+        <div className="d-flex align-items-center gap-3">
+          <div
+            className="d-flex justify-content-center align-items-center"
+            style={{
+              width: "60px",
+              height: "60px",
+              borderRadius: "20px",
+              background: `
+                linear-gradient(
+                  145deg,
+                  rgba(255,179,0,.25),
+                  rgba(192,1,42,.18)
+                )
+              `,
+              border: "1px solid rgba(255,255,255,.08)",
+            }}
+          >
+            <i
+              className="bi bi-person-circle"
               style={{
-                padding: "50px 35px",
+                fontSize: "1.75rem",
+                color: "#ffcf40",
+              }}
+            />
+          </div>
+
+          <div>
+            <h1
+              style={{
+                margin: 0,
+                fontWeight: "800",
+                fontSize: "2rem",
+                background: "linear-gradient(90deg,#ffcf40,#ff9d00,#c0012a)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
               }}
             >
-              {/* FOTO */}
-              <div
-                style={{
-                  width: "220px",
-                  height: "220px",
-                  borderRadius: "24px",
-                  overflow: "hidden",
-                  position: "relative",
-                  border:
-                    "3px solid rgba(255,179,0,.75)",
-                  boxShadow: `
-                    0 15px 35px rgba(0,0,0,.45),
-                    0 0 20px rgba(192,1,42,.18)
-                  `,
-                }}
-              >
-                <Image
-                  src="/core.png"
-                  alt="Perfil"
-                  fill
-                  priority
-                  sizes="220px"
-                  style={{
-                    objectFit: "cover",
-                  }}
-                />
-              </div>
+              Perfil do Usuário
+            </h1>
 
-              {/* NOME */}
-              <div
-                className="w-100 mt-4"
-                style={{
-                  background: "rgba(255,255,255,.03)",
-                  border:
-                    "1px solid rgba(255,215,120,.12)",
-                  borderRadius: "18px",
-                  padding: "18px",
-                  textAlign: "center",
-                }}
-              >
-                <p
+            <p
+              style={{
+                margin: 0,
+                color: "rgba(255,255,255,.55)",
+              }}
+            >
+              Gerencie seus dados, conta e informações profissionais.
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={abrirModalEdicao}
+          className="btn"
+          style={{
+            ...buttonGradient,
+            padding: "14px 24px",
+          }}
+        >
+          <i className="bi bi-pencil-square me-2" />
+          Editar perfil
+        </button>
+      </header>
+
+      <div className="container-fluid px-4 px-lg-5 py-5">
+        {feedback && (
+          <div className="alert alert-success mb-4">
+            {feedback}
+          </div>
+        )}
+
+        <div className="row g-4">
+          <div className="col-xl-4">
+            <aside
+              className="h-100"
+              style={{
+                ...panelStyle,
+                padding: "30px",
+              }}
+            >
+              <div className="text-center">
+                <div
                   style={{
-                    margin: 0,
-                    color: "#ffe082",
-                    fontWeight: "700",
-                    fontSize: "1.35rem",
-                    letterSpacing: ".4px",
+                    width: "170px",
+                    height: "170px",
+                    margin: "0 auto",
+                    borderRadius: "34px",
+                    position: "relative",
+                    overflow: "hidden",
+                    border: "2px solid rgba(255,215,120,.24)",
+                    boxShadow: "0 22px 45px rgba(0,0,0,.45)",
                   }}
                 >
-                  Henrique Lopez Vieira
+                  <Image
+                    src="/core.png"
+                    alt="Perfil"
+                    fill
+                    priority
+                    sizes="170px"
+                    style={{
+                      objectFit: "cover",
+                    }}
+                  />
+                </div>
+
+                <div
+                  className="mx-auto d-flex justify-content-center align-items-center"
+                  style={{
+                    width: "64px",
+                    height: "64px",
+                    marginTop: "-28px",
+                    position: "relative",
+                    zIndex: 2,
+                    borderRadius: "20px",
+                    background: "linear-gradient(145deg,#ffcf40,#c0012a)",
+                    border: "4px solid rgba(22,23,27,1)",
+                    fontWeight: "900",
+                    color: "white",
+                    letterSpacing: ".5px",
+                  }}
+                >
+                  {iniciais}
+                </div>
+
+                <h2
+                  className="mt-4 mb-2"
+                  style={{
+                    color: "#ffe082",
+                    fontWeight: "800",
+                    fontSize: "1.65rem",
+                  }}
+                >
+                  {perfil?.nome_user || "Usuário"}
+                </h2>
+
+                <p
+                  className="mb-3"
+                  style={{
+                    color: "rgba(255,255,255,.62)",
+                  }}
+                >
+                  {perfil?.cargo || "Cargo não informado"}
                 </p>
 
                 <span
+                  className="badge"
                   style={{
-                    color: "rgba(255,255,255,.60)",
-                    fontSize: ".92rem",
+                    background: `${tipoCor}20`,
+                    color: tipoCor,
+                    border: `1px solid ${tipoCor}66`,
+                    borderRadius: "999px",
+                    padding: "10px 14px",
+                    fontWeight: "800",
                   }}
                 >
-                  Frontend Developer
+                  <i className="bi bi-shield-check me-2" />
+                  {formatarTipo(perfil?.tipo)}
                 </span>
               </div>
 
-              {/* DESCRIÇÃO */}
               <div
-                className="w-100 mt-4"
+                className="mt-5"
                 style={{
                   background: "rgba(255,255,255,.03)",
-                  border:
-                    "1px solid rgba(192,1,42,.15)",
-                  borderRadius: "18px",
-                  padding: "28px",
+                  border: "1px solid rgba(255,255,255,.06)",
+                  borderRadius: "24px",
+                  padding: "24px",
                 }}
               >
-                <h4
+                <h5
                   style={{
                     color: "#ffcf40",
-                    fontWeight: "700",
-                    marginBottom: "18px",
-                    textAlign: "center",
-                    fontSize: "1.35rem",
+                    fontWeight: "800",
+                    marginBottom: "14px",
                   }}
                 >
-                  Descrição
-                </h4>
+                  Resumo
+                </h5>
 
                 <p
                   style={{
-                    color: "rgba(255,255,255,.86)",
-                    lineHeight: "1.9",
-                    fontSize: ".98rem",
-                    textAlign: "center",
+                    color: "rgba(255,255,255,.72)",
+                    lineHeight: "1.8",
                     margin: 0,
                   }}
                 >
-                  Desenvolvedor Frontend especializado
-                  em interfaces modernas, experiência
-                  do usuário e desenvolvimento de
-                  aplicações web responsivas utilizando
-                  React e Next.js.
+                  {perfil?.nome_user || "Este usuário"} faz parte da empresa{" "}
+                  <strong style={{ color: "#ffe082" }}>
+                    {perfil?.empresa || "não informada"}
+                  </strong>{" "}
+                  atuando como{" "}
+                  <strong style={{ color: "#ffe082" }}>
+                    {perfil?.cargo || "cargo não informado"}
+                  </strong>
+                  .
                 </p>
               </div>
-            </div>
-          </div>
 
-          {/* LADO DIREITO */}
-          <div className="col-lg-7">
-            <div
-              style={{
-                padding: "50px 45px",
-              }}
-            >
-              <h2
-                style={{
-                  color: "#ee3110",
-                  textAlign: "center",
-                  fontWeight: "800",
-                  marginBottom: "35px",
-                  fontSize: "2.1rem",
-                  letterSpacing: ".5px",
-                }}
-              >
-                Informações Pessoais
-              </h2>
-
-              <div
-                style={{
-                  background: `
-                    linear-gradient(
-                      145deg,
-                      rgba(29,31,36,.95),
-                      rgba(35,22,27,.95)
-                    )
-                  `,
-                  borderRadius: "22px",
-                  padding: "38px",
-                  border:
-                    "1px solid rgba(199, 31, 31, 0.64)",
-                  boxShadow:
-                    "0 10px 25px rgba(0,0,0,.28)",
-                }}
-              >
-                {/* ITEM */}
-                {[
-                  {
-                    titulo: "Email",
-                    cor: "#ffcf40",
-                    valor: "henrique.vieira@intel.com",
-                  },
-                  {
-                    titulo: "Empresa",
-                    cor: "#ffcf40",
-                    valor: "Intel Corporation",
-                  },
-                  {
-                    titulo: "Cargo",
-                    cor: "#ffcf40",
-                    valor: "Frontend Developer",
-                  },
-                  {
-                    titulo: "Endereço",
-                    cor: "#ffcf40",
-                    valor: "São Paulo, Brasil",
-                  },
-                ].map((item, index) => (
+              <div className="d-flex flex-column gap-3 mt-4">
+                {resumoConta.map((item) => (
                   <div
-                    key={index}
+                    key={item.titulo}
+                    className="d-flex align-items-center gap-3"
                     style={{
-                      paddingBottom: "22px",
-                      marginBottom:
-                        index !== 3 ? "22px" : "0",
-                      borderBottom:
-                        index !== 3
-                          ? "1px solid rgba(255,255,255,.06)"
-                          : "none",
+                      background: "rgba(255,255,255,.03)",
+                      border: "1px solid rgba(255,255,255,.05)",
+                      borderRadius: "20px",
+                      padding: "16px",
                     }}
                   >
-                    <p
+                    <div
+                      className="d-flex justify-content-center align-items-center"
                       style={{
+                        width: "48px",
+                        height: "48px",
+                        borderRadius: "15px",
+                        background: `${item.cor}18`,
                         color: item.cor,
-                        marginBottom: "8px",
-                        fontWeight: "700",
-                        fontSize: ".98rem",
-                        textTransform: "uppercase",
-                        letterSpacing: ".8px",
                       }}
                     >
-                      {item.titulo}
-                    </p>
+                      <i className={`bi ${item.icon}`} />
+                    </div>
 
-                    <span
+                    <div style={{ minWidth: 0 }}>
+                      <p
+                        style={{
+                          margin: 0,
+                          color: "rgba(255,255,255,.52)",
+                          fontSize: ".78rem",
+                          textTransform: "uppercase",
+                          fontWeight: "800",
+                          letterSpacing: ".6px",
+                        }}
+                      >
+                        {item.titulo}
+                      </p>
+
+                      <span
+                        style={{
+                          display: "block",
+                          color: "rgba(255,255,255,.9)",
+                          fontWeight: "700",
+                          wordBreak: "break-word",
+                        }}
+                      >
+                        {item.valor}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </aside>
+          </div>
+
+          <div className="col-xl-8">
+            <section
+              style={{
+                ...panelStyle,
+                padding: "35px",
+                height: "100%",
+              }}
+            >
+              <div className="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+                <div>
+                  <h2
+                    style={{
+                      color: "#ffe082",
+                      fontWeight: "800",
+                      marginBottom: "8px",
+                    }}
+                  >
+                    Informações da Conta
+                  </h2>
+
+                  <p
+                    style={{
+                      margin: 0,
+                      color: "rgba(255,255,255,.55)",
+                    }}
+                  >
+                    Dados principais usados no sistema.
+                  </p>
+                </div>
+
+                <span
+                  className="badge"
+                  style={{
+                    background: "rgba(255,255,255,.06)",
+                    color: "rgba(255,255,255,.75)",
+                    border: "1px solid rgba(255,255,255,.08)",
+                    borderRadius: "999px",
+                    padding: "10px 13px",
+                  }}
+                >
+                  ID #{perfil?.id_user}
+                </span>
+              </div>
+
+              <div className="row g-4">
+                {informacoesPrincipais.map((item) => (
+                  <div className="col-md-6" key={item.titulo}>
+                    <div
+                      className="h-100"
                       style={{
-                        color: "rgba(255,255,255,.92)",
-                        fontSize: "1.05rem",
-                        fontWeight: "500",
+                        background: "rgba(255,255,255,.035)",
+                        border: "1px solid rgba(255,255,255,.06)",
+                        borderRadius: "24px",
+                        padding: "24px",
                       }}
                     >
-                      {item.valor}
-                    </span>
+                      <div className="d-flex align-items-center gap-3 mb-3">
+                        <div
+                          className="d-flex justify-content-center align-items-center"
+                          style={{
+                            width: "48px",
+                            height: "48px",
+                            borderRadius: "16px",
+                            background: "rgba(255,179,0,.12)",
+                            color: "#ffcf40",
+                          }}
+                        >
+                          <i className={`bi ${item.icon}`} />
+                        </div>
+
+                        <div>
+                          <h5
+                            style={{
+                              margin: 0,
+                              color: "#ffcf40",
+                              fontWeight: "800",
+                            }}
+                          >
+                            {item.titulo}
+                          </h5>
+
+                          <p
+                            style={{
+                              margin: 0,
+                              color: "rgba(255,255,255,.48)",
+                              fontSize: ".86rem",
+                            }}
+                          >
+                            {item.descricao}
+                          </p>
+                        </div>
+                      </div>
+
+                      <span
+                        style={{
+                          display: "block",
+                          color: "rgba(255,255,255,.92)",
+                          fontSize: "1.02rem",
+                          fontWeight: "600",
+                          wordBreak: "break-word",
+                        }}
+                      >
+                        {item.valor}
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
 
-              {/* BOTÃO */}
-              <div className="d-flex justify-content-center mt-5">
-                <button
-                  className="btn"
-                  style={{
-                    background:
-                      "linear-gradient(90deg,#ffcf40,#ffb300,#c0012a)",
-                    color: "white",
-                    padding: "14px 34px",
-                    borderRadius: "14px",
-                    fontWeight: "700",
-                    border: "none",
-                    fontSize: ".98rem",
-                    letterSpacing: ".3px",
-                    boxShadow:
-                      "0 10px 22px rgba(192,1,42,.25)",
-                  }}
-                >
-                  Editar Perfil
-                </button>
+              <div
+                className="mt-4"
+                style={{
+                  background: `
+                    radial-gradient(circle at top left, rgba(255,207,64,.08), transparent 35%),
+                    rgba(255,255,255,.03)
+                  `,
+                  border: "1px solid rgba(255,255,255,.06)",
+                  borderRadius: "24px",
+                  padding: "26px",
+                }}
+              >
+                <div className="row g-4 align-items-center">
+                  <div className="col-lg-8">
+                    <h4
+                      style={{
+                        color: "#ffe082",
+                        fontWeight: "800",
+                        marginBottom: "8px",
+                      }}
+                    >
+                      Segurança e acesso
+                    </h4>
+
+                    <p
+                      style={{
+                        color: "rgba(255,255,255,.58)",
+                        margin: 0,
+                        lineHeight: "1.7",
+                      }}
+                    >
+                      Use o botão de edição para atualizar seus dados. Para
+                      alterar senha, preencha o campo de nova senha no modal.
+                    </p>
+                  </div>
+
+                  <div className="col-lg-4 d-grid">
+                    <button
+                      type="button"
+                      onClick={abrirModalEdicao}
+                      className="btn"
+                      style={{
+                        ...buttonGradient,
+                        padding: "14px 18px",
+                      }}
+                    >
+                      <i className="bi bi-lock me-2" />
+                      Atualizar dados
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
+            </section>
           </div>
         </div>
       </div>
-    </div>
+
+      {modalAberto && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={fecharModal}
+          className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center"
+          style={{
+            zIndex: 9999,
+            background: "rgba(0,0,0,.68)",
+            backdropFilter: "blur(16px)",
+            padding: "18px",
+          }}
+        >
+          <div
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              width: "min(850px, 100%)",
+              maxHeight: "92vh",
+              overflowY: "auto",
+              borderRadius: "28px",
+              background: `
+                radial-gradient(circle at top left, rgba(255,207,64,.12), transparent 30%),
+                linear-gradient(
+                  145deg,
+                  rgba(20,21,26,.98),
+                  rgba(33,23,29,.98)
+                )
+              `,
+              border: "1px solid rgba(255,215,120,.14)",
+              boxShadow: "0 40px 120px rgba(0,0,0,.65)",
+              color: "white",
+            }}
+          >
+            <div
+              className="d-flex justify-content-between align-items-start gap-3"
+              style={{
+                padding: "30px 32px 20px",
+                borderBottom: "1px solid rgba(255,255,255,.06)",
+              }}
+            >
+              <div className="d-flex gap-3 align-items-center">
+                <div
+                  className="d-flex justify-content-center align-items-center"
+                  style={{
+                    width: "54px",
+                    height: "54px",
+                    borderRadius: "18px",
+                    background: "rgba(255,179,0,.12)",
+                    border: "1px solid rgba(255,255,255,.08)",
+                  }}
+                >
+                  <i
+                    className="bi bi-pencil-square"
+                    style={{
+                      color: "#ffcf40",
+                      fontSize: "1.35rem",
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <h3
+                    style={{
+                      color: "#ffe082",
+                      fontWeight: "800",
+                      margin: 0,
+                    }}
+                  >
+                    Editar Perfil
+                  </h3>
+
+                  <p
+                    style={{
+                      color: "rgba(255,255,255,.55)",
+                      margin: "6px 0 0",
+                    }}
+                  >
+                    Atualize suas informações pessoais.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={fecharModal}
+                disabled={salvando}
+                className="btn"
+                style={{
+                  width: "44px",
+                  height: "44px",
+                  borderRadius: "15px",
+                  background: "rgba(255,255,255,.04)",
+                  border: "1px solid rgba(255,255,255,.08)",
+                  color: "white",
+                }}
+              >
+                <i className="bi bi-x-lg" />
+              </button>
+            </div>
+
+            <form onSubmit={salvarPerfil}>
+              <div style={{ padding: "28px 32px 10px" }}>
+                <div className="row g-3">
+                  <div className="col-md-6">
+                    <label className="form-label small text-white-50">
+                      Nome
+                    </label>
+
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={formData.nome_user}
+                      onChange={(event) =>
+                        atualizarCampo("nome_user", event.target.value)
+                      }
+                      style={inputStyle}
+                    />
+                  </div>
+
+                  <div className="col-md-6">
+                    <label className="form-label small text-white-50">
+                      Email
+                    </label>
+
+                    <input
+                      type="email"
+                      className="form-control"
+                      value={formData.email}
+                      onChange={(event) =>
+                        atualizarCampo("email", event.target.value)
+                      }
+                      style={inputStyle}
+                    />
+                  </div>
+
+                  <div className="col-md-6">
+                    <label className="form-label small text-white-50">
+                      Empresa
+                    </label>
+
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={formData.empresa}
+                      onChange={(event) =>
+                        atualizarCampo("empresa", event.target.value)
+                      }
+                      style={inputStyle}
+                    />
+                  </div>
+
+                  <div className="col-md-6">
+                    <label className="form-label small text-white-50">
+                      Cargo
+                    </label>
+
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={formData.cargo}
+                      onChange={(event) =>
+                        atualizarCampo("cargo", event.target.value)
+                      }
+                      style={inputStyle}
+                    />
+                  </div>
+
+                  <div className="col-md-6">
+                    <label className="form-label small text-white-50">
+                      CNPJ
+                    </label>
+
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={formData.cnpj}
+                      onChange={(event) =>
+                        atualizarCampo("cnpj", event.target.value)
+                      }
+                      style={inputStyle}
+                    />
+                  </div>
+
+                  <div className="col-md-6">
+                    <label className="form-label small text-white-50">
+                      CEP
+                    </label>
+
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={formData.cep}
+                      onChange={(event) =>
+                        atualizarCampo("cep", event.target.value)
+                      }
+                      style={inputStyle}
+                    />
+                  </div>
+
+                  <div className="col-12">
+                    <label className="form-label small text-white-50">
+                      Endereço
+                    </label>
+
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={formData.endereco}
+                      onChange={(event) =>
+                        atualizarCampo("endereco", event.target.value)
+                      }
+                      style={inputStyle}
+                    />
+                  </div>
+
+                  <div className="col-12">
+                    <label className="form-label small text-white-50">
+                      Nova senha
+                    </label>
+
+                    <input
+                      type="password"
+                      className="form-control"
+                      value={formData.senha}
+                      onChange={(event) =>
+                        atualizarCampo("senha", event.target.value)
+                      }
+                      placeholder="Deixe vazio para não alterar"
+                      style={inputStyle}
+                    />
+                  </div>
+                </div>
+
+                {formErro && (
+                  <div className="alert alert-danger mt-4 mb-0">
+                    {formErro}
+                  </div>
+                )}
+              </div>
+
+              <div
+                className="d-flex justify-content-end gap-2 flex-wrap"
+                style={{
+                  padding: "22px 32px 32px",
+                  borderTop: "1px solid rgba(255,255,255,.06)",
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={fecharModal}
+                  disabled={salvando}
+                  className="btn btn-outline-light"
+                  style={{
+                    borderRadius: "16px",
+                    padding: "12px 20px",
+                    fontWeight: "700",
+                  }}
+                >
+                  Cancelar
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={salvando}
+                  className="btn"
+                  style={{
+                    ...buttonGradient,
+                    padding: "12px 24px",
+                    minWidth: "170px",
+                  }}
+                >
+                  {salvando ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" />
+                      Salvando...
+                    </>
+                  ) : (
+                    "Salvar Alterações"
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </main>
   );
 }

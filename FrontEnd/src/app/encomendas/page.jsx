@@ -1,1088 +1,851 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
-import "bootstrap/dist/js/bootstrap.bundle.min.js";
 
-import Image from "next/image";
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
+const ENCOMENDAS_URL = `${API_URL}/api/encomendas`;
+
+const encomendasPorPagina = 8;
+
+const inputStyle = {
+  background: "#1c1c1c",
+  border: "1px solid #3b3b3b",
+  color: "white",
+  borderRadius: "14px",
+  padding: "12px 14px",
+};
+
+const buttonGradient = {
+  background: "linear-gradient(to right, #940533, #ff8800)",
+  border: "none",
+  color: "white",
+  borderRadius: "14px",
+  fontWeight: "700",
+};
+
+function decodificarToken(token) {
+  try {
+    if (!token || !token.includes(".")) return null;
+
+    const payload = token.split(".")[1];
+    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+
+    const json = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((char) => {
+          return "%" + ("00" + char.charCodeAt(0).toString(16)).slice(-2);
+        })
+        .join("")
+    );
+
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+
+function obterToken() {
+  if (typeof window === "undefined") return "";
+
+  return (
+    localStorage.getItem("token") ||
+    localStorage.getItem("authToken") ||
+    localStorage.getItem("jwt") ||
+    ""
+  );
+}
+
+function obterUsuarioLogado() {
+  if (typeof window === "undefined") return null;
+
+  const chavesUsuario = ["usuario", "user", "dadosUsuario", "authUser"];
+
+  for (const chave of chavesUsuario) {
+    const valor = localStorage.getItem(chave);
+
+    if (!valor) continue;
+
+    try {
+      return JSON.parse(valor);
+    } catch {
+      continue;
+    }
+  }
+
+  const token = obterToken();
+
+  return decodificarToken(token);
+}
+
+function obterTipoUsuario(usuario) {
+  return String(
+    usuario?.tipo ||
+      usuario?.tipo_user ||
+      usuario?.cargo ||
+      usuario?.role ||
+      usuario?.nivel ||
+      usuario?.dados?.tipo ||
+      usuario?.dados?.tipo_user ||
+      usuario?.dados?.cargo ||
+      usuario?.dados?.role ||
+      usuario?.dados?.nivel ||
+      ""
+  )
+    .toLowerCase()
+    .trim();
+}
+
+function obterIdUsuario(usuario) {
+  return (
+    usuario?.id_user ||
+    usuario?.id_usuario ||
+    usuario?.id ||
+    usuario?.userId ||
+    usuario?.dados?.id_user ||
+    usuario?.dados?.id_usuario ||
+    usuario?.dados?.id ||
+    usuario?.dados?.userId ||
+    null
+  );
+}
+
+function montarHeaders() {
+  const token = obterToken();
+
+  return {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
+
+async function tratarResposta(response) {
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const detalhes = Array.isArray(data?.detalhes)
+      ? data.detalhes.map((item) => item.mensagem).join(" | ")
+      : null;
+
+    throw new Error(
+      detalhes ||
+        data?.mensagem ||
+        data?.erro ||
+        "Não foi possível concluir a operação."
+    );
+  }
+
+  return data;
+}
+
+function normalizarLista(data) {
+  return data?.dados || data?.encomendas || data?.data || [];
+}
+
+function normalizarPaginacao(data) {
+  return {
+    pagina: data?.paginacao?.pagina || data?.pagina || 1,
+    limite: data?.paginacao?.limite || data?.limite || encomendasPorPagina,
+    total: data?.paginacao?.total || data?.total || 0,
+    totalPaginas: data?.paginacao?.totalPaginas || data?.totalPaginas || 1,
+  };
+}
+
+function formatarStatus(status) {
+  switch (status) {
+    case "pendente":
+      return "Pendente";
+    case "em_andamento":
+      return "Em andamento";
+    case "finalizado":
+      return "Finalizado";
+    case "cancelado":
+      return "Cancelado";
+    default:
+      return "Não informado";
+  }
+}
+
+function corStatus(status) {
+  switch (status) {
+    case "pendente":
+      return "bg-warning text-dark";
+    case "em_andamento":
+      return "bg-primary";
+    case "finalizado":
+      return "bg-success";
+    case "cancelado":
+      return "bg-danger";
+    default:
+      return "bg-secondary";
+  }
+}
+
+function formatarData(data) {
+  if (!data) return "Não informada";
+
+  const dataObj = new Date(data);
+
+  if (Number.isNaN(dataObj.getTime())) return data;
+
+  return dataObj.toLocaleDateString("pt-BR");
+}
+
+function formatarDinheiro(valor) {
+  if (valor === null || valor === undefined || valor === "") {
+    return "Não informado";
+  }
+
+  return Number(valor).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+}
 
 export default function Encomendas() {
+  const router = useRouter();
+
+  const [validandoAcesso, setValidandoAcesso] = useState(true);
+  const [usuarioLogado, setUsuarioLogado] = useState(null);
+
+  const [encomendas, setEncomendas] = useState([]);
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const [paginacao, setPaginacao] = useState({
+    pagina: 1,
+    limite: encomendasPorPagina,
+    total: 0,
+    totalPaginas: 1,
+  });
+
+  const [busca, setBusca] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [erro, setErro] = useState(null);
+
+  const [encomendaSelecionada, setEncomendaSelecionada] = useState(null);
+
   useEffect(() => {
     import("bootstrap/dist/js/bootstrap.bundle.min.js");
   }, []);
 
-  const [modalAberto, setModalAberto] =
-    useState(false);
-
-  const [
-    encomendaSelecionada,
-    setEncomendaSelecionada,
-  ] = useState(null);
-
-  const [
-    empresaSelecionada,
-    setEmpresaSelecionada,
-  ] = useState(null);
-
-  const [encomendas] = useState([
-    {
-      id: "#94821",
-
-      produto: "RTX 4090 ASUS ROG",
-
-      status: "Em transporte",
-
-      data: "19 Maio 2026",
-
-      preco: "R$ 12.199,90",
-
-      cor: "#ff8800",
-
-      descricao:
-        "Placa de vídeo enviada via transporte expresso com seguro total.",
-
-      imagem:
-        "https://images.kabum.com.br/produtos/fotos/384997/placa-de-video-rtx-4090.jpg",
-
-      orcamentos: [
-        {
-          empresa: "Kabum",
-
-          opcoes: [
-            {
-              nome:
-                "Entrega padrão",
-
-              valor:
-                "R$ 12.499,90",
-
-              entrega:
-                "5 dias",
-
-              garantia:
-                "12 meses",
-            },
-
-            {
-              nome:
-                "Entrega expressa",
-
-              valor:
-                "R$ 12.899,90",
-
-              entrega:
-                "1 dia",
-
-              garantia:
-                "12 meses",
-            },
-
-            {
-              nome:
-                "Premium + Seguro",
-
-              valor:
-                "R$ 13.250,00",
-
-              entrega:
-                "24 horas",
-
-              garantia:
-                "24 meses",
-            },
-          ],
-        },
-
-        {
-          empresa: "Terabyte",
-
-          opcoes: [
-            {
-              nome:
-                "Plano básico",
-
-              valor:
-                "R$ 12.350,00",
-
-              entrega:
-                "4 dias",
-
-              garantia:
-                "12 meses",
-            },
-
-            {
-              nome:
-                "Plano gamer",
-
-              valor:
-                "R$ 12.780,00",
-
-              entrega:
-                "2 dias",
-
-              garantia:
-                "24 meses",
-            },
-          ],
-        },
-
-        {
-          empresa: "Pichau",
-
-          opcoes: [
-            {
-              nome:
-                "Entrega normal",
-
-              valor:
-                "R$ 12.299,90",
-
-              entrega:
-                "5 dias",
-
-              garantia:
-                "12 meses",
-            },
-
-            {
-              nome:
-                "Entrega turbo",
-
-              valor:
-                "R$ 12.999,90",
-
-              entrega:
-                "1 dia",
-
-              garantia:
-                "24 meses",
-            },
-          ],
-        },
-      ],
-    },
-
-    {
-      id: "#94822",
-
-      produto: "Ryzen 9 9950X",
-
-      status: "Processando",
-
-      data: "17 Maio 2026",
-
-      preco: "R$ 4.199,90",
-
-      cor: "#ffc107",
-
-      descricao:
-        "Processador em análise de envio para transportadora.",
-
-      imagem:
-        "https://m.media-amazon.com/images/I/61vGQNUEsGL.jpg",
-
-      orcamentos: [
-        {
-          empresa: "Kabum",
-
-          opcoes: [
-            {
-              nome:
-                "Entrega padrão",
-
-              valor:
-                "R$ 4.299,90",
-
-              entrega:
-                "4 dias",
-
-              garantia:
-                "12 meses",
-            },
-
-            {
-              nome:
-                "Entrega rápida",
-
-              valor:
-                "R$ 4.550,00",
-
-              entrega:
-                "1 dia",
-
-              garantia:
-                "24 meses",
-            },
-          ],
-        },
-
-        {
-          empresa: "Amazon",
-
-          opcoes: [
-            {
-              nome:
-                "Prime Express",
-
-              valor:
-                "R$ 4.399,90",
-
-              entrega:
-                "24 horas",
-
-              garantia:
-                "12 meses",
-            },
-
-            {
-              nome:
-                "Plano econômico",
-
-              valor:
-                "R$ 4.199,90",
-
-              entrega:
-                "5 dias",
-
-              garantia:
-                "12 meses",
-            },
-          ],
-        },
-      ],
-    },
-  ]);
+  useEffect(() => {
+    const usuario = obterUsuarioLogado();
+    const tipoUsuario = obterTipoUsuario(usuario);
+
+    if (!usuario) {
+      router.replace("/login");
+      return;
+    }
+
+    if (tipoUsuario === "fornecedor" || tipoUsuario === "supplier") {
+      router.replace("/encomendasrecebe");
+      return;
+    }
+
+    setUsuarioLogado(usuario);
+    setValidandoAcesso(false);
+  }, [router]);
+
+  useEffect(() => {
+    if (validandoAcesso) return;
+
+    const controller = new AbortController();
+
+    async function carregarEncomendas() {
+      try {
+        setLoading(true);
+        setErro(null);
+
+        const query = `?pagina=${paginaAtual}&limite=${encomendasPorPagina}`;
+        let url = `${ENCOMENDAS_URL}${query}`;
+
+        if (busca.trim()) {
+          url = `${ENCOMENDAS_URL}/pecas/${encodeURIComponent(busca.trim())}${query}`;
+        }
+
+        let response = await fetch(url, {
+          method: "GET",
+          headers: montarHeaders(),
+          signal: controller.signal,
+        });
+
+        if (!response.ok && busca.trim()) {
+          response = await fetch(`${ENCOMENDAS_URL}${query}`, {
+            method: "GET",
+            headers: montarHeaders(),
+            signal: controller.signal,
+          });
+        }
+
+        const data = await tratarResposta(response);
+
+        let lista = normalizarLista(data);
+        const idUsuario = obterIdUsuario(usuarioLogado);
+
+        if (idUsuario) {
+          lista = lista.filter((item) => {
+            if (!item.id_user && !item.id_usuario) return true;
+
+            return Number(item.id_user || item.id_usuario) === Number(idUsuario);
+          });
+        }
+
+        if (busca.trim()) {
+          const termo = busca.trim().toLowerCase();
+
+          lista = lista.filter((item) =>
+            String(item.pecas || item.produto || item.descricao || "")
+              .toLowerCase()
+              .includes(termo)
+          );
+        }
+
+        setEncomendas(Array.isArray(lista) ? lista : []);
+        setPaginacao(normalizarPaginacao(data));
+      } catch (error) {
+        if (error.name === "AbortError") return;
+
+        console.error("Erro ao carregar encomendas:", error);
+        setErro(error.message || "Não foi possível carregar suas encomendas.");
+        setEncomendas([]);
+        setPaginacao({
+          pagina: 1,
+          limite: encomendasPorPagina,
+          total: 0,
+          totalPaginas: 1,
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    const delay = setTimeout(() => {
+      carregarEncomendas();
+    }, 350);
+
+    return () => {
+      clearTimeout(delay);
+      controller.abort();
+    };
+  }, [validandoAcesso, paginaAtual, busca, usuarioLogado]);
+
+  function handleBuscaChange(event) {
+    setBusca(event.target.value);
+    setPaginaAtual(1);
+  }
+
+  function abrirDetalhes(encomenda) {
+    setEncomendaSelecionada(encomenda);
+  }
+
+  const metricas = useMemo(() => {
+    return {
+      total: encomendas.length,
+      pendentes: encomendas.filter((item) => item.status === "pendente").length,
+      andamento: encomendas.filter((item) => item.status === "em_andamento").length,
+      finalizadas: encomendas.filter((item) => item.status === "finalizado").length,
+      canceladas: encomendas.filter((item) => item.status === "cancelado").length,
+    };
+  }, [encomendas]);
+
+  if (validandoAcesso) {
+    return (
+      <main
+        className="d-flex justify-content-center align-items-center text-white"
+        style={{
+          minHeight: "100vh",
+          background: "linear-gradient(145deg,#08080a,#101014,#160d12)",
+        }}
+      >
+        <div className="text-center">
+          <div className="spinner-border text-warning mb-3" />
+          <h4 className="fw-bold">Verificando acesso...</h4>
+          <p className="text-secondary mb-0">
+            Direcionando para a página correta.
+          </p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main
       style={{
-        background: "#000",
         minHeight: "100vh",
+        color: "white",
+        background: `
+          radial-gradient(circle at top left, rgba(255,136,0,.10), transparent 25%),
+          radial-gradient(circle at bottom right, rgba(192,1,42,.16), transparent 30%),
+          linear-gradient(145deg,#08080a,#101014,#160d12)
+        `,
       }}
     >
-      {/* HERO */}
       <section
         className="py-5 text-white"
         style={{
-          background:
-            "linear-gradient(to right, #7a0018, #ff8800)",
+          background: "linear-gradient(135deg,#940533,#c0012a,#f5061d)",
+          borderBottom: "1px solid rgba(255,255,255,.08)",
         }}
       >
-        <div className="container py-4">
+        <div className="container py-4 text-center">
+          <span className="badge bg-warning text-dark mb-3 px-3 py-2">
+            Minhas Encomendas
+          </span>
+
           <h1 className="display-4 fw-bold">
-            Encomendas
+            Acompanhe seus pedidos
           </h1>
 
-          <p className="lead mt-3 col-lg-7">
-            Gerencie encomendas,
-            acompanhe empresas e
-            visualize diversos
-            orçamentos em tempo
-            real.
+          <p className="lead mt-3 mb-0">
+            Veja o status, datas, orçamento e detalhes das suas encomendas.
           </p>
         </div>
       </section>
 
-      {/* CONTEUDO */}
       <section className="py-5">
         <div className="container-fluid px-4">
-          <div className="row">
-            {/* SIDEBAR */}
-            <div className="col-lg-3 mb-4">
-              <div
-                className="position-sticky p-4 rounded-4 shadow-lg"
+          <div className="row g-4">
+            <div className="col-lg-3">
+              <aside
+                className="p-4 rounded-4 shadow-lg position-sticky"
                 style={{
                   top: "20px",
-                  background: "#111",
-                  border:
-                    "1px solid rgba(255,255,255,.08)",
+                  background: "rgba(17,17,17,.95)",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  backdropFilter: "blur(12px)",
                 }}
               >
-                <div className="text-center">
-                  <div
-                    style={{
-                      width: "120px",
-                      height: "120px",
-                      borderRadius:
-                        "24px",
-                      overflow:
-                        "hidden",
-                      margin:
-                        "0 auto",
-                    }}
-                  >
-                    <Image
-                      src="/fisheye.png"
-                      alt="Usuário"
-                      width={120}
-                      height={120}
-                      style={{
-                        width:
-                          "100%",
-                        height:
-                          "100%",
-                        objectFit:
-                          "cover",
-                      }}
-                    />
-                  </div>
+                <h3 className="fw-bold mb-4">
+                  Buscar encomenda
+                </h3>
 
-                  <h4 className="text-white fw-bold mt-4">
-                    Bida
-                  </h4>
+                <input
+                  type="text"
+                  className="form-control mb-4"
+                  placeholder="Digite o nome da peça"
+                  value={busca}
+                  onChange={handleBuscaChange}
+                  style={inputStyle}
+                />
 
-                  <p
-                    style={{
-                      color:
-                        "#bdbdbd",
-                    }}
-                  >
-                    Cliente Premium
-                  </p>
-                </div>
-
-                <div className="mt-4 d-flex flex-column gap-3">
-                  <div
-                    style={{
-                      background:
-                        "rgba(255,255,255,.03)",
-                      border:
-                        "1px solid rgba(255,255,255,.08)",
-                      borderRadius:
-                        "18px",
-                      padding:
-                        "18px",
-                    }}
-                  >
-                    <span
-                      style={{
-                        color:
-                          "#9d9d9d",
-                      }}
-                    >
-                      Encomendas
-                    </span>
-
-                    <h2 className="text-white fw-bold mt-2">
-                      {
-                        encomendas.length
-                      }
-                    </h2>
-                  </div>
-
-                  <div
-                    style={{
-                      background:
-                        "rgba(255,255,255,.03)",
-                      border:
-                        "1px solid rgba(255,255,255,.08)",
-                      borderRadius:
-                        "18px",
-                      padding:
-                        "18px",
-                    }}
-                  >
-                    <span
-                      style={{
-                        color:
-                          "#9d9d9d",
-                      }}
-                    >
-                      Empresas
-                    </span>
-
-                    <h2 className="text-white fw-bold mt-2">
-                      10+
-                    </h2>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* LISTA */}
-            <div className="col-lg-9">
-              <div className="row g-4">
-                {encomendas.map(
-                  (encomenda) => (
+                <div className="d-flex flex-column gap-3">
+                  {[
+                    {
+                      titulo: "Nesta página",
+                      valor: metricas.total,
+                      icon: "bi-box-seam",
+                    },
+                    {
+                      titulo: "Pendentes",
+                      valor: metricas.pendentes,
+                      icon: "bi-hourglass-split",
+                    },
+                    {
+                      titulo: "Em andamento",
+                      valor: metricas.andamento,
+                      icon: "bi-arrow-repeat",
+                    },
+                    {
+                      titulo: "Finalizadas",
+                      valor: metricas.finalizadas,
+                      icon: "bi-check-circle",
+                    },
+                    {
+                      titulo: "Canceladas",
+                      valor: metricas.canceladas,
+                      icon: "bi-x-circle",
+                    },
+                  ].map((item) => (
                     <div
-                      className="col-12"
-                      key={
-                        encomenda.id
-                      }
+                      key={item.titulo}
+                      className="d-flex align-items-center gap-3"
+                      style={{
+                        background: "rgba(255,255,255,.035)",
+                        border: "1px solid rgba(255,255,255,.06)",
+                        borderRadius: "18px",
+                        padding: "15px",
+                      }}
                     >
                       <div
-                        className="card border-0 overflow-hidden"
+                        className="d-flex align-items-center justify-content-center"
                         style={{
-                          background:
-                            "#111",
-                          border:
-                            "1px solid rgba(255,255,255,.08)",
-                          borderRadius:
-                            "26px",
+                          width: "46px",
+                          height: "46px",
+                          borderRadius: "14px",
+                          background: "rgba(255,136,0,.14)",
+                          color: "#ffb300",
                         }}
                       >
-                        <div className="row g-0">
-                          {/* IMAGEM */}
-                          <div className="col-lg-3">
-                            <img
-                              src={
-                                encomenda.imagem
-                              }
-                              alt={
-                                encomenda.produto
-                              }
-                              className="w-100 h-100"
-                              style={{
-                                objectFit:
-                                  "cover",
-                                maxHeight:
-                                  "280px",
-                              }}
-                            />
-                          </div>
+                        <i className={`bi ${item.icon}`} />
+                      </div>
 
-                          {/* CONTEUDO */}
-                          <div className="col-lg-9">
-                            <div className="card-body p-4">
-                              <div className="d-flex justify-content-between align-items-start flex-wrap gap-3">
-                                <div>
-                                  <span
-                                    style={{
-                                      color:
-                                        encomenda.cor,
-                                      fontWeight:
-                                        "700",
-                                    }}
-                                  >
-                                    {
-                                      encomenda.id
-                                    }
-                                  </span>
+                      <div>
+                        <p
+                          className="mb-0"
+                          style={{
+                            color: "rgba(255,255,255,.58)",
+                            fontSize: ".82rem",
+                          }}
+                        >
+                          {item.titulo}
+                        </p>
 
-                                  <h2 className="text-white fw-bold mt-2">
-                                    {
-                                      encomenda.produto
-                                    }
-                                  </h2>
+                        <strong style={{ fontSize: "1.15rem" }}>
+                          {String(item.valor).padStart(2, "0")}
+                        </strong>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </aside>
+            </div>
 
-                                  <p
-                                    style={{
-                                      color:
-                                        "#bdbdbd",
-                                      maxWidth:
-                                        "620px",
-                                    }}
-                                  >
-                                    {
-                                      encomenda.descricao
-                                    }
+            <div className="col-lg-9">
+              {loading && (
+                <div
+                  className="text-center py-5 rounded-4"
+                  style={{
+                    background: "rgba(255,255,255,.03)",
+                    border: "1px solid rgba(255,255,255,.06)",
+                  }}
+                >
+                  <div className="spinner-border text-warning mb-3" />
+                  <h4 className="fw-bold">
+                    Carregando encomendas...
+                  </h4>
+                </div>
+              )}
+
+              {erro && (
+                <div className="alert alert-danger">
+                  {erro}
+                </div>
+              )}
+
+              {!loading && !erro && encomendas.length === 0 && (
+                <div
+                  className="text-center py-5 rounded-4"
+                  style={{
+                    background: "rgba(255,255,255,.03)",
+                    border: "1px solid rgba(255,255,255,.06)",
+                    color: "rgba(255,255,255,.62)",
+                  }}
+                >
+                  <i
+                    className="bi bi-inbox"
+                    style={{
+                      fontSize: "4rem",
+                      color: "#ffb300",
+                    }}
+                  />
+
+                  <h3 className="fw-bold mt-3 text-white">
+                    Nenhuma encomenda encontrada
+                  </h3>
+
+                  <p className="mb-0">
+                    Você ainda não possui encomendas ou a pesquisa não encontrou resultados.
+                  </p>
+                </div>
+              )}
+
+              <div className="row g-4">
+                {!loading &&
+                  encomendas.map((encomenda) => (
+                    <div className="col-12" key={encomenda.id_encomenda}>
+                      <article
+                        className="card shadow-lg overflow-hidden"
+                        style={{
+                          background: "rgba(17,17,17,.96)",
+                          borderRadius: "24px",
+                          border: "1px solid rgba(255,255,255,.08)",
+                        }}
+                      >
+                        <div className="card-body p-4">
+                          <div className="row g-4 align-items-center">
+                            <div className="col-lg-8">
+                              <div className="d-flex align-items-center gap-2 mb-3 flex-wrap">
+                                <span
+                                  className={`badge ${corStatus(encomenda.status)}`}
+                                  style={{
+                                    borderRadius: "999px",
+                                    padding: "8px 12px",
+                                  }}
+                                >
+                                  {formatarStatus(encomenda.status)}
+                                </span>
+
+                                <span
+                                  className="badge bg-dark border"
+                                  style={{
+                                    borderColor: "rgba(255,255,255,.12)",
+                                    borderRadius: "999px",
+                                    padding: "8px 12px",
+                                    color: "rgba(255,255,255,.72)",
+                                  }}
+                                >
+                                  #{encomenda.id_encomenda}
+                                </span>
+                              </div>
+
+                              <h3 className="text-white fw-bold mb-3">
+                                {encomenda.pecas || encomenda.produto || "Peça não informada"}
+                              </h3>
+
+                              <p className="text-secondary mb-3">
+                                {encomenda.descricao || "Sem descrição cadastrada."}
+                              </p>
+
+                              <div className="row g-3">
+                                <div className="col-md-6">
+                                  <p className="text-secondary mb-2">
+                                    Fornecedor:
+                                    <span className="text-white fw-semibold ms-2">
+                                      {encomenda.id_fornecedor || "Não informado"}
+                                    </span>
+                                  </p>
+
+                                  <p className="text-secondary mb-2">
+                                    Logística:
+                                    <span className="text-white fw-semibold ms-2">
+                                      {encomenda.id_logistica || "Não informada"}
+                                    </span>
                                   </p>
                                 </div>
 
-                                <div
-                                  style={{
-                                    background:
-                                      "rgba(255,255,255,.04)",
-                                    border:
-                                      "1px solid rgba(255,255,255,.08)",
-                                    borderRadius:
-                                      "16px",
-                                    padding:
-                                      "14px 18px",
-                                  }}
-                                >
-                                  <span
-                                    style={{
-                                      color:
-                                        "#9d9d9d",
-                                      fontSize:
-                                        ".8rem",
-                                    }}
-                                  >
-                                    DATA
-                                  </span>
+                                <div className="col-md-6">
+                                  <p className="text-secondary mb-2">
+                                    Compra:
+                                    <span className="text-white fw-semibold ms-2">
+                                      {formatarData(encomenda.data_com)}
+                                    </span>
+                                  </p>
 
-                                  <h6 className="text-white fw-bold mt-2 mb-0">
-                                    {
-                                      encomenda.data
-                                    }
-                                  </h6>
+                                  <p className="text-secondary mb-2">
+                                    Entrega:
+                                    <span className="text-white fw-semibold ms-2">
+                                      {formatarData(encomenda.data_entrega)}
+                                    </span>
+                                  </p>
                                 </div>
                               </div>
 
-                              {/* CARDS */}
-                              <div className="row g-3 mt-3">
-                                <div className="col-md-4">
-                                  <div
-                                    style={{
-                                      background:
-                                        "rgba(255,255,255,.03)",
-                                      border:
-                                        "1px solid rgba(255,255,255,.06)",
-                                      borderRadius:
-                                        "18px",
-                                      padding:
-                                        "20px",
-                                    }}
-                                  >
-                                    <span
-                                      style={{
-                                        color:
-                                          "#9d9d9d",
-                                      }}
-                                    >
-                                      STATUS
-                                    </span>
+                              <p className="text-secondary mt-2 mb-0">
+                                Orçamento:
+                                <span className="text-white fw-semibold ms-2">
+                                  {formatarDinheiro(encomenda.orcamento)}
+                                </span>
+                              </p>
+                            </div>
 
-                                    <h5
-                                      className="fw-bold mt-2"
-                                      style={{
-                                        color:
-                                          encomenda.cor,
-                                      }}
-                                    >
-                                      {
-                                        encomenda.status
-                                      }
-                                    </h5>
-                                  </div>
-                                </div>
-
-                                <div className="col-md-4">
-                                  <div
-                                    style={{
-                                      background:
-                                        "rgba(255,255,255,.03)",
-                                      border:
-                                        "1px solid rgba(255,255,255,.06)",
-                                      borderRadius:
-                                        "18px",
-                                      padding:
-                                        "20px",
-                                    }}
-                                  >
-                                    <span
-                                      style={{
-                                        color:
-                                          "#9d9d9d",
-                                      }}
-                                    >
-                                      MELHOR PREÇO
-                                    </span>
-
-                                    <h5
-                                      className="fw-bold mt-2"
-                                      style={{
-                                        color:
-                                          "#4ade80",
-                                      }}
-                                    >
-                                      {
-                                        encomenda.preco
-                                      }
-                                    </h5>
-                                  </div>
-                                </div>
-
-                                <div className="col-md-4">
-                                  <div
-                                    style={{
-                                      background:
-                                        "rgba(255,255,255,.03)",
-                                      border:
-                                        "1px solid rgba(255,255,255,.06)",
-                                      borderRadius:
-                                        "18px",
-                                      padding:
-                                        "20px",
-                                    }}
-                                  >
-                                    <span
-                                      style={{
-                                        color:
-                                          "#9d9d9d",
-                                      }}
-                                    >
-                                      EMPRESAS
-                                    </span>
-
-                                    <h5 className="text-white fw-bold mt-2">
-                                      {
-                                        encomenda
-                                          .orcamentos
-                                          .length
-                                      }{" "}
-                                      opções
-                                    </h5>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* BOTAO */}
-                              <div className="mt-4">
+                            <div className="col-lg-4">
+                              <div className="d-grid gap-3">
                                 <button
-                                  onClick={() => {
-                                    setEncomendaSelecionada(
-                                      encomenda
-                                    );
-
-                                    setEmpresaSelecionada(
-                                      null
-                                    );
-
-                                    setModalAberto(
-                                      true
-                                    );
-                                  }}
-                                  className="btn text-white fw-bold"
+                                  type="button"
+                                  className="btn btn-outline-light fw-semibold"
+                                  data-bs-toggle="modal"
+                                  data-bs-target="#modalDetalhesEncomenda"
+                                  onClick={() => abrirDetalhes(encomenda)}
                                   style={{
-                                    background:
-                                      "linear-gradient(to right, #7a0018, #ff8800)",
-                                    border:
-                                      "none",
-                                    borderRadius:
-                                      "14px",
-                                    padding:
-                                      "13px 24px",
+                                    borderRadius: "14px",
+                                    padding: "12px 16px",
                                   }}
                                 >
-                                  Ver Orçamentos
+                                  Ver detalhes
+                                </button>
+
+                                <button
+                                  type="button"
+                                  className="btn fw-semibold"
+                                  style={{
+                                    ...buttonGradient,
+                                    padding: "12px 16px",
+                                  }}
+                                  disabled
+                                >
+                                  Aguardando fornecedor
                                 </button>
                               </div>
                             </div>
                           </div>
                         </div>
-                      </div>
+                      </article>
                     </div>
-                  )
-                )}
+                  ))}
               </div>
+
+              {paginacao.totalPaginas > 1 && (
+                <nav className="mt-5">
+                  <ul className="pagination justify-content-center flex-wrap gap-2">
+                    <li className={`page-item ${paginaAtual <= 1 ? "disabled" : ""}`}>
+                      <button
+                        type="button"
+                        className="page-link"
+                        onClick={() => setPaginaAtual((prev) => Math.max(prev - 1, 1))}
+                        style={{
+                          background: "#111",
+                          color: "white",
+                          border: "1px solid rgba(255,255,255,.18)",
+                          borderRadius: "12px",
+                        }}
+                      >
+                        Anterior
+                      </button>
+                    </li>
+
+                    {[...Array(paginacao.totalPaginas)].map((_, index) => {
+                      const numeroPagina = index + 1;
+                      const ativo = paginaAtual === numeroPagina;
+
+                      return (
+                        <li key={numeroPagina} className="page-item">
+                          <button
+                            type="button"
+                            className="page-link"
+                            onClick={() => setPaginaAtual(numeroPagina)}
+                            style={{
+                              background: ativo
+                                ? "linear-gradient(to right, #c0012a, #ff8800)"
+                                : "#111",
+                              color: "white",
+                              border: ativo
+                                ? "1px solid transparent"
+                                : "1px solid rgba(255,255,255,.18)",
+                              borderRadius: "12px",
+                            }}
+                          >
+                            {numeroPagina}
+                          </button>
+                        </li>
+                      );
+                    })}
+
+                    <li
+                      className={`page-item ${
+                        paginaAtual >= paginacao.totalPaginas ? "disabled" : ""
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        className="page-link"
+                        onClick={() =>
+                          setPaginaAtual((prev) =>
+                            Math.min(prev + 1, paginacao.totalPaginas)
+                          )
+                        }
+                        style={{
+                          background: "#111",
+                          color: "white",
+                          border: "1px solid rgba(255,255,255,.18)",
+                          borderRadius: "12px",
+                        }}
+                      >
+                        Próxima
+                      </button>
+                    </li>
+                  </ul>
+                </nav>
+              )}
             </div>
           </div>
         </div>
       </section>
 
-      {/* MODAL */}
-      {modalAberto &&
-        encomendaSelecionada && (
+      <div className="modal fade" id="modalDetalhesEncomenda" tabIndex="-1">
+        <div className="modal-dialog modal-dialog-centered modal-lg">
           <div
-            className="d-flex justify-content-center align-items-center"
+            className="modal-content border-0"
             style={{
-              position: "fixed",
-              inset: 0,
-              background:
-                "rgba(0,0,0,.82)",
-              backdropFilter:
-                "blur(10px)",
-              zIndex: 9999,
-              padding: "20px",
-              overflowY: "auto",
+              background: "#111",
+              color: "white",
+              borderRadius: "24px",
+              overflow: "hidden",
             }}
           >
             <div
+              className="modal-header border-0"
               style={{
-                width: "100%",
-                maxWidth:
-                  "920px",
-                borderRadius:
-                  "28px",
-                overflow:
-                  "hidden",
-                background:
-                  "#111",
-                border:
-                  "1px solid rgba(255,255,255,.08)",
+                background: "linear-gradient(135deg,#940533,#c0012a,#f5061d)",
               }}
             >
-              {/* HEADER */}
-              <div
-                style={{
-                  background:
-                    "linear-gradient(to right, #7a0018, #ff8800)",
-                  padding:
-                    "30px",
-                  position:
-                    "relative",
-                }}
-              >
-                <button
-                  onClick={() => {
-                    setModalAberto(
-                      false
-                    );
+              <div>
+                <h2 className="fw-bold mb-1">
+                  {encomendaSelecionada?.pecas ||
+                    encomendaSelecionada?.produto ||
+                    "Encomenda"}
+                </h2>
 
-                    setEmpresaSelecionada(
-                      null
-                    );
-                  }}
-                  className="btn"
-                  style={{
-                    position:
-                      "absolute",
-                    top: "18px",
-                    right: "18px",
-                    width: "48px",
-                    height: "48px",
-                    borderRadius:
-                      "14px",
-                    background:
-                      "rgba(255,255,255,.15)",
-                    border:
-                      "1px solid rgba(255,255,255,.15)",
-                    color:
-                      "#fff",
-                  }}
-                >
-                  <i className="bi bi-x-lg"></i>
-                </button>
-
-                <div className="d-flex align-items-center gap-4 flex-wrap">
-                  <img
-                    src={
-                      encomendaSelecionada.imagem
-                    }
-                    alt={
-                      encomendaSelecionada.produto
-                    }
-                    style={{
-                      width:
-                        "130px",
-                      height:
-                        "130px",
-                      objectFit:
-                        "cover",
-                      borderRadius:
-                        "22px",
-                    }}
-                  />
-
-                  <div>
-                    <h2 className="fw-bold text-white">
-                      {
-                        encomendaSelecionada.produto
-                      }
-                    </h2>
-
-                    <p
-                      style={{
-                        color:
-                          "rgba(255,255,255,.82)",
-                        maxWidth:
-                          "520px",
-                        marginBottom:
-                          "0",
-                      }}
-                    >
-                      {
-                        encomendaSelecionada.descricao
-                      }
-                    </p>
-                  </div>
-                </div>
+                <p className="mb-0 opacity-75">
+                  Código #{encomendaSelecionada?.id_encomenda || "---"}
+                </p>
               </div>
 
-              {/* CONTEUDO */}
-              <div className="p-4">
-                <div className="mb-4">
-                  <h4 className="text-white fw-bold">
-                    Empresas
-                    disponíveis
-                  </h4>
+              <button
+                type="button"
+                className="btn-close btn-close-white"
+                data-bs-dismiss="modal"
+              />
+            </div>
 
-                  <p
-                    style={{
-                      color:
-                        "rgba(255,255,255,.55)",
-                    }}
-                  >
-                    Clique em uma
-                    empresa para
-                    visualizar os
-                    orçamentos.
-                  </p>
-                </div>
+            <div className="modal-body p-4">
+              <div className="mb-4">
+                <h5 className="text-secondary">Descrição</h5>
 
-                {/* EMPRESAS */}
-                <div className="row g-3">
-                  {encomendaSelecionada.orcamentos.map(
-                    (
-                      empresa,
-                      index
-                    ) => (
-                      <div
-                        className="col-md-4"
-                        key={index}
-                      >
-                        <button
-                          onClick={() =>
-                            setEmpresaSelecionada(
-                              empresa
-                            )
-                          }
-                          className="w-100 text-start"
-                          style={{
-                            background:
-                              empresaSelecionada?.empresa ===
-                              empresa.empresa
-                                ? "linear-gradient(to right, #7a0018, #ff8800)"
-                                : "rgba(255,255,255,.03)",
+                <p>
+                  {encomendaSelecionada?.descricao ||
+                    "Sem descrição disponível para esta encomenda."}
+                </p>
+              </div>
 
-                            border:
-                              empresaSelecionada?.empresa ===
-                              empresa.empresa
-                                ? "1px solid transparent"
-                                : "1px solid rgba(255,255,255,.08)",
-
-                            borderRadius:
-                              "18px",
-
-                            padding:
-                              "18px",
-
-                            color:
-                              "#fff",
-                          }}
-                        >
-                          <div className="d-flex justify-content-between align-items-center">
-                            <div>
-                              <h5 className="fw-bold mb-1">
-                                {
-                                  empresa.empresa
-                                }
-                              </h5>
-
-                              <span
-                                style={{
-                                  color:
-                                    "#cfcfcf",
-                                  fontSize:
-                                    ".85rem",
-                                }}
-                              >
-                                Ver opções
-                              </span>
-                            </div>
-
-                            <i className="bi bi-building-fill fs-4"></i>
-                          </div>
-                        </button>
-                      </div>
-                    )
-                  )}
-                </div>
-
-                {/* ORÇAMENTOS */}
-                {empresaSelecionada && (
-                  <div className="mt-5">
-                    <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
-                      <div>
-                        <span
-                          style={{
-                            color:
-                              "#9d9d9d",
-                          }}
-                        >
-                          EMPRESA
-                          SELECIONADA
-                        </span>
-
-                        <h2 className="fw-bold text-white mt-2">
-                          {
-                            empresaSelecionada.empresa
-                          }
-                        </h2>
-                      </div>
-
-                      <div
-                        style={{
-                          background:
-                            "rgba(255,255,255,.04)",
-                          border:
-                            "1px solid rgba(255,255,255,.08)",
-                          borderRadius:
-                            "16px",
-                          padding:
-                            "14px 18px",
-                        }}
-                      >
-                        <span
-                          style={{
-                            color:
-                              "#9d9d9d",
-                          }}
-                        >
-                          ORÇAMENTOS
-                        </span>
-
-                        <h5 className="text-white fw-bold mt-2 mb-0">
-                          {
-                            empresaSelecionada
-                              .opcoes
-                              .length
-                          }{" "}
-                          opções
-                        </h5>
-                      </div>
-                    </div>
-
-                    {/* LISTA DE OPÇÕES */}
-                    <div className="row g-3">
-                      {empresaSelecionada.opcoes.map(
-                        (
-                          opcao,
-                          index
-                        ) => (
-                          <div
-                            className="col-md-6"
-                            key={index}
-                          >
-                            <div
-                              style={{
-                                background:
-                                  "rgba(255,255,255,.03)",
-
-                                border:
-                                  "1px solid rgba(255,255,255,.08)",
-
-                                borderRadius:
-                                  "22px",
-
-                                padding:
-                                  "24px",
-                              }}
-                            >
-                              <div className="d-flex justify-content-between align-items-start">
-                                <div>
-                                  <span
-                                    style={{
-                                      color:
-                                        "#9d9d9d",
-                                      fontSize:
-                                        ".8rem",
-                                    }}
-                                  >
-                                    PLANO
-                                  </span>
-
-                                  <h4 className="text-white fw-bold mt-2">
-                                    {
-                                      opcao.nome
-                                    }
-                                  </h4>
-                                </div>
-
-                                <h4
-                                  className="fw-bold"
-                                  style={{
-                                    color:
-                                      "#4ade80",
-                                  }}
-                                >
-                                  {
-                                    opcao.valor
-                                  }
-                                </h4>
-                              </div>
-
-                              <div className="row g-3 mt-3">
-                                <div className="col-6">
-                                  <div
-                                    style={{
-                                      background:
-                                        "rgba(255,255,255,.04)",
-
-                                      borderRadius:
-                                        "14px",
-
-                                      padding:
-                                        "14px",
-                                    }}
-                                  >
-                                    <span
-                                      style={{
-                                        color:
-                                          "#9d9d9d",
-                                        fontSize:
-                                          ".72rem",
-                                      }}
-                                    >
-                                      ENTREGA
-                                    </span>
-
-                                    <h6 className="text-white fw-bold mt-2 mb-0">
-                                      {
-                                        opcao.entrega
-                                      }
-                                    </h6>
-                                  </div>
-                                </div>
-
-                                <div className="col-6">
-                                  <div
-                                    style={{
-                                      background:
-                                        "rgba(255,255,255,.04)",
-
-                                      borderRadius:
-                                        "14px",
-
-                                      padding:
-                                        "14px",
-                                    }}
-                                  >
-                                    <span
-                                      style={{
-                                        color:
-                                          "#9d9d9d",
-                                        fontSize:
-                                          ".72rem",
-                                      }}
-                                    >
-                                      GARANTIA
-                                    </span>
-
-                                    <h6 className="text-white fw-bold mt-2 mb-0">
-                                      {
-                                        opcao.garantia
-                                      }
-                                    </h6>
-                                  </div>
-                                </div>
-                              </div>
-
-                              <button
-                                className="btn w-100 text-white fw-bold mt-4"
-                                style={{
-                                  background:
-                                    "linear-gradient(to right, #7a0018, #ff8800)",
-
-                                  border:
-                                    "none",
-
-                                  borderRadius:
-                                    "14px",
-
-                                  padding:
-                                    "12px",
-                                }}
-                              >
-                                Escolher
-                                orçamento
-                              </button>
-                            </div>
-                          </div>
-                        )
-                      )}
-                    </div>
+              <div className="row g-3">
+                <div className="col-md-6">
+                  <div className="p-3 rounded-4" style={{ background: "#181818" }}>
+                    <span className="text-secondary d-block mb-1">Status</span>
+                    <strong>{formatarStatus(encomendaSelecionada?.status)}</strong>
                   </div>
-                )}
+                </div>
+
+                <div className="col-md-6">
+                  <div className="p-3 rounded-4" style={{ background: "#181818" }}>
+                    <span className="text-secondary d-block mb-1">Orçamento</span>
+                    <strong>{formatarDinheiro(encomendaSelecionada?.orcamento)}</strong>
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="p-3 rounded-4" style={{ background: "#181818" }}>
+                    <span className="text-secondary d-block mb-1">Fornecedor</span>
+                    <strong>{encomendaSelecionada?.id_fornecedor || "Não informado"}</strong>
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="p-3 rounded-4" style={{ background: "#181818" }}>
+                    <span className="text-secondary d-block mb-1">Logística</span>
+                    <strong>{encomendaSelecionada?.id_logistica || "Não informada"}</strong>
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="p-3 rounded-4" style={{ background: "#181818" }}>
+                    <span className="text-secondary d-block mb-1">Data da compra</span>
+                    <strong>{formatarData(encomendaSelecionada?.data_com)}</strong>
+                  </div>
+                </div>
+
+                <div className="col-md-6">
+                  <div className="p-3 rounded-4" style={{ background: "#181818" }}>
+                    <span className="text-secondary d-block mb-1">Data de entrega</span>
+                    <strong>{formatarData(encomendaSelecionada?.data_entrega)}</strong>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        )}
+        </div>
+      </div>
     </main>
   );
 }
