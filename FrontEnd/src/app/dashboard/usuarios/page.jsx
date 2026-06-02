@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
 
+const LIMITE_USUARIOS = 10;
+
 const formInicial = {
   nome_user: "",
   email: "",
@@ -23,6 +25,14 @@ export default function Usuarios() {
   const [carregando, setCarregando] = useState(true);
   const [erroLista, setErroLista] = useState(null);
 
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const [paginacao, setPaginacao] = useState({
+    pagina: 1,
+    limite: LIMITE_USUARIOS,
+    total: 0,
+    totalPaginas: 1,
+  });
+
   const [formData, setFormData] = useState(formInicial);
 
   const [formErro, setFormErro] = useState(null);
@@ -34,7 +44,7 @@ export default function Usuarios() {
   const [processandoForm, setProcessandoForm] = useState(false);
 
   useEffect(() => {
-    carregarUsuarios();
+    carregarUsuarios(1);
   }, []);
 
   const obterTokenAdmin = () => {
@@ -53,25 +63,58 @@ export default function Usuarios() {
     }
   };
 
-  const carregarUsuarios = async () => {
+  const carregarUsuarios = async (pagina = 1) => {
     setCarregando(true);
     setErroLista(null);
 
     const token = obterTokenAdmin();
 
     try {
-      const res = await fetch(`${API_URL}/api/usuarios`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+      const res = await fetch(
+        `${API_URL}/api/usuarios?pagina=${pagina}&limite=${LIMITE_USUARIOS}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       const data = await lerJsonComSeguranca(res);
 
+      console.log("RESPOSTA USUÁRIOS:", data);
+
       if (res.ok) {
-        setUsuarios(Array.isArray(data.dados) ? data.dados : []);
+        const listaUsuarios = Array.isArray(data.dados)
+          ? data.dados
+          : Array.isArray(data.usuarios)
+          ? data.usuarios
+          : [];
+
+        const paginaApi = Number(data.paginacao?.pagina || data.pagina || pagina);
+        const limiteApi = Number(
+          data.paginacao?.limite || data.limite || LIMITE_USUARIOS
+        );
+        const totalApi = Number(
+          data.paginacao?.total || data.total || listaUsuarios.length
+        );
+        const totalPaginasApi = Number(
+          data.paginacao?.totalPaginas ||
+            data.totalPaginas ||
+            Math.max(1, Math.ceil(totalApi / limiteApi))
+        );
+
+        setUsuarios(listaUsuarios);
+
+        setPaginacao({
+          pagina: paginaApi,
+          limite: limiteApi,
+          total: totalApi,
+          totalPaginas: totalPaginasApi,
+        });
+
+        setPaginaAtual(paginaApi);
       } else {
         console.error("Erro do servidor ao listar:", res.status, data);
         setErroLista(data.mensagem || data.erro || "Erro ao carregar usuários.");
@@ -185,86 +228,81 @@ export default function Usuarios() {
   };
 
   const handleCriarUsuario = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  setFormErro(null);
-  setFormSucesso(null);
+    setFormErro(null);
+    setFormSucesso(null);
 
-  const token = obterTokenAdmin();
+    const token = obterTokenAdmin();
 
-  if (!token) {
-    setFormErro("Token não encontrado. Faça login novamente.");
-    return;
-  }
-
-  const erroValidacao = validarCriacao();
-
-  if (erroValidacao) {
-    setFormErro(erroValidacao);
-    return;
-  }
-
-  const cnpjLimpo = formData.cnpj.replace(/\D/g, "");
-
-  setProcessandoForm(true);
-
-  try {
-    const res = await fetch(`${API_URL}/api/usuarios`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        nome_user: formData.nome_user.trim(),
-        email: formData.email.trim(),
-        cnpj: cnpjLimpo,
-        empresa: formData.empresa.trim(),
-        cargo: formData.cargo.trim(),
-        cep: formData.cep.trim(),
-        endereco: formData.endereco.trim(),
-        senha: formData.senha,
-        tipo: formData.tipo,
-      }),
-    });
-
-    const data = await lerJsonComSeguranca(res);
-
-    console.log("STATUS CADASTRO:", res.status);
-    console.log("RESPOSTA CADASTRO:", data);
-
-    if (res.ok) {
-      setFormSucesso(data.mensagem || "Usuário criado com sucesso!");
-      await carregarUsuarios();
-
-      setTimeout(() => {
-        fecharModais();
-      }, 900);
-
+    if (!token) {
+      setFormErro("Token não encontrado. Faça login novamente.");
       return;
     }
 
-    const detalhes =
-      Array.isArray(data.detalhes)
-        ? data.detalhes.map((item) => item.mensagem).join(" | ")
-        : null;
+    const erroValidacao = validarCriacao();
 
-    console.log("STATUS:", res.status);
-    console.log("RESPOSTA DO BACKEND:", data);
+    if (erroValidacao) {
+      setFormErro(erroValidacao);
+      return;
+    }
 
-setFormErro(
-  data.mensagem ||
-  data.erro ||
-  data.detalhes?.map((erro) => erro.mensagem).join(", ") ||
-  "Erro ao cadastrar usuário."
-);
-  } catch (error) {
-    console.error("Erro na requisição de cadastro:", error);
-    setFormErro("Erro de conexão com o servidor.");
-  } finally {
-    setProcessandoForm(false);
-  }
-};
+    const cnpjLimpo = formData.cnpj.replace(/\D/g, "");
+
+    setProcessandoForm(true);
+
+    try {
+      const res = await fetch(`${API_URL}/api/usuarios`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          nome_user: formData.nome_user.trim(),
+          email: formData.email.trim(),
+          cnpj: cnpjLimpo,
+          empresa: formData.empresa.trim(),
+          cargo: formData.cargo.trim(),
+          cep: formData.cep.trim(),
+          endereco: formData.endereco.trim(),
+          senha: formData.senha,
+          tipo: formData.tipo,
+        }),
+      });
+
+      const data = await lerJsonComSeguranca(res);
+
+      console.log("STATUS CADASTRO:", res.status);
+      console.log("RESPOSTA CADASTRO:", data);
+
+      if (res.ok) {
+        setFormSucesso(data.mensagem || "Usuário criado com sucesso!");
+        await carregarUsuarios(1);
+
+        setTimeout(() => {
+          fecharModais();
+        }, 900);
+
+        return;
+      }
+
+      console.log("STATUS:", res.status);
+      console.log("RESPOSTA DO BACKEND:", data);
+
+      setFormErro(
+        data.mensagem ||
+          data.erro ||
+          data.detalhes?.map((erro) => erro.mensagem).join(", ") ||
+          "Erro ao cadastrar usuário."
+      );
+    } catch (error) {
+      console.error("Erro na requisição de cadastro:", error);
+      setFormErro("Erro de conexão com o servidor.");
+    } finally {
+      setProcessandoForm(false);
+    }
+  };
 
   const handleEditarUsuario = async (e) => {
     e.preventDefault();
@@ -312,7 +350,7 @@ setFormErro(
 
       if (res.ok && (data.sucesso || data.success)) {
         setFormSucesso("Usuário atualizado com sucesso!");
-        await carregarUsuarios();
+        await carregarUsuarios(paginaAtual);
 
         setTimeout(() => {
           fecharModais();
@@ -344,7 +382,10 @@ setFormErro(
       const data = await lerJsonComSeguranca(res);
 
       if (res.ok) {
-        setUsuarios((prev) => prev.filter((user) => user.id_user !== id_user));
+        const proximaPagina =
+          usuarios.length === 1 && paginaAtual > 1 ? paginaAtual - 1 : paginaAtual;
+
+        await carregarUsuarios(proximaPagina);
       } else {
         alert(data.mensagem || data.erro || "Erro ao excluir usuário.");
       }
@@ -381,6 +422,13 @@ setFormErro(
     WebkitBackdropFilter: "blur(12px)",
     padding: "24px",
     overflowY: "auto",
+  };
+
+  const paginationBtnStyle = {
+    background: "#151518",
+    border: "1px solid rgba(255,255,255,0.06)",
+    color: "#ffb300",
+    borderRadius: "12px",
   };
 
   const renderFormularioUsuario = ({ modo }) => {
@@ -708,7 +756,7 @@ setFormErro(
               className="mb-0"
               style={{ color: "#71717a", fontSize: ".9rem" }}
             >
-              Controle e gerenciamento dos usuários
+              {paginacao.total} usuário(s) cadastrado(s)
             </p>
           </div>
 
@@ -937,6 +985,48 @@ setFormErro(
             </tbody>
           </table>
         </div>
+
+        {!carregando && !erroLista && (
+          <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mt-4">
+            <span style={{ color: "#71717a", fontSize: ".9rem" }}>
+              Página {paginacao.pagina || paginaAtual} de {paginacao.totalPaginas || 1}
+            </span>
+
+            <div className="d-flex gap-2">
+              <button
+                type="button"
+                className="btn px-3"
+                disabled={paginaAtual <= 1 || carregando}
+                onClick={() => carregarUsuarios(paginaAtual - 1)}
+                style={{
+                  ...paginationBtnStyle,
+                  opacity: paginaAtual <= 1 ? 0.45 : 1,
+                  cursor: paginaAtual <= 1 ? "not-allowed" : "pointer",
+                }}
+              >
+                Anterior
+              </button>
+
+              <button
+                type="button"
+                className="btn px-3"
+                disabled={paginaAtual >= (paginacao.totalPaginas || 1) || carregando}
+                onClick={() => carregarUsuarios(paginaAtual + 1)}
+                style={{
+                  ...paginationBtnStyle,
+                  opacity:
+                    paginaAtual >= (paginacao.totalPaginas || 1) ? 0.45 : 1,
+                  cursor:
+                    paginaAtual >= (paginacao.totalPaginas || 1)
+                      ? "not-allowed"
+                      : "pointer",
+                }}
+              >
+                Próxima
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {modalCriarAberto && (

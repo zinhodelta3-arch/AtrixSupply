@@ -249,9 +249,6 @@ class AuthController {
                 return res.status(duplicata.status).json(duplicata.resposta);
             }
 
-            const saltRounds = 10;
-            const senhaHash = await bcrypt.hash(senha, saltRounds);
-
             const dadosUsuario = {
                 nome_user: nome_user.trim(),
                 cnpj: cnpjLimpo,
@@ -259,7 +256,7 @@ class AuthController {
                 empresa: empresa.trim(),
                 cargo: cargo.trim(),
                 email: email.trim().toLowerCase(),
-                senha: senhaHash,
+                senha: senha,
                 tipo: tipo,
                 cep: cepLimpo
             };
@@ -487,10 +484,7 @@ class AuthController {
 
             if (duplicata) {
                 return res.status(duplicata.status).json(duplicata.resposta);
-            }
-
-            const saltRounds = 10;
-            const senhaHash = await bcrypt.hash(senha, saltRounds);
+            };
 
             const dadosUsuario = {
                 nome_user: nome_user.trim(),
@@ -499,7 +493,7 @@ class AuthController {
                 empresa: empresa.trim(),
                 cargo: cargo.trim(),
                 email: email.trim().toLowerCase(),
-                senha: senhaHash,
+                senha: senha,
                 tipo: tipo,
                 cep: cepLimpo
             };
@@ -639,7 +633,7 @@ class AuthController {
                     });
                 }
                 const saltRounds = 10;
-                dadosAtualizacao.senha = await bcrypt.hash(senha, saltRounds);
+                dadosAtualizacao.senha = senha;
             }
 
             if (cep !== undefined) {

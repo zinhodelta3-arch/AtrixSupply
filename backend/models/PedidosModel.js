@@ -8,11 +8,18 @@ class PedidosModel {
 
             const connection = await getConnection();
             try {
-                const sql = 'SELECT * FROM pedidos ORDER BY id_pedido DESC LIMIT ? OFFSET ?';
+                const sql = `SELECT
+                            p.*,
+                            u.nome_user,
+                            u.email,
+                            pr.nome_produto
+                            FROM pedidos p
+                            LEFT JOIN usuarios u ON u.id_user = p.id_user
+                            LEFT JOIN produtos pr ON pr.id_produto = p.id_produto`;
 
                 const [pedidos] = await connection.query(sql, [limite, offset]);
 
-                const [totalResult] = await connection.execute('SELECT COUNT(*) as total FROM produtos');
+                const [totalResult] = await connection.execute('SELECT COUNT(*) as total FROM pedidos');
                 const total = totalResult[0].total;
 
                 const paginaAtual = (offset / limite) + 1;
@@ -112,19 +119,39 @@ class PedidosModel {
     //buscar pelo nome do user
 
     static async buscarPorNome(nome_user, limite, offset) {
-         try {
-
+        try {
             const connection = await getConnection();
+
             try {
-                const sql = 'SELECT p.* FROM pedidos p JOIN usuarios u ON u.id_user = p.id_user WHERE u.nome_user LIKE ?;';
+                const sql = `
+                    SELECT
+                        p.*,
+                        u.nome_user,
+                        u.email,
+                        pr.nome_produto
+                    FROM pedidos p
+                    LEFT JOIN usuarios u ON u.id_user = p.id_user
+                    LEFT JOIN produtos pr ON pr.id_produto = p.id_produto
+                    WHERE u.nome_user LIKE ?
+                    ORDER BY p.id_pedido DESC
+                    LIMIT ? OFFSET ?
+                `;
 
                 const nome = `%${nome_user}%`;
 
                 const [pedidos] = await connection.query(sql, [nome, limite, offset]);
 
-                const [totalResult] = await connection.query('SELECT COUNT(*) as total FROM pedidos p JOIN usuarios u ON u.id_user = p.id_user WHERE u.nome_user LIKE ?;', [nome]);
-                const total = totalResult[0].total;
+                const [totalResult] = await connection.query(
+                    `
+                        SELECT COUNT(*) as total
+                        FROM pedidos p
+                        LEFT JOIN usuarios u ON u.id_user = p.id_user
+                        WHERE u.nome_user LIKE ?
+                    `,
+                    [nome]
+                );
 
+                const total = totalResult[0].total;
                 const paginaAtual = (offset / limite) + 1;
                 const totalPaginas = Math.ceil(total / limite);
 
@@ -139,7 +166,7 @@ class PedidosModel {
                 connection.release();
             }
         } catch (error) {
-            console.error('Erro ao listar produtos:', error);
+            console.error('Erro ao listar pedidos por nome:', error);
             throw error;
         }
     }
@@ -151,7 +178,13 @@ class PedidosModel {
 
             const connection = await getConnection();
             try {
-                const sql = 'SELECT * FROM pedidos WHERE status = ?;';
+                const sql =  `
+                    SELECT *
+                    FROM pedidos
+                    WHERE status = ?
+                    ORDER BY id_pedido DESC
+                    LIMIT ? OFFSET ?
+                    `;
 
                 const [pedidos] = await connection.query(sql, [status, limite, offset]);
 
