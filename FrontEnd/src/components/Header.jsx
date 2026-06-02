@@ -4,44 +4,61 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 
 export default function Header() {
-  // Carrega o pacote JS do Bootstrap apenas no lado do cliente (evita erros de SSR no Next.js)
   useEffect(() => {
     if (typeof window !== "undefined") {
       import("bootstrap/dist/js/bootstrap.bundle.min.js");
     }
   }, []);
 
-  // ESTADO DO CARRINHO: Gerencia a lista de produtos com IDs únicos para a remoção funcionar
+  // TODOS OS PRODUTOS AGORA USAM A IMAGEM "engrenagem.png"
   const [cartItems, setCartItems] = useState([
-    { id: 1, name: "RTX 4090 ASUS ROG STRIX", qty: 1, price: 12499.90, img: "/fixadores.png" },
-    { id: 2, name: "RTX 4090 ASUS ROG STRIX", qty: 1, price: 12499.90, img: "/fixadores.png" },
-    { id: 3, name: "RTX 4090 ASUS ROG STRIX", qty: 1, price: 12499.90, img: "/fixadores.png" },
-    { id: 4, name: "RTX 4090 ASUS ROG STRIX", qty: 1, price: 12499.90, img: "/fixadores.png" },
-    { id: 5, name: "RTX 4090 ASUS ROG STRIX", qty: 1, price: 12499.90, img: "/fixadores.png" },
-    { id: 6, name: "RTX 4090 ASUS ROG STRIX", qty: 1, price: 12499.90, img: "/fixadores.png" },
-    { id: 7, name: "RTX 4090 ASUS ROG STRIX", qty: 1, price: 12499.90, img: "/fixadores.png" },
-    { id: 8, name: "RTX 4090 ASUS ROG STRIX", qty: 1, price: 12499.90, img: "/fixadores.png" },
+    { 
+      id: 1, 
+      name: "Parafuso Sextavado de Alta Resistência (M16 x 50mm)", 
+      qty: 250, 
+      price: 4.50, 
+      img: "/engrenagem.png" 
+    },
+    { 
+      id: 2, 
+      name: "Engrenagem Helicoidal de Aço Temperado Módulo 3", 
+      qty: 4, 
+      price: 389.90, 
+      img: "/engrenagem.png" 
+    },
+    { 
+      id: 3, 
+      name: "Rolamento de Esferas Blindado SKF 6204-2Z", 
+      qty: 12, 
+      price: 42.80, 
+      img: "/engrenagem.png" 
+    },
+    { 
+      id: 4, 
+      name: "Porca Autotravante em Aço Inox AISI 316 (M16)", 
+      qty: 200, 
+      price: 2.10, 
+      img: "/engrenagem.png" 
+    }
   ]);
 
-  // FUNÇÃO PARA REMOVER UM PRODUTO ESPECÍFICO PELO ID
   const handleRemoveItem = (idToRemove) => {
     setCartItems(cartItems.filter(item => item.id !== idToRemove));
   };
 
-  // CÁLCULO DO VALOR TOTAL DO CARRINHO
   const subtotal = cartItems.reduce((acc, item) => acc + (item.price * item.qty), 0);
   const subtotalFormatado = subtotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
   return (
     <>
-      {/* ==========================================================================
-          NAVBAR PRINCIPAL (GLASSMORPHISM)
-          ========================================================================== */}
-      <header>
-        <nav className="glass-navbar navbar navbar-expand-lg p-0">
+      <header style={{ background: "transparent", border: "none", boxShadow: "none" }}>
+        <nav 
+          className="glass-navbar navbar navbar-expand-lg p-0" 
+          style={{ background: "transparent", backgroundColor: "transparent" }}
+        >
           <div className="container position-relative d-flex align-items-center justify-content-between">
             
-            {/* LADO ESQUERDO: Logo e Nome da Marca */}
+            {/* LADO ESQUERDO: Logo */}
             <div className="d-flex align-items-center gap-2">
               <Link className="navbar-brand-premium d-flex align-items-center gap-2 text-decoration-none" href="/">
                 <img src="/logo.png" className="photoLogo" alt="Logo Atrix Supply" />
@@ -49,10 +66,10 @@ export default function Header() {
               </Link>
             </div>
 
-            {/* LADO DIREITO: Carrinho, Perfil e Hamburguer Mobile */}
+            {/* LADO DIREITO: Carrinho, Perfil e Mobile */}
             <div className="d-flex align-items-center gap-3 order-lg-3">
               
-              {/* BOTÃO DO CARRINHO (Dispara a aba lateral) */}
+              {/* BOTÃO DO CARRINHO */}
               <div className="cart-wrapper">
                 <button 
                   className="cart-btn" 
@@ -62,14 +79,13 @@ export default function Header() {
                   aria-controls="offcanvasCarrinho"
                 >
                   <i className="bi bi-cart3"></i>
-                  {/* Badge numérico dinâmico */}
                   {cartItems.length > 0 && (
                     <span className="cart-badge">{cartItems.length}</span>
                   )}
                 </button>
               </div>
 
-              {/* BOTÃO DO PERFIL + DROPDOWN NO HOVER */}
+              {/* BOTÃO DO PERFIL */}
               <div className="profile-wrapper">
                 <div className="profile-btn">
                   <i className="bi bi-person-fill"></i>
@@ -80,7 +96,7 @@ export default function Header() {
                 </div>
               </div>
 
-              {/* BOTÃO HAMBURGUER (Aparece apenas em telas menores) */}
+              {/* HAMBURGUER (Mobile) */}
               <button
                 className="navbar-toggler border-0 shadow-none p-0"
                 type="button"
@@ -94,7 +110,7 @@ export default function Header() {
               </button>
             </div>
 
-            {/* CENTRO: Links de Navegação Principal */}
+            {/* CENTRO: Links de Navegação */}
             <div className="collapse navbar-collapse order-lg-2" id="navbarNav">
               <ul className="navbar-nav navbar-center gap-lg-4">
                 <li className="nav-item">
@@ -116,34 +132,19 @@ export default function Header() {
         </nav>
       </header>
 
-      {/* ==========================================================================
-          ABA LATERAL DO CARRINHO (OFFCANVAS PREMIUM)
-          ========================================================================== */}
-      <div 
-        className="offcanvas offcanvas-end custom-cart-sidebar" 
-        tabIndex="-1" 
-        id="offcanvasCarrinho" 
-        aria-labelledby="offcanvasCarrinhoLabel"
-      >
-        {/* TOPO DA ABA */}
+      {/* ABA LATERAL DO CARRINHO (OFFCANVAS) */}
+      <div className="offcanvas offcanvas-end custom-cart-sidebar" tabIndex="-1" id="offcanvasCarrinho">
         <div className="offcanvas-header sidebar-premium-header">
-          <h5 className="offcanvas-title sidebar-premium-title" id="offcanvasCarrinhoLabel">
+          <h5 className="offcanvas-title sidebar-premium-title">
             <i className="bi bi-cart3 me-2"></i> Seu Carrinho
           </h5>
-          <button 
-            type="button" 
-            className="btn-close btn-close-white shadow-none" 
-            data-bs-dismiss="offcanvas" 
-            aria-label="Close"
-          ></button>
+          <button type="button" className="btn-close btn-close-white shadow-none" data-bs-dismiss="offcanvas"></button>
         </div>
         
-        {/* CORPO DA ABA */}
         <div className="offcanvas-body d-flex flex-column justify-content-between">
           
-          {/* Lista de Produtos (Rolável caso tenha muitos itens) */}
+          {/* LISTAGEM DE PEDIDOS ROLÁVEL */}
           <div className="cart-items-wrapper">
-            
             {cartItems.length === 0 ? (
               <div className="text-center text-muted mt-5">
                 <i className="bi bi-bag-x fs-1 mb-3 d-block"></i>
@@ -155,52 +156,33 @@ export default function Header() {
                   <div className="cart-item-img-container">
                     <img src={item.img} alt={item.name} />
                   </div>
-                  
-                  <div className="d-flex flex-column justify-content-center flex-grow-1">
-                    <h6 className="cart-item-name m-0 text-truncate">{item.name}</h6>
-                    <span className="cart-item-qty text-muted small">Quantidade: {item.qty}</span>
+                  <div className="d-flex flex-column justify-content-center flex-grow-1" style={{ minWidth: 0 }}>
+                    <h6 className="cart-item-name m-0 text-truncate" title={item.name}>{item.name}</h6>
+                    <span className="cart-item-qty text-muted small">Qtd: {item.qty}</span>
                     <span className="cart-item-price mt-1">
-                      {item.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      {(item.price * item.qty).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                     </span>
                   </div>
-                  
-                  {/* BOTÃO DE REMOVER O PRODUTO */}
-                  <button 
-                    className="btn cart-item-remove-btn p-0 align-self-center" 
-                    type="button"
-                    title="Remover item"
-                    onClick={() => handleRemoveItem(item.id)}
-                  >
+                  <button className="btn cart-item-remove-btn p-0 align-self-center" type="button" onClick={() => handleRemoveItem(item.id)}>
                     <i className="bi bi-x-lg"></i>
                   </button>
                 </div>
               ))
             )}
-
           </div>
 
-          {/* RODAPÉ DO CARRINHO (Valores e Ação) */}
+          {/* RESUMO E CHECKOUT */}
           <div className="sidebar-premium-footer">
-            <div className="d-flex justify-content-between mb-4 align-items-center">
+            <div className="d-flex justify-content-between mb-4 align-items-center mt-3">
               <span className="text-muted text-uppercase fw-bold small tracking-label">Subtotal</span>
               <span className="sidebar-total-price">{subtotalFormatado}</span>
             </div>
-            
-            <button 
-              className="btn btn-premium-checkout w-100 d-flex align-items-center justify-content-center gap-2"
-              type="button"
-              disabled={cartItems.length === 0}
-            >
-              <i className="bi bi-lightning-charge-fill" />
-              Finalizar Compra
+            <button className="btn btn-premium-checkout w-100 d-flex align-items-center justify-content-center gap-2" type="button" disabled={cartItems.length === 0}>
+              <i className="bi bi-lightning-charge-fill" /> Finalizar Compra
             </button>
           </div>
-
         </div>
       </div>
-
-      {/* Espaçador de segurança para o conteúdo da página não sumir sob a barra fixa */}
-      <div className="navbar-spacer"></div>
     </>
   );
 }

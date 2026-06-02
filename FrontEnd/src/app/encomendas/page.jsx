@@ -13,68 +13,6 @@ export default function Encomendas() {
     import("bootstrap/dist/js/bootstrap.bundle.min.js");
   }, []);
 
-  const [encomendas, setEncomendas] =
-    useState([
-      {
-        id: "#94821",
-        produto: "RTX 4090 ASUS ROG",
-        status: "Em transporte",
-        data: "19 Maio 2026",
-        preco: "R$ 12.499,90",
-        cor: "#ff8800",
-
-        descricao:
-          "Placa de vídeo enviada via transporte expresso com seguro total.",
-
-        imagem:
-          "https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcTbNGoTPkp0FCEaso75eZN-6C_qby-QJ1j8sZOGOhZ_t5GPTYUMVl0nXcCWIekiXL8hhUn-OQl6uXo3jHvZltf-aDgO7q2ekpnkGKbg_CRcDromkmvxgOsj1Q",
-
-        orcamentos: [
-          {
-            empresa: "Kabum",
-            valor: "R$ 12.499,90",
-          },
-
-          {
-            empresa: "Terabyte",
-            valor: "R$ 12.899,90",
-          },
-
-          {
-            empresa: "Pichau",
-            valor: "R$ 12.350,00",
-          },
-        ],
-      },
-
-      {
-        id: "#94822",
-        produto: "Ryzen 9 9950X",
-        status: "Processando",
-        data: "17 Maio 2026",
-        preco: "R$ 4.299,90",
-        cor: "#ffc107",
-
-        descricao:
-          "Processador em análise de envio para transportadora.",
-
-        imagem:
-          "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ",
-
-        orcamentos: [
-          {
-            empresa: "Kabum",
-            valor: "R$ 4.299,90",
-          },
-
-          {
-            empresa: "Terabyte",
-            valor: "R$ 4.450,00",
-          },
-        ],
-      },
-    ]);
-
   const [modalAberto, setModalAberto] =
     useState(false);
 
@@ -83,97 +21,240 @@ export default function Encomendas() {
     setEncomendaSelecionada,
   ] = useState(null);
 
-  const [modalCriar, setModalCriar] =
-    useState(false);
+  const [
+    empresaSelecionada,
+    setEmpresaSelecionada,
+  ] = useState(null);
 
-  const [paginaAtual, setPaginaAtual] =
-    useState(1);
+  const [encomendas] = useState([
+    {
+      id: "#94821",
 
-  const [novaEncomenda, setNovaEncomenda] =
-    useState({
-      produto: "",
-      descricao: "",
-    });
+      produto: "RTX 4090 ASUS ROG",
 
-  const encomendasPorPagina = 4;
+      status: "Em transporte",
 
-  const ultimaEncomenda =
-    paginaAtual * encomendasPorPagina;
+      data: "19 Maio 2026",
 
-  const primeiraEncomenda =
-    ultimaEncomenda -
-    encomendasPorPagina;
+      preco: "R$ 12.199,90",
 
-  const encomendasAtuais =
-    encomendas.slice(
-      primeiraEncomenda,
-      ultimaEncomenda
-    );
-
-  const totalPaginas = Math.ceil(
-    encomendas.length /
-      encomendasPorPagina
-  );
-
-  function deletarEncomenda(id) {
-    setEncomendas((prev) =>
-      prev.filter(
-        (encomenda) =>
-          encomenda.id !== id
-      )
-    );
-  }
-
-  function criarEncomenda() {
-    if (
-      !novaEncomenda.produto ||
-      !novaEncomenda.descricao
-    )
-      return;
-
-    const nova = {
-      id: `#${
-        Math.floor(
-          Math.random() * 90000
-        ) + 10000
-      }`,
-
-      produto: novaEncomenda.produto,
+      cor: "#ff8800",
 
       descricao:
-        novaEncomenda.descricao,
-
-      status: "Processando",
-
-      data: "28 Maio 2026",
-
-      preco: "R$ 0,00",
-
-      cor: "#ffc107",
+        "Placa de vídeo enviada via transporte expresso com seguro total.",
 
       imagem:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ",
+        "https://images.kabum.com.br/produtos/fotos/384997/placa-de-video-rtx-4090.jpg",
 
       orcamentos: [
         {
           empresa: "Kabum",
-          valor: "R$ 0,00",
+
+          opcoes: [
+            {
+              nome:
+                "Entrega padrão",
+
+              valor:
+                "R$ 12.499,90",
+
+              entrega:
+                "5 dias",
+
+              garantia:
+                "12 meses",
+            },
+
+            {
+              nome:
+                "Entrega expressa",
+
+              valor:
+                "R$ 12.899,90",
+
+              entrega:
+                "1 dia",
+
+              garantia:
+                "12 meses",
+            },
+
+            {
+              nome:
+                "Premium + Seguro",
+
+              valor:
+                "R$ 13.250,00",
+
+              entrega:
+                "24 horas",
+
+              garantia:
+                "24 meses",
+            },
+          ],
+        },
+
+        {
+          empresa: "Terabyte",
+
+          opcoes: [
+            {
+              nome:
+                "Plano básico",
+
+              valor:
+                "R$ 12.350,00",
+
+              entrega:
+                "4 dias",
+
+              garantia:
+                "12 meses",
+            },
+
+            {
+              nome:
+                "Plano gamer",
+
+              valor:
+                "R$ 12.780,00",
+
+              entrega:
+                "2 dias",
+
+              garantia:
+                "24 meses",
+            },
+          ],
+        },
+
+        {
+          empresa: "Pichau",
+
+          opcoes: [
+            {
+              nome:
+                "Entrega normal",
+
+              valor:
+                "R$ 12.299,90",
+
+              entrega:
+                "5 dias",
+
+              garantia:
+                "12 meses",
+            },
+
+            {
+              nome:
+                "Entrega turbo",
+
+              valor:
+                "R$ 12.999,90",
+
+              entrega:
+                "1 dia",
+
+              garantia:
+                "24 meses",
+            },
+          ],
         },
       ],
-    };
+    },
 
-    setEncomendas((prev) => [
-      nova,
-      ...prev,
-    ]);
+    {
+      id: "#94822",
 
-    setNovaEncomenda({
-      produto: "",
-      descricao: "",
-    });
+      produto: "Ryzen 9 9950X",
 
-    setModalCriar(false);
-  }
+      status: "Processando",
+
+      data: "17 Maio 2026",
+
+      preco: "R$ 4.199,90",
+
+      cor: "#ffc107",
+
+      descricao:
+        "Processador em análise de envio para transportadora.",
+
+      imagem:
+        "https://m.media-amazon.com/images/I/61vGQNUEsGL.jpg",
+
+      orcamentos: [
+        {
+          empresa: "Kabum",
+
+          opcoes: [
+            {
+              nome:
+                "Entrega padrão",
+
+              valor:
+                "R$ 4.299,90",
+
+              entrega:
+                "4 dias",
+
+              garantia:
+                "12 meses",
+            },
+
+            {
+              nome:
+                "Entrega rápida",
+
+              valor:
+                "R$ 4.550,00",
+
+              entrega:
+                "1 dia",
+
+              garantia:
+                "24 meses",
+            },
+          ],
+        },
+
+        {
+          empresa: "Amazon",
+
+          opcoes: [
+            {
+              nome:
+                "Prime Express",
+
+              valor:
+                "R$ 4.399,90",
+
+              entrega:
+                "24 horas",
+
+              garantia:
+                "12 meses",
+            },
+
+            {
+              nome:
+                "Plano econômico",
+
+              valor:
+                "R$ 4.199,90",
+
+              entrega:
+                "5 dias",
+
+              garantia:
+                "12 meses",
+            },
+          ],
+        },
+      ],
+    },
+  ]);
 
   return (
     <main
@@ -187,7 +268,7 @@ export default function Encomendas() {
         className="py-5 text-white"
         style={{
           background:
-           "linear-gradient(to right, #c0012a, #ff8800)",
+            "linear-gradient(to right, #7a0018, #ff8800)",
         }}
       >
         <div className="container py-4">
@@ -195,16 +276,17 @@ export default function Encomendas() {
             Encomendas
           </h1>
 
-          <p className="lead mt-3 col-lg-8">
+          <p className="lead mt-3 col-lg-7">
             Gerencie encomendas,
-            acompanhe orçamentos e
-            visualize detalhes dos
-            pedidos em tempo real.
+            acompanhe empresas e
+            visualize diversos
+            orçamentos em tempo
+            real.
           </p>
         </div>
       </section>
 
-      {/* CONTEÚDO */}
+      {/* CONTEUDO */}
       <section className="py-5">
         <div className="container-fluid px-4">
           <div className="row">
@@ -216,31 +298,34 @@ export default function Encomendas() {
                   top: "20px",
                   background: "#111",
                   border:
-                    "1px solid rgba(255,255,255,.14)",
+                    "1px solid rgba(255,255,255,.08)",
                 }}
               >
-                {/* PERFIL */}
                 <div className="text-center">
                   <div
                     style={{
-                      width: "130px",
-                      height: "130px",
-                      borderRadius: "24px",
-                      overflow: "hidden",
-                      margin: "0 auto",
-                      border:
-                        "2px solid rgba(255,255,255,.14)",
+                      width: "120px",
+                      height: "120px",
+                      borderRadius:
+                        "24px",
+                      overflow:
+                        "hidden",
+                      margin:
+                        "0 auto",
                     }}
                   >
                     <Image
                       src="/fisheye.png"
                       alt="Usuário"
-                      width={130}
-                      height={130}
+                      width={120}
+                      height={120}
                       style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
+                        width:
+                          "100%",
+                        height:
+                          "100%",
+                        objectFit:
+                          "cover",
                       }}
                     />
                   </div>
@@ -251,148 +336,76 @@ export default function Encomendas() {
 
                   <p
                     style={{
-                      color: "#cfcfcf",
+                      color:
+                        "#bdbdbd",
                     }}
                   >
                     Cliente Premium
                   </p>
                 </div>
 
-                {/* RESUMO */}
-                <div className="mt-4">
-                  <h5 className="text-white fw-bold mb-3">
-                    Resumo
-                  </h5>
-
-                  <div className="d-flex flex-column gap-3">
-                    {[
-                      {
-                        titulo:
-                          "Encomendas",
-                        valor:
-                          encomendas.length,
-                      },
-
-                      {
-                        titulo:
-                          "Processando",
-                        valor: "03",
-                      },
-
-                      {
-                        titulo:
-                          "Finalizados",
-                        valor: "21",
-                      },
-                    ].map(
-                      (item, index) => (
-                        <div
-                          key={index}
-                          style={{
-                            background:
-                              "rgba(255,255,255,.03)",
-
-                            border:
-                              "1px solid rgba(255,255,255,.08)",
-
-                            borderRadius:
-                              "18px",
-
-                            padding:
-                              "18px",
-                          }}
-                        >
-                          <span
-                            style={{
-                              color:
-                                "#cfcfcf",
-
-                              fontSize:
-                                ".82rem",
-
-                              textTransform:
-                                "uppercase",
-
-                              letterSpacing:
-                                ".5px",
-                            }}
-                          >
-                            {
-                              item.titulo
-                            }
-                          </span>
-
-                          <h3
-                            style={{
-                              color:
-                                "white",
-
-                              marginTop:
-                                "8px",
-
-                              fontWeight:
-                                "700",
-                            }}
-                          >
-                            {
-                              item.valor
-                            }
-                          </h3>
-                        </div>
-                      )
-                    )}
-                  </div>
-                </div>
-
-                {/* BUSCA */}
-                <div className="mt-4">
-                  <label className="form-label text-white">
-                    Buscar encomenda
-                  </label>
-
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Digite a encomenda..."
+                <div className="mt-4 d-flex flex-column gap-3">
+                  <div
                     style={{
                       background:
-                        "#1c1c1c",
-
+                        "rgba(255,255,255,.03)",
                       border:
-                        "1px solid #3b3b3b",
-
-                      color: "#fff",
+                        "1px solid rgba(255,255,255,.08)",
+                      borderRadius:
+                        "18px",
+                      padding:
+                        "18px",
                     }}
-                  />
+                  >
+                    <span
+                      style={{
+                        color:
+                          "#9d9d9d",
+                      }}
+                    >
+                      Encomendas
+                    </span>
+
+                    <h2 className="text-white fw-bold mt-2">
+                      {
+                        encomendas.length
+                      }
+                    </h2>
+                  </div>
+
+                  <div
+                    style={{
+                      background:
+                        "rgba(255,255,255,.03)",
+                      border:
+                        "1px solid rgba(255,255,255,.08)",
+                      borderRadius:
+                        "18px",
+                      padding:
+                        "18px",
+                    }}
+                  >
+                    <span
+                      style={{
+                        color:
+                          "#9d9d9d",
+                      }}
+                    >
+                      Empresas
+                    </span>
+
+                    <h2 className="text-white fw-bold mt-2">
+                      10+
+                    </h2>
+                  </div>
                 </div>
-
-                {/* BOTÃO */}
-                <button
-                  onClick={() =>
-                    setModalCriar(true)
-                  }
-                  className="btn w-100 text-white fw-semibold mt-4"
-                  style={{
-                    background:
-                      "linear-gradient(to right, #c0012a, #ff8800)",
-
-                    border: "none",
-
-                    borderRadius:
-                      "14px",
-
-                    padding: "12px",
-                  }}
-                >
-                  Nova Encomenda
-                </button>
               </div>
             </div>
 
             {/* LISTA */}
             <div className="col-lg-9">
               <div className="row g-4">
-                {encomendasAtuais.map(
+                {encomendas.map(
                   (encomenda) => (
                     <div
                       className="col-12"
@@ -401,18 +414,19 @@ export default function Encomendas() {
                       }
                     >
                       <div
-                        className="card border-0 overflow-hidden shadow-lg"
+                        className="card border-0 overflow-hidden"
                         style={{
                           background:
                             "#111",
-
                           border:
-                            "1px solid rgba(255,255,255,.14)",
+                            "1px solid rgba(255,255,255,.08)",
+                          borderRadius:
+                            "26px",
                         }}
                       >
                         <div className="row g-0">
                           {/* IMAGEM */}
-                          <div className="col-md-3">
+                          <div className="col-lg-3">
                             <img
                               src={
                                 encomenda.imagem
@@ -424,132 +438,108 @@ export default function Encomendas() {
                               style={{
                                 objectFit:
                                   "cover",
-
-                                minHeight:
-                                  "250px",
+                                maxHeight:
+                                  "280px",
                               }}
                             />
                           </div>
 
-                          {/* CONTEÚDO */}
-                          <div className="col-md-9">
-                            <div className="card-body h-100 d-flex flex-column">
-                              {/* TOPO */}
+                          {/* CONTEUDO */}
+                          <div className="col-lg-9">
+                            <div className="card-body p-4">
                               <div className="d-flex justify-content-between align-items-start flex-wrap gap-3">
                                 <div>
-                                  <p
+                                  <span
                                     style={{
                                       color:
                                         encomenda.cor,
-
                                       fontWeight:
                                         "700",
-
-                                      marginBottom:
-                                        "8px",
                                     }}
                                   >
-                                    Encomenda{" "}
                                     {
                                       encomenda.id
                                     }
-                                  </p>
+                                  </span>
 
-                                  <h3 className="text-white fw-bold">
+                                  <h2 className="text-white fw-bold mt-2">
                                     {
                                       encomenda.produto
                                     }
-                                  </h3>
+                                  </h2>
 
                                   <p
                                     style={{
                                       color:
-                                        "#cfcfcf",
+                                        "#bdbdbd",
+                                      maxWidth:
+                                        "620px",
                                     }}
                                   >
-                                    Data:{" "}
                                     {
-                                      encomenda.data
+                                      encomenda.descricao
                                     }
                                   </p>
                                 </div>
 
-                                {/* DELETE */}
-                                <button
-                                  onClick={() =>
-                                    deletarEncomenda(
-                                      encomenda.id
-                                    )
-                                  }
-                                  className="btn"
+                                <div
                                   style={{
                                     background:
-                                      "rgba(255,255,255,.05)",
-
+                                      "rgba(255,255,255,.04)",
                                     border:
                                       "1px solid rgba(255,255,255,.08)",
-
-                                    color:
-                                      "#ff5a5a",
-
-                                    width:
-                                      "45px",
-
-                                    height:
-                                      "45px",
-
                                     borderRadius:
-                                      "12px",
+                                      "16px",
+                                    padding:
+                                      "14px 18px",
                                   }}
                                 >
-                                  <i className="bi bi-trash-fill"></i>
-                                </button>
+                                  <span
+                                    style={{
+                                      color:
+                                        "#9d9d9d",
+                                      fontSize:
+                                        ".8rem",
+                                    }}
+                                  >
+                                    DATA
+                                  </span>
+
+                                  <h6 className="text-white fw-bold mt-2 mb-0">
+                                    {
+                                      encomenda.data
+                                    }
+                                  </h6>
+                                </div>
                               </div>
 
-                              {/* INFO */}
-                              <div className="row mt-4">
-                                <div className="col-md-4 mb-3">
+                              {/* CARDS */}
+                              <div className="row g-3 mt-3">
+                                <div className="col-md-4">
                                   <div
                                     style={{
                                       background:
                                         "rgba(255,255,255,.03)",
-
                                       border:
-                                        "1px solid rgba(255,255,255,.08)",
-
+                                        "1px solid rgba(255,255,255,.06)",
                                       borderRadius:
-                                        "16px",
-
-                                      padding:
                                         "18px",
+                                      padding:
+                                        "20px",
                                     }}
                                   >
                                     <span
                                       style={{
                                         color:
-                                          "#cfcfcf",
-
-                                        fontSize:
-                                          ".8rem",
-
-                                        display:
-                                          "block",
-
-                                        marginBottom:
-                                          "8px",
+                                          "#9d9d9d",
                                       }}
                                     >
-                                      Status
+                                      STATUS
                                     </span>
 
-                                    <h6
+                                    <h5
+                                      className="fw-bold mt-2"
                                       style={{
-                                        margin:
-                                          0,
-
-                                        fontWeight:
-                                          "700",
-
                                         color:
                                           encomenda.cor,
                                       }}
@@ -557,146 +547,109 @@ export default function Encomendas() {
                                       {
                                         encomenda.status
                                       }
-                                    </h6>
+                                    </h5>
                                   </div>
                                 </div>
 
-                                <div className="col-md-4 mb-3">
+                                <div className="col-md-4">
                                   <div
                                     style={{
                                       background:
                                         "rgba(255,255,255,.03)",
-
                                       border:
-                                        "1px solid rgba(255,255,255,.08)",
-
+                                        "1px solid rgba(255,255,255,.06)",
                                       borderRadius:
-                                        "16px",
-
-                                      padding:
                                         "18px",
+                                      padding:
+                                        "20px",
                                     }}
                                   >
                                     <span
                                       style={{
                                         color:
-                                          "#cfcfcf",
-
-                                        fontSize:
-                                          ".8rem",
-
-                                        display:
-                                          "block",
-
-                                        marginBottom:
-                                          "8px",
+                                          "#9d9d9d",
                                       }}
                                     >
-                                      Valor
+                                      MELHOR PREÇO
                                     </span>
 
-                                    <h6
+                                    <h5
+                                      className="fw-bold mt-2"
                                       style={{
-                                        margin:
-                                          0,
-
-                                        fontWeight:
-                                          "700",
-
                                         color:
-                                          "#5ba100dc",
+                                          "#4ade80",
                                       }}
                                     >
                                       {
                                         encomenda.preco
                                       }
-                                    </h6>
+                                    </h5>
                                   </div>
                                 </div>
 
-                                <div className="col-md-4 mb-3">
+                                <div className="col-md-4">
                                   <div
                                     style={{
                                       background:
                                         "rgba(255,255,255,.03)",
-
                                       border:
-                                        "1px solid rgba(255,255,255,.08)",
-
+                                        "1px solid rgba(255,255,255,.06)",
                                       borderRadius:
-                                        "16px",
-
-                                      padding:
                                         "18px",
+                                      padding:
+                                        "20px",
                                     }}
                                   >
                                     <span
                                       style={{
                                         color:
-                                          "#cfcfcf",
-
-                                        fontSize:
-                                          ".8rem",
-
-                                        display:
-                                          "block",
-
-                                        marginBottom:
-                                          "8px",
+                                          "#9d9d9d",
                                       }}
                                     >
-                                      Empresas
+                                      EMPRESAS
                                     </span>
 
-                                    <h6
-                                      className="text-white"
-                                      style={{
-                                        margin:
-                                          0,
-
-                                        fontWeight:
-                                          "700",
-                                      }}
-                                    >
+                                    <h5 className="text-white fw-bold mt-2">
                                       {
                                         encomenda
                                           .orcamentos
                                           .length
                                       }{" "}
                                       opções
-                                    </h6>
+                                    </h5>
                                   </div>
                                 </div>
                               </div>
 
-                              {/* BOTÕES */}
-                              <div className="mt-auto d-flex gap-3 flex-wrap">
+                              {/* BOTAO */}
+                              <div className="mt-4">
                                 <button
                                   onClick={() => {
                                     setEncomendaSelecionada(
                                       encomenda
                                     );
 
+                                    setEmpresaSelecionada(
+                                      null
+                                    );
+
                                     setModalAberto(
                                       true
                                     );
                                   }}
-                                  className="btn text-white fw-semibold"
+                                  className="btn text-white fw-bold"
                                   style={{
                                     background:
-                                      "linear-gradient(to right, #940533, #ff8800)",
-
+                                      "linear-gradient(to right, #7a0018, #ff8800)",
                                     border:
                                       "none",
-
                                     borderRadius:
-                                      "12px",
-
+                                      "14px",
                                     padding:
-                                      "12px 18px",
+                                      "13px 24px",
                                   }}
                                 >
-                                  Ver detalhes
+                                  Ver Orçamentos
                                 </button>
                               </div>
                             </div>
@@ -706,121 +659,13 @@ export default function Encomendas() {
                     </div>
                   )
                 )}
-
-                {/* PAGINAÇÃO */}
-                <nav className="mt-4">
-                  <ul className="pagination justify-content-center">
-                    <li
-                      className={`page-item ${
-                        paginaAtual ===
-                        1
-                          ? "disabled"
-                          : ""
-                      }`}
-                    >
-                      <button
-                        className="page-link"
-                        onClick={() =>
-                          setPaginaAtual(
-                            paginaAtual -
-                              1
-                          )
-                        }
-                        style={{
-                          background:
-                            "#000",
-
-                          color: "white",
-
-                          border:
-                            "1px solid white",
-                        }}
-                      >
-                        Anterior
-                      </button>
-                    </li>
-
-                    {[
-                      ...Array(
-                        totalPaginas
-                      ),
-                    ].map(
-                      (_, index) => (
-                        <li
-                          key={index}
-                          className={`page-item ${
-                            paginaAtual ===
-                            index + 1
-                              ? "active"
-                              : ""
-                          }`}
-                        >
-                          <button
-                            onClick={() =>
-                              setPaginaAtual(
-                                index +
-                                  1
-                              )
-                            }
-                            className="page-link"
-                            style={{
-                              background:
-                                paginaAtual ===
-                                index + 1
-                                  ? "linear-gradient(to right, #c0012a, #ff8800)"
-                                  : "#000",
-
-                              color:
-                                "white",
-
-                              border:
-                                "1px solid white",
-                            }}
-                          >
-                            {index + 1}
-                          </button>
-                        </li>
-                      )
-                    )}
-
-                    <li
-                      className={`page-item ${
-                        paginaAtual ===
-                        totalPaginas
-                          ? "disabled"
-                          : ""
-                      }`}
-                    >
-                      <button
-                        className="page-link"
-                        onClick={() =>
-                          setPaginaAtual(
-                            paginaAtual +
-                              1
-                          )
-                        }
-                        style={{
-                          background:
-                            "#000",
-
-                          color: "white",
-
-                          border:
-                            "1px solid white",
-                        }}
-                      >
-                        Próximo
-                      </button>
-                    </li>
-                  </ul>
-                </nav>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* MODAL DETALHES */}
+      {/* MODAL */}
       {modalAberto &&
         encomendaSelecionada && (
           <div
@@ -829,304 +674,415 @@ export default function Encomendas() {
               position: "fixed",
               inset: 0,
               background:
-                "rgba(0,0,0,.75)",
-
+                "rgba(0,0,0,.82)",
               backdropFilter:
                 "blur(10px)",
-
               zIndex: 9999,
-
               padding: "20px",
+              overflowY: "auto",
             }}
           >
             <div
               style={{
                 width: "100%",
-
-                maxWidth: "750px",
-
+                maxWidth:
+                  "920px",
                 borderRadius:
                   "28px",
-
-                padding: "35px",
-
+                overflow:
+                  "hidden",
                 background:
                   "#111",
-
                 border:
-                  "1px solid rgba(255,255,255,.12)",
-
-                position:
-                  "relative",
+                  "1px solid rgba(255,255,255,.08)",
               }}
             >
-              {/* FECHAR */}
-              <button
-                onClick={() =>
-                  setModalAberto(
-                    false
-                  )
-                }
-                className="btn"
+              {/* HEADER */}
+              <div
                 style={{
-                  position:
-                    "absolute",
-
-                  top: "18px",
-
-                  right: "18px",
-
-                  width: "42px",
-
-                  height: "42px",
-
-                  borderRadius:
-                    "14px",
-
                   background:
-                    "rgba(255,255,255,.05)",
-
-                  border:
-                    "1px solid rgba(255,255,255,.08)",
-
-                  color:
-                    "#ff7b93",
+                    "linear-gradient(to right, #7a0018, #ff8800)",
+                  padding:
+                    "30px",
+                  position:
+                    "relative",
                 }}
               >
-                <i className="bi bi-x-lg"></i>
-              </button>
+                <button
+                  onClick={() => {
+                    setModalAberto(
+                      false
+                    );
 
-              <h2
-                className="fw-bold text-white mb-4"
-              >
-                {
-                  encomendaSelecionada.produto
-                }
-              </h2>
+                    setEmpresaSelecionada(
+                      null
+                    );
+                  }}
+                  className="btn"
+                  style={{
+                    position:
+                      "absolute",
+                    top: "18px",
+                    right: "18px",
+                    width: "48px",
+                    height: "48px",
+                    borderRadius:
+                      "14px",
+                    background:
+                      "rgba(255,255,255,.15)",
+                    border:
+                      "1px solid rgba(255,255,255,.15)",
+                    color:
+                      "#fff",
+                  }}
+                >
+                  <i className="bi bi-x-lg"></i>
+                </button>
 
-              <p
-                style={{
-                  color:
-                    "rgba(255,255,255,.75)",
-                }}
-              >
-                {
-                  encomendaSelecionada.descricao
-                }
-              </p>
+                <div className="d-flex align-items-center gap-4 flex-wrap">
+                  <img
+                    src={
+                      encomendaSelecionada.imagem
+                    }
+                    alt={
+                      encomendaSelecionada.produto
+                    }
+                    style={{
+                      width:
+                        "130px",
+                      height:
+                        "130px",
+                      objectFit:
+                        "cover",
+                      borderRadius:
+                        "22px",
+                    }}
+                  />
 
-              <div className="row mt-4">
-                {encomendaSelecionada.orcamentos.map(
-                  (
-                    orcamento,
-                    index
-                  ) => (
-                    <div
-                      className="col-md-6 mb-3"
-                      key={index}
+                  <div>
+                    <h2 className="fw-bold text-white">
+                      {
+                        encomendaSelecionada.produto
+                      }
+                    </h2>
+
+                    <p
+                      style={{
+                        color:
+                          "rgba(255,255,255,.82)",
+                        maxWidth:
+                          "520px",
+                        marginBottom:
+                          "0",
+                      }}
                     >
+                      {
+                        encomendaSelecionada.descricao
+                      }
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* CONTEUDO */}
+              <div className="p-4">
+                <div className="mb-4">
+                  <h4 className="text-white fw-bold">
+                    Empresas
+                    disponíveis
+                  </h4>
+
+                  <p
+                    style={{
+                      color:
+                        "rgba(255,255,255,.55)",
+                    }}
+                  >
+                    Clique em uma
+                    empresa para
+                    visualizar os
+                    orçamentos.
+                  </p>
+                </div>
+
+                {/* EMPRESAS */}
+                <div className="row g-3">
+                  {encomendaSelecionada.orcamentos.map(
+                    (
+                      empresa,
+                      index
+                    ) => (
+                      <div
+                        className="col-md-4"
+                        key={index}
+                      >
+                        <button
+                          onClick={() =>
+                            setEmpresaSelecionada(
+                              empresa
+                            )
+                          }
+                          className="w-100 text-start"
+                          style={{
+                            background:
+                              empresaSelecionada?.empresa ===
+                              empresa.empresa
+                                ? "linear-gradient(to right, #7a0018, #ff8800)"
+                                : "rgba(255,255,255,.03)",
+
+                            border:
+                              empresaSelecionada?.empresa ===
+                              empresa.empresa
+                                ? "1px solid transparent"
+                                : "1px solid rgba(255,255,255,.08)",
+
+                            borderRadius:
+                              "18px",
+
+                            padding:
+                              "18px",
+
+                            color:
+                              "#fff",
+                          }}
+                        >
+                          <div className="d-flex justify-content-between align-items-center">
+                            <div>
+                              <h5 className="fw-bold mb-1">
+                                {
+                                  empresa.empresa
+                                }
+                              </h5>
+
+                              <span
+                                style={{
+                                  color:
+                                    "#cfcfcf",
+                                  fontSize:
+                                    ".85rem",
+                                }}
+                              >
+                                Ver opções
+                              </span>
+                            </div>
+
+                            <i className="bi bi-building-fill fs-4"></i>
+                          </div>
+                        </button>
+                      </div>
+                    )
+                  )}
+                </div>
+
+                {/* ORÇAMENTOS */}
+                {empresaSelecionada && (
+                  <div className="mt-5">
+                    <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+                      <div>
+                        <span
+                          style={{
+                            color:
+                              "#9d9d9d",
+                          }}
+                        >
+                          EMPRESA
+                          SELECIONADA
+                        </span>
+
+                        <h2 className="fw-bold text-white mt-2">
+                          {
+                            empresaSelecionada.empresa
+                          }
+                        </h2>
+                      </div>
+
                       <div
                         style={{
                           background:
-                            "rgba(255,255,255,.03)",
-
+                            "rgba(255,255,255,.04)",
                           border:
                             "1px solid rgba(255,255,255,.08)",
-
                           borderRadius:
-                            "18px",
-
+                            "16px",
                           padding:
-                            "20px",
+                            "14px 18px",
                         }}
                       >
-                        <h5
-                          className="fw-bold"
+                        <span
                           style={{
                             color:
-                              "#ffcf40",
+                              "#9d9d9d",
                           }}
                         >
-                          {
-                            orcamento.empresa
-                          }
-                        </h5>
+                          ORÇAMENTOS
+                        </span>
 
-                        <p className="text-white mb-0">
+                        <h5 className="text-white fw-bold mt-2 mb-0">
                           {
-                            orcamento.valor
-                          }
-                        </p>
+                            empresaSelecionada
+                              .opcoes
+                              .length
+                          }{" "}
+                          opções
+                        </h5>
                       </div>
                     </div>
-                  )
+
+                    {/* LISTA DE OPÇÕES */}
+                    <div className="row g-3">
+                      {empresaSelecionada.opcoes.map(
+                        (
+                          opcao,
+                          index
+                        ) => (
+                          <div
+                            className="col-md-6"
+                            key={index}
+                          >
+                            <div
+                              style={{
+                                background:
+                                  "rgba(255,255,255,.03)",
+
+                                border:
+                                  "1px solid rgba(255,255,255,.08)",
+
+                                borderRadius:
+                                  "22px",
+
+                                padding:
+                                  "24px",
+                              }}
+                            >
+                              <div className="d-flex justify-content-between align-items-start">
+                                <div>
+                                  <span
+                                    style={{
+                                      color:
+                                        "#9d9d9d",
+                                      fontSize:
+                                        ".8rem",
+                                    }}
+                                  >
+                                    PLANO
+                                  </span>
+
+                                  <h4 className="text-white fw-bold mt-2">
+                                    {
+                                      opcao.nome
+                                    }
+                                  </h4>
+                                </div>
+
+                                <h4
+                                  className="fw-bold"
+                                  style={{
+                                    color:
+                                      "#4ade80",
+                                  }}
+                                >
+                                  {
+                                    opcao.valor
+                                  }
+                                </h4>
+                              </div>
+
+                              <div className="row g-3 mt-3">
+                                <div className="col-6">
+                                  <div
+                                    style={{
+                                      background:
+                                        "rgba(255,255,255,.04)",
+
+                                      borderRadius:
+                                        "14px",
+
+                                      padding:
+                                        "14px",
+                                    }}
+                                  >
+                                    <span
+                                      style={{
+                                        color:
+                                          "#9d9d9d",
+                                        fontSize:
+                                          ".72rem",
+                                      }}
+                                    >
+                                      ENTREGA
+                                    </span>
+
+                                    <h6 className="text-white fw-bold mt-2 mb-0">
+                                      {
+                                        opcao.entrega
+                                      }
+                                    </h6>
+                                  </div>
+                                </div>
+
+                                <div className="col-6">
+                                  <div
+                                    style={{
+                                      background:
+                                        "rgba(255,255,255,.04)",
+
+                                      borderRadius:
+                                        "14px",
+
+                                      padding:
+                                        "14px",
+                                    }}
+                                  >
+                                    <span
+                                      style={{
+                                        color:
+                                          "#9d9d9d",
+                                        fontSize:
+                                          ".72rem",
+                                      }}
+                                    >
+                                      GARANTIA
+                                    </span>
+
+                                    <h6 className="text-white fw-bold mt-2 mb-0">
+                                      {
+                                        opcao.garantia
+                                      }
+                                    </h6>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <button
+                                className="btn w-100 text-white fw-bold mt-4"
+                                style={{
+                                  background:
+                                    "linear-gradient(to right, #7a0018, #ff8800)",
+
+                                  border:
+                                    "none",
+
+                                  borderRadius:
+                                    "14px",
+
+                                  padding:
+                                    "12px",
+                                }}
+                              >
+                                Escolher
+                                orçamento
+                              </button>
+                            </div>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
           </div>
         )}
-
-      {/* MODAL CRIAR */}
-      {modalCriar && (
-        <div
-          className="d-flex justify-content-center align-items-center"
-          style={{
-            position: "fixed",
-            inset: 0,
-            background:
-              "rgba(0,0,0,.75)",
-
-            backdropFilter:
-              "blur(10px)",
-
-            zIndex: 9999,
-
-            padding: "20px",
-          }}
-        >
-          <div
-            style={{
-              width: "100%",
-              maxWidth: "650px",
-              borderRadius: "28px",
-              padding: "35px",
-              background: "#111",
-              border:
-                "1px solid rgba(255,255,255,.12)",
-              position: "relative",
-            }}
-          >
-            {/* FECHAR */}
-            <button
-              onClick={() =>
-                setModalCriar(false)
-              }
-              className="btn"
-              style={{
-                position:
-                  "absolute",
-
-                top: "18px",
-
-                right: "18px",
-
-                width: "42px",
-
-                height: "42px",
-
-                borderRadius:
-                  "14px",
-
-                background:
-                  "rgba(255,255,255,.05)",
-
-                border:
-                  "1px solid rgba(255,255,255,.08)",
-
-                color:
-                  "#ff7b93",
-              }}
-            >
-              <i className="bi bi-x-lg"></i>
-            </button>
-
-            <h2
-              className="fw-bold text-white text-center mb-4"
-            >
-              Nova Encomenda
-            </h2>
-
-            {/* INPUT */}
-            <div className="mb-4">
-              <label className="form-label text-white fw-bold">
-                Produto
-              </label>
-
-              <input
-                type="text"
-                value={
-                  novaEncomenda.produto
-                }
-                onChange={(e) =>
-                  setNovaEncomenda({
-                    ...novaEncomenda,
-                    produto:
-                      e.target.value,
-                  })
-                }
-                className="form-control"
-                style={{
-                  background:
-                    "#1c1c1c",
-
-                  border:
-                    "1px solid #3b3b3b",
-
-                  color: "#fff",
-
-                  padding: "14px",
-                }}
-              />
-            </div>
-
-            {/* TEXTAREA */}
-            <div className="mb-4">
-              <label className="form-label text-white fw-bold">
-                Descrição
-              </label>
-
-              <textarea
-                rows={5}
-                value={
-                  novaEncomenda.descricao
-                }
-                onChange={(e) =>
-                  setNovaEncomenda({
-                    ...novaEncomenda,
-                    descricao:
-                      e.target.value,
-                  })
-                }
-                className="form-control"
-                style={{
-                  background:
-                    "#1c1c1c",
-
-                  border:
-                    "1px solid #3b3b3b",
-
-                  color: "#fff",
-
-                  padding: "14px",
-
-                  resize: "none",
-                }}
-              />
-            </div>
-
-            {/* BOTÃO */}
-            <button
-              onClick={
-                criarEncomenda
-              }
-              className="btn w-100 text-white fw-bold"
-              style={{
-                background:
-                  "linear-gradient(to right, #c0012a, #ff8800)",
-
-                border: "none",
-
-                padding: "14px",
-
-                borderRadius:
-                  "14px",
-              }}
-            >
-              Criar Encomenda
-            </button>
-          </div>
-        </div>
-      )}
     </main>
   );
 }

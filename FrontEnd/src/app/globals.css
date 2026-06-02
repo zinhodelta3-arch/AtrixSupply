@@ -17,7 +17,7 @@ html {
 }
 
 body {
-  min-height: 100vh; /* ocupa a tela toda */
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   max-width: 100vw;
@@ -30,7 +30,7 @@ body {
 }
 
 main {
-  flex: 1; /* empurra o footer pra baixo */
+  flex: 1;
 }
 
 * {
@@ -53,17 +53,12 @@ a {
 /* ==========================================================================
    1. BASE E REGRAS GERAIS DA NAVBAR
    ========================================================================== */
-.navbar-spacer {
-  height: 90px;
-}
-
 .photoLogo {
   width: 35px;
   height: 40px;
   object-fit: contain;
 }
 
-/* Nome da marca com o degradê idêntico ao da página de compra */
 .navbar-brand-premium {
   font-size: 1.5rem;
   font-weight: 800;
@@ -75,7 +70,6 @@ a {
   text-decoration: none;
 }
 
-/* Estrutura flutuante da Navbar */
 .glass-navbar {
   position: fixed;
   top: 20px;
@@ -166,7 +160,6 @@ a {
   font-size: 1.2rem;
 }
 
-/* Notificação numérica de itens (Badge) */
 .cart-badge {
   position: absolute;
   top: -3px;
@@ -184,7 +177,6 @@ a {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
-/* Dropdown Menu do Perfil */
 .profile-dropdown {
   position: absolute;
   top: 55px;
@@ -224,16 +216,15 @@ a {
   color: #ffb300;
 }
 
-/* Icone hamburguer mobile esbranquiçado customizado */
 .navbar-toggler-icon {
   background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.9%29' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
 }
 
 /* ==========================================================================
-   4. ABA LATERAL DO CARRINHO (OFFCANVAS VISUAL COMPRA)
+   4. ABA LATERAL DO CARRINHO (MODIFICADA PARA PADRONIZAÇÃO DE TAMANHOS)
    ========================================================================== */
 .custom-cart-sidebar {
-  background: linear-gradient(145deg, rgba(28, 29, 31, 0.932) 0%, rgba(17, 15, 17, 0.932) 100%) !important;
+  background: linear-gradient(145deg, rgba(28, 29, 31, 0.95) 0%, rgba(17, 15, 17, 0.95) 100%) !important;
   border-left: 1px solid rgba(255, 215, 120, 0.10) !important;
   box-shadow: -15px 0 50px rgba(221, 25, 25, 0.15), -5px 0 20px rgba(235, 194, 13, 0.05) !important;
   width: 420px !important;
@@ -255,7 +246,6 @@ a {
   -webkit-text-fill-color: transparent;
 }
 
-/* Área rolável interna para os itens do carrinho */
 .cart-items-wrapper {
   max-height: 60vh;
   overflow-y: auto;
@@ -271,13 +261,17 @@ a {
   border-radius: 10px;
 }
 
-/* Cards internos dos itens adicionados */
+/* TAMANHO PADRÃO DO CARD DE ITEM (ALTURA CORRIGIDA PARA 100px) */
 .cart-item-card {
+  height: 100px;
   background: rgba(24, 23, 21, 0.74);
   border: 1px solid rgba(247, 48, 21, 0.842);
   border-radius: 20px;
-  padding: 16px;
+  padding: 12px 16px;
   margin-top: 10px;
+  display: flex;
+  align-items: center; /* Centraliza verticalmente o conteúdo interno */
+  gap: 16px;
   transition: 0.3s ease;
 }
 
@@ -287,9 +281,10 @@ a {
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 }
 
+/* CAIXA DA FOTO PADRONIZADA */
 .cart-item-img-container {
-  width: 75px;
-  height: 75px;
+  width: 68px;
+  height: 68px;
   background: rgba(0, 0, 0, 0.3);
   border-radius: 14px;
   display: flex;
@@ -297,6 +292,7 @@ a {
   justify-content: center;
   padding: 6px;
   border: 1px solid rgba(255, 255, 255, 0.02);
+  flex-shrink: 0; /* Impede a imagem de amassar */
 }
 
 .cart-item-img-container img {
@@ -309,42 +305,46 @@ a {
   color: white;
   font-weight: 700;
   font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* Corta textos gigantes com "..." para manter o padrão */
 }
 
 .cart-item-price {
   color: #ffe082;
   font-weight: 800;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
 }
 
-/* BOTÃO DE REMOVER PRODUTO (VERMELHO E VISÍVEL) */
+/* BOTÃO DE REMOVER (X) - TOTALMENTE ENQUADRADO E PERFEITO */
 .cart-item-remove-btn {
-  color: var(--color3); /* Vermelho vivo (#f5061d) para total visibilidade inicial */
-  font-size: 1.2rem;
+  color: var(--color3); 
+  font-size: 1.1rem;
   background: transparent;
   border: none;
   width: 36px;
   height: 36px;
-  display: flex;
+  display: inline-flex; /* Garante alinhamento interno flexível */
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
+  border-radius: 50% !important; /* Deixa o hover perfeitamente circular */
+  flex-shrink: 0; /* CRUCIAL: Impede que textos grandes esmaguem o círculo do botão */
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
 }
 
 .cart-item-remove-btn:hover {
-  color: #e7be07 !important; /* Ícone fica branco no hover */
-  background: var(--color2); /* Fundo preenche com o vermelho escuro (#c0012a) */
-  transform: scale(1.1) rotate(90deg); /* Efeito dinâmico de rotação e zoom */
-  box-shadow: 0 0 12px rgba(245, 6, 29, 0.6); /* Brilho neon vermelho */
+  color: #e7be07 !important; 
+  background: var(--color2); 
+  transform: scale(1.1) rotate(90deg); 
+  box-shadow: 0 0 12px rgba(245, 6, 29, 0.6); 
 }
 
 .cart-item-remove-btn:active {
   transform: scale(0.95);
 }
 
-/* Rodapé e Botão de Checkout com o degradê tricolor */
+/* Rodapé do Carrinho */
 .sidebar-premium-footer {
   border-top: 1px solid rgba(255, 49, 49, 0.1) !important;
   padding-top: 0px;
@@ -352,7 +352,7 @@ a {
 
 .tracking-label {
   letter-spacing: 1px;
-  color: #ffe082 !important; /* Altera a cor do texto do Subtotal */
+  color: #ffe082 !important; 
 }
 
 .sidebar-total-price {
@@ -434,7 +434,6 @@ a {
   color: white;
 }
 
-/* Camada extra pra profundidade do Footer */
 .footer-custom::before {
   content: "";
   position: absolute;
@@ -504,14 +503,17 @@ a {
   opacity: 0.8;
 }
 
+/* =========================
+   CONFIGURAÇÕES GLOBAIS DE BACKDROP DO NEXT
+========================= */
 html,
 body,
 #__next {
-  background-color: #0a0a0a !important;
+  background-color: #ff161600 !important;
 }
 
-main,
-section,
-div {
-  background-color: transparent;
+header, 
+header nav.glass-navbar {
+  background-color: transparent !important;
+  background: transparent !important;
 }
