@@ -3,7 +3,7 @@ import UsuarioModel from '../models/UsuarioModel.js';
 import bcrypt from 'bcryptjs';
 import { JWT_CONFIG } from '../config/jwt.js';
 
-// Controller para operações de autenticação
+// Controller para operações de autenticação e gerenciamento de usuários
 class AuthController {
     
     // POST /auth/login - Fazer login
@@ -11,7 +11,6 @@ class AuthController {
         try {
             const { email, senha } = req.body;
             
-            // Validações básicas
             if (!email || email.trim() === '') {
                 return res.status(400).json({
                     sucesso: false,
@@ -28,7 +27,6 @@ class AuthController {
                 });
             }
 
-            // Validação básica de formato de email
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email)) {
                 return res.status(400).json({
@@ -38,7 +36,6 @@ class AuthController {
                 });
             }
 
-            // Verificar credenciais
             const usuario = await UsuarioModel.verificarCredenciais(email.trim(), senha);
             
             if (!usuario) {
@@ -49,7 +46,6 @@ class AuthController {
                 });
             }
 
-            // Gerar token JWT
             const token = jwt.sign(
                 { 
                     id_user: usuario.id_user, 
@@ -59,8 +55,6 @@ class AuthController {
                 JWT_CONFIG.secret,
                 { expiresIn: JWT_CONFIG.expiresIn }
             );
-
-            // nome_user, cnpj, endereco, empresa, cargo, email, senha, tipo, cep
 
             res.status(200).json({
                 sucesso: true,
@@ -90,107 +84,39 @@ class AuthController {
         }
     }
 
-    // POST /auth/registrar - Registrar novo usuário
+    // POST /auth/registrar - Registrar novo usuário (Autocadastro público)
     static async registrar(req, res) {
         try {
             const { nome_user, cnpj, endereco, empresa, cargo, email, senha, tipo, cep } = req.body;
             
-            // Validações básicas
-            if (!nome_user || nome_user.trim() === '') {
-                return res.status(400).json({
-                    sucesso: false,
-                    erro: 'Nome obrigatório',
-                    mensagem: 'O nome é obrigatório'
-                });
-            }
-
-            if (!cnpj || cnpj.trim() === '') {
-                return res.status(400).json({
-                    sucesso: false,
-                    erro: 'CNPJ obrigatória',
-                    mensagem: 'A CNPJ é obrigatória'
-                });
-            }
-
-            if (!endereco || endereco.trim() === '') {
-                return res.status(400).json({
-                    sucesso: false,
-                    erro: 'Endereço obrigatório',
-                    mensagem: 'O endereço é obrigatório'
-                });
-            }
-
-            if (!empresa || empresa.trim() === '') {
-                return res.status(400).json({
-                    sucesso: false,
-                    erro: 'Empresa obrigatória',
-                    mensagem: 'O nome da empresa é obrigatória'
-                });
-            }
-
-            if (!cargo || cargo.trim() === '') {
-                return res.status(400).json({
-                    sucesso: false,
-                    erro: 'Cargo obrigatório',
-                    mensagem: 'O seu cargo na empresa é obrigatório'
-                });
-            }
-
-            if (!email || email.trim() === '') {
-                return res.status(400).json({
-                    sucesso: false,
-                    erro: 'Email obrigatório',
-                    mensagem: 'O email é obrigatório'
-                });
-            }
-
-            if (!senha || senha.trim() === '') {
-                return res.status(400).json({
-                    sucesso: false,
-                    erro: 'Senha obrigatória',
-                    mensagem: 'A senha é obrigatória'
-                });
-            }
-
-            if (!tipo || tipo.trim() === '') {
-                return res.status(400).json({
-                    sucesso: false,
-                    erro: 'Tipo obrigatório',
-                    mensagem: 'O tipo é obrigatório'
-                });
-            }
-
-            if (!cep || cep.trim() === '') {
-                return res.status(400).json({
-                    sucesso: false,
-                    erro: 'CEP obrigatório',
-                    mensagem: 'O CEP é obrigatório'
-                });
+            // Validações de presença
+            const campos = { nome_user, cnpj, endereco, empresa, cargo, email, senha, tipo, cep };
+            for (const [campo, valor] of Object.entries(campos)) {
+                if (!valor || valor.trim() === '') {
+                    return res.status(400).json({
+                        sucesso: false,
+                        erro: `Campo obrigatório`,
+                        mensagem: `O campo ${campo} é obrigatório`
+                    });
+                }
             }
 
             // Validações de formato
-            if (nome_user.length < 2) {
+            if (nome_user.length < 2 || nome_user.length > 255) {
                 return res.status(400).json({
                     sucesso: false,
-                    erro: 'Nome muito curto',
-                    mensagem: 'O nome deve ter pelo menos 2 caracteres'
+                    erro: 'Nome inválido',
+                    mensagem: 'O nome deve ter entre 2 e 255 caracteres'
                 });
             }
 
-            if (nome_user.length > 255) {
+            const cnpjLimpo = cnpj.replace(/\D/g, '');
+            if (cnpjLimpo.length !== 14){
                 return res.status(400).json({
                     sucesso: false,
-                    erro: 'Nome muito longo',
-                    mensagem: 'O nome deve ter no máximo 255 caracteres'
+                    erro: 'CNPJ inválido',
+                    mensagem: 'O CNPJ deve conter exatamente 14 dígitos numéricos'
                 });
-            }
-
-            if (cnpj.length != 14){
-                return res.status(400).json({
-                    sucesso: false,
-                    erro: 'CNPJ inválida',
-                    mensagem: 'A CNPJ possui caractéres incorretos'
-                })
             }
 
             const enderecoRegex = /^[a-zA-ZÀ-ÿ0-9\s,.\-\/ª°º]{5,150}$/;
@@ -201,7 +127,6 @@ class AuthController {
                     mensagem: 'Formato de endereço inválido'
                 });
             }
-
 
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email)) {
@@ -229,23 +154,24 @@ class AuthController {
                 });
             }
 
-            if (tipo != 'comum' || tipo != 'fornecedor'){
+            // CORREÇÃO CRÍTICA: Mudança de || para && para evitar bloqueio total
+            if (tipo !== 'comum' && tipo !== 'fornecedor') {
                 return res.status(400).json({
                     sucesso: false,
                     erro: 'Tipo inválido',
-                    mensagem: 'O usuário pode ser somente um cliente ou fornecedor'
-                })
-            }
-
-            if (cep.length != 9) {
-                return res.status(400).json({
-                    sucesso: false,
-                    erro: 'CEP inválido',
-                    mensagem: 'O CEP deve corresponder aos padrões de formato'
+                    mensagem: 'No cadastro público, o usuário deve ser comum ou fornecedor'
                 });
             }
 
-            // Verificar se o email já existe
+            const cepLimpo = cep.replace(/\D/g, '');
+            if (cepLimpo.length !== 8) {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'CEP inválido',
+                    mensagem: 'O CEP deve conter 8 dígitos numéricos'
+                });
+            }
+
             const usuarioExistente = await UsuarioModel.buscarPorEmail(email);
             if (usuarioExistente) {
                 return res.status(409).json({
@@ -258,20 +184,18 @@ class AuthController {
             const saltRounds = 10;
             const senhaHash = await bcrypt.hash(senha, saltRounds);
 
-            // Preparar dados do usuário
             const dadosUsuario = {
                 nome_user: nome_user.trim(),
-                cnpj: cnpj.trim().toLowerCase(),
+                cnpj: cnpjLimpo,
                 endereco: endereco.trim(),
                 empresa: empresa.trim(),
                 cargo: cargo.trim(),
                 email: email.trim().toLowerCase(),
                 senha: senhaHash,
-                tipo: tipo || 'comum',
-                cep: cep.trim()
+                tipo: tipo,
+                cep: cepLimpo
             };
 
-            // Criar usuário
             const usuarioId = await UsuarioModel.criar(dadosUsuario);
             
             res.status(201).json({
@@ -279,14 +203,8 @@ class AuthController {
                 mensagem: 'Usuário registrado com sucesso',
                 dados: {
                     id_user: usuarioId,
-                    nome_user: dadosUsuario.nome_user,
-                    cnpj: dadosUsuario.cnpj,
-                    endereco: dadosUsuario.endereco,
-                    empresa: dadosUsuario.empresa,
-                    cargo: dadosUsuario.cargo,
-                    email: dadosUsuario.email,
-                    tipo: dadosUsuario.tipo,
-                    cep: dadosUsuario.cep
+                    ...dadosUsuario,
+                    senha: undefined // Remove a senha do retorno por segurança
                 }
             });
         } catch (error) {
@@ -312,7 +230,6 @@ class AuthController {
                 });
             }
 
-            // Remover senha dos dados retornados
             const { senha, ...usuarioSemSenha } = usuario;
 
             res.status(200).json({
@@ -329,10 +246,10 @@ class AuthController {
         }
     }
 
-    // GET /auth/:id_user - Obter perfil do usuário específico
+    // GET /auth/:id_user - Obter perfil de um usuário específico
     static async buscarUsuarioPorId(req, res) {
         try {
-            const { id_user } = req.params
+            const { id_user } = req.params;
             const usuario = await UsuarioModel.buscarPorId(id_user);
             
             if (!usuario) {
@@ -343,7 +260,6 @@ class AuthController {
                 });
             }
 
-            // Remover senha dos dados retornados
             const { senha, ...usuarioSemSenha } = usuario;
 
             res.status(200).json({
@@ -363,11 +279,9 @@ class AuthController {
     // GET /usuarios - Listar todos os usuários (apenas admin, com paginação)
     static async listarUsuarios(req, res) {
         try {
-            // Obter parâmetros de paginação da query string
             const pagina = parseInt(req.query.pagina) || 1;
             const limite = parseInt(req.query.limite) || 10;
             
-            // Validações
             if (pagina < 1) {
                 return res.status(400).json({
                     sucesso: false,
@@ -386,8 +300,6 @@ class AuthController {
             }
             
             const resultado = await UsuarioModel.listarTodos(pagina, limite);
-            
-            // Remover senha de todos os usuários
             const usuariosSemSenha = resultado.usuarios.map(({ senha, ...usuario }) => usuario);
 
             res.status(200).json({
@@ -410,99 +322,39 @@ class AuthController {
         }
     }
 
-    // POST /usuarios - Criar novo usuário (apenas admin)
+    // POST /usuarios - Criar novo usuário (Apenas Admin - Permite criar outros Admins)
     static async criarUsuario(req, res) {
         try {
             const { nome_user, cnpj, endereco, empresa, cargo, email, senha, tipo, cep } = req.body;
             
-            // Validações básicas
-            if (!nome_user || nome_user.trim() === '') {
+            // Validações de presença
+            const campos = { nome_user, cnpj, endereco, empresa, cargo, email, senha, tipo, cep };
+            for (const [campo, valor] of Object.entries(campos)) {
+                if (!valor || valor.trim() === '') {
+                    return res.status(400).json({
+                        sucesso: false,
+                        erro: `Campo obrigatório`,
+                        mensagem: `O campo ${campo} é obrigatório.`
+                    });
+                }
+            }
+
+            // Validações de formato e tamanho
+            if (nome_user.length < 2 || nome_user.length > 255) {
                 return res.status(400).json({
                     sucesso: false,
-                    erro: 'Nome obrigatório',
-                    mensagem: 'O nome é obrigatório'
+                    erro: 'Nome inválido',
+                    mensagem: 'O nome deve ter entre 2 e 255 caracteres'
                 });
             }
 
-            if (!cnpj || cnpj.trim() === '') {
+            const cnpjLimpo = cnpj.replace(/\D/g, '');
+            if (cnpjLimpo.length !== 14){
                 return res.status(400).json({
                     sucesso: false,
-                    erro: 'CNPJ obrigatória',
-                    mensagem: 'A CNPJ é obrigatória'
+                    erro: 'CNPJ inválido',
+                    mensagem: 'O CNPJ deve conter exatamente 14 dígitos numéricos'
                 });
-            }
-
-            if (!endereco || endereco.trim() === '') {
-                return res.status(400).json({
-                    sucesso: false,
-                    erro: 'Endereço obrigatório',
-                    mensagem: 'O endereço é obrigatório'
-                });
-            }
-
-            if (!empresa || empresa.trim() === '') {
-                return res.status(400).json({
-                    sucesso: false,
-                    erro: 'Empresa obrigatória',
-                    mensagem: 'O nome da empresa é obrigatória'
-                });
-            }
-
-            if (!cargo || cargo.trim() === '') {
-                return res.status(400).json({
-                    sucesso: false,
-                    erro: 'Cargo obrigatório',
-                    mensagem: 'O seu cargo na empresa é obrigatório'
-                });
-            }
-
-            if (!email || email.trim() === '') {
-                return res.status(400).json({
-                    sucesso: false,
-                    erro: 'Email obrigatório',
-                    mensagem: 'O email é obrigatório'
-                });
-            }
-
-            if (!senha || senha.trim() === '') {
-                return res.status(400).json({
-                    sucesso: false,
-                    erro: 'Senha obrigatória',
-                    mensagem: 'A senha é obrigatória'
-                });
-            }
-
-            if (!cep || cep.trim() === '') {
-                return res.status(400).json({
-                    sucesso: false,
-                    erro: 'CEP obrigatório',
-                    mensagem: 'O CEP é obrigatório'
-                });
-            }
-
-            // Validações de formato
-            if (nome_user.length < 2) {
-                return res.status(400).json({
-                    sucesso: false,
-                    erro: 'Nome muito curto',
-                    mensagem: 'O nome deve ter pelo menos 2 caracteres'
-                });
-            }
-
-            if (nome_user.length > 255) {
-                return res.status(400).json({
-                    sucesso: false,
-                    erro: 'Nome muito longo',
-                    mensagem: 'O nome deve ter no máximo 255 caracteres'
-                });
-            }
-
-            if (cnpj.length != 14){
-                return res.status(400).json({
-                    sucesso: false,
-                    erro: 'CNPJ inválida',
-                    mensagem: 'A CNPJ possui caractéres incorretos'
-                })
             }
 
             const enderecoRegex = /^[a-zA-ZÀ-ÿ0-9\s,.\-\/ª°º]{5,150}$/;
@@ -540,15 +392,25 @@ class AuthController {
                 });
             }
 
-            if (cep.length != 9) {
+            const cepLimpo = cep.replace(/\D/g, '');
+            if (cepLimpo.length !== 8) {
                 return res.status(400).json({
                     sucesso: false,
                     erro: 'CEP inválido',
-                    mensagem: 'O CEP deve corresponder aos padrões de formato'
+                    mensagem: 'O CEP deve conter 8 dígitos numéricos'
                 });
             }
 
-            // Verificar se o email já existe
+            // REFACHADO: Admin pode criar contas do tipo 'admin', 'comum' ou 'fornecedor'
+            const tiposValidos = ['comum', 'fornecedor', 'admin'];
+            if (!tiposValidos.includes(tipo)) {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'Tipo inválido',
+                    mensagem: 'O tipo do usuário deve ser: comum, fornecedor ou admin'
+                });
+            }
+
             const usuarioExistente = await UsuarioModel.buscarPorEmail(email);
             if (usuarioExistente) {
                 return res.status(409).json({
@@ -561,39 +423,31 @@ class AuthController {
             const saltRounds = 10;
             const senhaHash = await bcrypt.hash(senha, saltRounds);
 
-            // Preparar dados do usuário
             const dadosUsuario = {
                 nome_user: nome_user.trim(),
-                cnpj: cnpj.trim().toLowerCase(),
+                cnpj: cnpjLimpo,
                 endereco: endereco.trim(),
                 empresa: empresa.trim(),
                 cargo: cargo.trim(),
                 email: email.trim().toLowerCase(),
                 senha: senhaHash,
-                tipo: tipo || 'comum',
-                cep: cep.trim()
+                tipo: tipo,
+                cep: cepLimpo
             };
 
-            // Criar usuário
             const usuarioId = await UsuarioModel.criar(dadosUsuario);
             
             res.status(201).json({
                 sucesso: true,
-                mensagem: 'Usuário criado com sucesso',
+                mensagem: 'Usuário criado com sucesso pelo Administrador',
                 dados: {
                     id_user: usuarioId,
-                    nome_user: dadosUsuario.nome_user,
-                    cnpj: dadosUsuario.cnpj,
-                    endereco: dadosUsuario.endereco,
-                    empresa: dadosUsuario.empresa,
-                    cargo: dadosUsuario.cargo,
-                    email: dadosUsuario.email,
-                    tipo: dadosUsuario.tipo,
-                    cep: dadosUsuario.cep
+                    ...dadosUsuario,
+                    senha: undefined
                 }
             });
         } catch (error) {
-            console.error('Erro ao criar usuário:', error);
+            console.error('Erro ao criar usuário via Admin:', error);
             res.status(500).json({
                 sucesso: false,
                 erro: 'Erro interno do servidor',
@@ -602,13 +456,12 @@ class AuthController {
         }
     }
 
-    // PUT /usuarios/:id - Atualizar usuário (apenas admin)
+    // PUT /usuarios/:id - Atualizar usuário (Apenas Admin)
     static async atualizarUsuario(req, res) {
         try {
             const { id_user } = req.params;
-            const { nome_user, cnpj, endereco, empresa, cargo, email, senha, cep } = req.body;
+            const { nome_user, cnpj, endereco, empresa, cargo, email, senha, cep, tipo } = req.body;
             
-            // Validação do ID
             if (!id_user || isNaN(id_user)) {
                 return res.status(400).json({
                     sucesso: false,
@@ -617,7 +470,6 @@ class AuthController {
                 });
             }
 
-            // Verificar se o usuário existe
             const usuarioExistente = await UsuarioModel.buscarPorId(id_user);
             if (!usuarioExistente) {
                 return res.status(404).json({
@@ -627,61 +479,38 @@ class AuthController {
                 });
             }
 
-            
-
-            // Preparar dados para atualização
             const dadosAtualizacao = {};
             
             if (nome_user !== undefined) {
-                if (nome_user.trim() === '') {
+                if (nome_user.trim() === '' || nome_user.length < 2) {
                     return res.status(400).json({
                         sucesso: false,
                         erro: 'Nome inválido',
-                        mensagem: 'O nome não pode estar vazio'
-                    });
-                }
-                if (nome_user.length < 2) {
-                    return res.status(400).json({
-                        sucesso: false,
-                        erro: 'Nome muito curto',
-                        mensagem: 'O nome deve ter pelo menos 2 caracteres'
+                        mensagem: 'O nome não pode ser vazio e deve ter ao menos 2 caracteres'
                     });
                 }
                 dadosAtualizacao.nome_user = nome_user.trim();
             }
 
             if (cnpj !== undefined) {
-                if (cnpj.trim() === '') {
+                const cnpjLimpo = cnpj.replace(/\D/g, '');
+                if (cnpjLimpo.length !== 14) {
                     return res.status(400).json({
                         sucesso: false,
-                        erro: 'CNPJ vazio',
-                        mensagem: 'A CNPJ não pode estar vazio'
+                        erro: 'CNPJ inválido',
+                        mensagem: 'O CNPJ precisa conter 14 dígitos válidos'
                     });
                 }
-                if (cnpj.length != 14) {
-                    return res.status(400).json({
-                        sucesso: false,
-                        erro: 'CNPJ inválida',
-                        mensagem: 'A CNPJ precisa ser válida'
-                    });
-                }
-                dadosAtualizacao.cnpj = cnpj.trim();
+                dadosAtualizacao.cnpj = cnpjLimpo;
             }
 
             if (endereco !== undefined) {
                 const enderecoRegex = /^[a-zA-ZÀ-ÿ0-9\s,.\-\/ª°º]{5,150}$/;
-                if (endereco.trim() === '') {
-                    return res.status(400).json({
-                        sucesso: false,
-                        erro: 'Endereço vazio',
-                        mensagem: 'O endereço não pode estar vazio'
-                    });
-                }
-                if (!enderecoRegex.test(endereco)) {
+                if (endereco.trim() === '' || !enderecoRegex.test(endereco)) {
                     return res.status(400).json({
                         sucesso: false,
                         erro: 'Endereço inválido',
-                        mensagem: 'O endereço não deve conter caracteres especiais'
+                        mensagem: 'O endereço informado possui caracteres inválidos ou tamanho incorreto'
                     });
                 }
                 dadosAtualizacao.endereco = endereco.trim();
@@ -691,7 +520,7 @@ class AuthController {
                 if (empresa.trim() === '') {
                     return res.status(400).json({
                         sucesso: false,
-                        erro: 'Empresa vazio',
+                        erro: 'Empresa vazia',
                         mensagem: 'O nome da empresa não pode estar vazio'
                     });
                 }
@@ -700,18 +529,11 @@ class AuthController {
 
             if (cargo !== undefined) {
                 const cargoRegex = /^[a-zA-ZÀ-ÿ0-9\s\+\-\.#&/]{2,60}$/;
-                if (cargo.trim() === '') {
-                    return res.status(400).json({
-                        sucesso: false,
-                        erro: 'Cargo vazio',
-                        mensagem: 'O cargo não pode estar vazio'
-                    });
-                }
-                if (!cargoRegex.test(cargo)) {
+                if (cargo.trim() === '' || !cargoRegex.test(cargo)) {
                     return res.status(400).json({
                         sucesso: false,
                         erro: 'Cargo inválido',
-                        mensagem: 'O cargo não deve conter caracteres especiais'
+                        mensagem: 'O cargo informado é inválido'
                     });
                 }
                 dadosAtualizacao.cargo = cargo.trim();
@@ -727,7 +549,6 @@ class AuthController {
                     });
                 }
                 
-                // Verificar se o email já está em uso por outro usuário
                 const usuarioComEmail = await UsuarioModel.buscarPorEmail(email);
                 if (usuarioComEmail && usuarioComEmail.id_user !== parseInt(id_user)) {
                     return res.status(409).json({
@@ -736,7 +557,6 @@ class AuthController {
                         mensagem: 'Este email já está sendo usado por outro usuário'
                     });
                 }
-                
                 dadosAtualizacao.email = email.trim().toLowerCase();
             }
 
@@ -749,33 +569,38 @@ class AuthController {
                     });
                 }
                 const saltRounds = 10;
-                const senhaHash = await bcrypt.hash(senha, saltRounds);
-                dadosAtualizacao.senha = senhaHash;
+                dadosAtualizacao.senha = await bcrypt.hash(senha, saltRounds);
             }
 
             if (cep !== undefined) {
-                if (cep.trim() === '') {
-                    return res.status(400).json({
-                        sucesso: false,
-                        erro: 'CEP vazio',
-                        mensagem: 'O CEP não pode estar vazio'
-                    });
-                }
-                if (cep.length != 9) {
+                const cepLimpo = cep.replace(/\D/g, '');
+                if (cepLimpo.length !== 8) {
                     return res.status(400).json({
                         sucesso: false,
                         erro: 'CEP inválido',
-                        mensagem: 'O CEP precisa ser válido'
+                        mensagem: 'O CEP precisa ser válido e conter 8 dígitos'
                     });
                 }
-                dadosAtualizacao.cep = cep.trim();
+                dadosAtualizacao.cep = cepLimpo;
+            }
+
+            // REFACHADO: Permite que o admin altere o nível de privilégio (cargo/role) do usuário gerenciado
+            if (tipo !== undefined) {
+                const tiposValidos = ['comum', 'fornecedor', 'admin'];
+                if (!tiposValidos.includes(tipo)) {
+                    return res.status(400).json({
+                        sucesso: false,
+                        erro: 'Tipo inválido',
+                        mensagem: 'O tipo deve ser alterado para comum, fornecedor ou admin'
+                    });
+                }
+                dadosAtualizacao.tipo = tipo;
             }
 
             if (req.file) {
                 dadosAtualizacao.foto = req.file.filename;
             }
 
-            // Verificar se há dados para atualizar
             if (Object.keys(dadosAtualizacao).length === 0) {
                 return res.status(400).json({
                     sucesso: false,
@@ -784,18 +609,17 @@ class AuthController {
                 });
             }
 
-            // Atualizar usuário
             const resultado = await UsuarioModel.atualizar(id_user, dadosAtualizacao);
             
             res.status(200).json({
                 sucesso: true,
-                mensagem: 'Usuário atualizado com sucesso',
+                mensagem: 'Usuário atualizado com sucesso pelo Admin',
                 dados: {
                     linhasAfetadas: resultado || 1
                 }
             });
         } catch (error) {
-            console.error('Erro ao atualizar usuário:', error);
+            console.error('Erro ao atualizar usuário via Admin:', error);
             res.status(500).json({
                 sucesso: false,
                 erro: 'Erro interno do servidor',
@@ -804,12 +628,11 @@ class AuthController {
         }
     }
 
-    // DELETE /usuarios/:id - Excluir usuário (apenas admin)
+    // DELETE /usuarios/:id - Excluir usuário (Apenas Admin)
     static async excluirUsuario(req, res) {
         try {
             const { id_user } = req.params;
             
-            // Validação do ID
             if (!id_user || isNaN(id_user)) {
                 return res.status(400).json({
                     sucesso: false,
@@ -818,7 +641,6 @@ class AuthController {
                 });
             }
 
-            // Verificar se o usuário existe
             const usuarioExistente = await UsuarioModel.buscarPorId(id_user);
             if (!usuarioExistente) {
                 return res.status(404).json({
@@ -828,7 +650,6 @@ class AuthController {
                 });
             }
 
-            // Excluir usuário
             const resultado = await UsuarioModel.excluir(id_user);
             
             res.status(200).json({

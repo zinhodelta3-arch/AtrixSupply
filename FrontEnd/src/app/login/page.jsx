@@ -28,7 +28,8 @@ export default function Login() {
 
     try {
       // Substitua pela URL base da sua API
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+      const port = process.env.PORT;
+      const apiUrl = `http://localhost:${port}` || "http://localhost:3001";
       
       const response = await fetch(`${apiUrl}/api/auth/login`, {
         method: "POST",
