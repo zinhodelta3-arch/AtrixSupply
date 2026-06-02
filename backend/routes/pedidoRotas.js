@@ -6,11 +6,10 @@ const router = express.Router();
 
 // Rotas protegidas GET
 router.get('/', authMiddleware, PedidoController.listarTodos);
-router.get('/:id_pedido', authMiddleware, PedidoController.buscarPorId);
 router.get('/id_user/:id_user', authMiddleware, PedidoController.buscarPorIdUser);
 router.get('/nome_user/:nome_user', authMiddleware, PedidoController.buscarPorNome);
 router.get('/status/:status', authMiddleware, PedidoController.buscarPorStatus); 
-
+router.get('/:id_pedido', authMiddleware, PedidoController.buscarPorId);
 
 // Rotas protegidas POST, PUT & DELETE
 router.post('/', authMiddleware, PedidoController.criar);

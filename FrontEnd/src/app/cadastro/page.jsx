@@ -1,18 +1,121 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
 import * as THREE from "three";
 import Link from "next/link";
 
 export default function Cadastro() {
   const mountRef = useRef(null);
+  const router = useRouter();
+
+  const API_URL = (
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
+  ).replace(/\/$/, "");
+
+  const [formData, setFormData] = useState({
+    nome_user: "",
+    email: "",
+    cnpj: "",
+    empresa: "",
+    cargo: "",
+    tipo: "",
+    cep: "",
+    endereco: "",
+    senha: "",
+    confirmarSenha: "",
+  });
+
+  const [erro, setErro] = useState("");
+  const [sucesso, setSucesso] = useState("");
+  const [carregando, setCarregando] = useState(false);
+
+  function handleChange(event) {
+    const { name, value } = event.target;
+
+    setFormData((dadosAtuais) => ({
+      ...dadosAtuais,
+      [name]: value,
+    }));
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+
+    setErro("");
+    setSucesso("");
+
+    if (formData.senha !== formData.confirmarSenha) {
+      setErro("As senhas não são iguais.");
+      return;
+    }
+
+    if (formData.senha.length < 6) {
+      setErro("A senha precisa ter pelo menos 6 caracteres.");
+      return;
+    }
+
+    try {
+      setCarregando(true);
+
+      const dadosParaEnviar = {
+        nome_user: formData.nome_user,
+        email: formData.email,
+        cnpj: formData.cnpj,
+        empresa: formData.empresa,
+        cargo: formData.cargo,
+        tipo: formData.tipo,
+        cep: formData.cep,
+        endereco: formData.endereco,
+        senha: formData.senha,
+      };
+
+      const resposta = await fetch(`${API_URL}/api/auth/registrar`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(dadosParaEnviar),
+      });
+
+      const data = await resposta.json();
+
+      if (!resposta.ok || data.sucesso === false) {
+        throw new Error(data.mensagem || "Não foi possível fazer o cadastro.");
+      }
+
+      setSucesso("Cadastro realizado com sucesso! Redirecionando para o login...");
+
+      setFormData({
+        nome_user: "",
+        email: "",
+        cnpj: "",
+        empresa: "",
+        cargo: "",
+        tipo: "",
+        cep: "",
+        endereco: "",
+        senha: "",
+        confirmarSenha: "",
+      });
+
+      setTimeout(() => {
+        router.push("/login");
+      }, 1200);
+    } catch (error) {
+      setErro(error.message);
+    } finally {
+      setCarregando(false);
+    }
+  }
 
   useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return;
 
     const scene = new THREE.Scene();
+
     const camera = new THREE.PerspectiveCamera(
       75,
       window.innerWidth / window.innerHeight,
@@ -74,8 +177,7 @@ export default function Cadastro() {
 
       positions[i * 3 + 1] += Math.random() * 12 - 6;
 
-      velocities[i].life =
-        Math.random() * velocities[i].maxLife;
+      velocities[i].life = Math.random() * velocities[i].maxLife;
     }
 
     const geometry = new THREE.BufferGeometry();
@@ -102,14 +204,7 @@ export default function Cadastro() {
 
     const ctx = canvas2d.getContext("2d");
 
-    const grad = ctx.createRadialGradient(
-      32,
-      32,
-      0,
-      32,
-      32,
-      32
-    );
+    const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
 
     grad.addColorStop(0, "rgba(255,255,255,1)");
     grad.addColorStop(0.4, "rgba(255,255,255,0.6)");
@@ -130,10 +225,7 @@ export default function Cadastro() {
       sizeAttenuation: true,
     });
 
-    const particles = new THREE.Points(
-      geometry,
-      material
-    );
+    const particles = new THREE.Points(geometry, material);
 
     scene.add(particles);
 
@@ -182,23 +274,16 @@ export default function Cadastro() {
 
       time += 0.01;
 
-      const posArr =
-        geometry.attributes.position.array;
-
-      const colArr =
-        geometry.attributes.color.array;
-
-      const sizeArr =
-        geometry.attributes.size.array;
+      const posArr = geometry.attributes.position.array;
+      const colArr = geometry.attributes.color.array;
+      const sizeArr = geometry.attributes.size.array;
 
       for (let i = 0; i < PARTICLE_COUNT; i++) {
         const v = velocities[i];
 
         v.life += 1;
 
-        posArr[i * 3] +=
-          v.vx + Math.sin(time + i * 0.5) * 0.003;
-
+        posArr[i * 3] += v.vx + Math.sin(time + i * 0.5) * 0.003;
         posArr[i * 3 + 1] += v.vy;
 
         const progress = v.life / v.maxLife;
@@ -221,14 +306,9 @@ export default function Cadastro() {
         colArr[i * 3 + 1] = col.g * alpha;
         colArr[i * 3 + 2] = col.b * alpha;
 
-        sizeArr[i] =
-          (Math.random() * 10 + 3) *
-          (1 - progress * 0.5);
+        sizeArr[i] = (Math.random() * 10 + 3) * (1 - progress * 0.5);
 
-        if (
-          v.life >= v.maxLife ||
-          posArr[i * 3 + 1] > 7
-        ) {
+        if (v.life >= v.maxLife || posArr[i * 3 + 1] > 7) {
           initParticle(i);
         }
       }
@@ -238,15 +318,10 @@ export default function Cadastro() {
       geometry.attributes.size.needsUpdate = true;
 
       orbs.forEach((orb, idx) => {
-        orb.position.y +=
-          Math.sin(time * 0.4 + idx * 1.2) * 0.005;
+        orb.position.y += Math.sin(time * 0.4 + idx * 1.2) * 0.005;
+        orb.position.x += Math.cos(time * 0.3 + idx * 0.9) * 0.004;
 
-        orb.position.x +=
-          Math.cos(time * 0.3 + idx * 0.9) * 0.004;
-
-        orb.material.opacity =
-          0.05 +
-          Math.sin(time * 0.5 + idx) * 0.03;
+        orb.material.opacity = 0.05 + Math.sin(time * 0.5 + idx) * 0.03;
       });
 
       renderer.render(scene, camera);
@@ -255,15 +330,11 @@ export default function Cadastro() {
     animate();
 
     const onResize = () => {
-      camera.aspect =
-        window.innerWidth / window.innerHeight;
+      camera.aspect = window.innerWidth / window.innerHeight;
 
       camera.updateProjectionMatrix();
 
-      renderer.setSize(
-        window.innerWidth,
-        window.innerHeight
-      );
+      renderer.setSize(window.innerWidth, window.innerHeight);
     };
 
     window.addEventListener("resize", onResize);
@@ -271,12 +342,11 @@ export default function Cadastro() {
     return () => {
       cancelAnimationFrame(frameId);
 
-      window.removeEventListener(
-        "resize",
-        onResize
-      );
+      window.removeEventListener("resize", onResize);
 
-      mount.removeChild(renderer.domElement);
+      if (mount.contains(renderer.domElement)) {
+        mount.removeChild(renderer.domElement);
+      }
 
       geometry.dispose();
       material.dispose();
@@ -325,7 +395,6 @@ export default function Cadastro() {
         padding: "20px",
       }}
     >
-    
       <div
         ref={mountRef}
         style={{
@@ -335,7 +404,6 @@ export default function Cadastro() {
         }}
       />
 
-      
       <div
         style={{
           position: "absolute",
@@ -347,7 +415,6 @@ export default function Cadastro() {
         }}
       />
 
-     
       <main
         style={{
           position: "relative",
@@ -361,8 +428,7 @@ export default function Cadastro() {
           maxWidth: "720px",
           boxShadow:
             "0 0 40px rgba(245, 6, 30, 0.4), 0 0 80px rgba(245, 6, 30, 0.15), inset 0 1px 0 rgba(255,179,0,0.15)",
-          border:
-            "1px solid rgba(245, 6, 30, 0.3)",
+          border: "1px solid rgba(245, 6, 30, 0.3)",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -377,8 +443,7 @@ export default function Cadastro() {
           style={{
             marginTop: "-70px",
             marginBottom: "-20px",
-            filter:
-              "drop-shadow(0 0 12px rgba(255,179,0,0.4))",
+            filter: "drop-shadow(0 0 12px rgba(255,179,0,0.4))",
           }}
         />
 
@@ -387,14 +452,14 @@ export default function Cadastro() {
             color: "#ffb300",
             fontSize: "28px",
             marginBottom: "24px",
-            textShadow:
-              "0 0 20px rgba(255,179,0,0.4)",
+            textShadow: "0 0 20px rgba(255,179,0,0.4)",
           }}
         >
           Cadastro
         </h1>
 
         <form
+          onSubmit={handleSubmit}
           style={{
             display: "flex",
             flexDirection: "column",
@@ -402,7 +467,36 @@ export default function Cadastro() {
             gap: "16px",
           }}
         >
-       
+          {erro && (
+            <div
+              style={{
+                backgroundColor: "rgba(245, 6, 29, 0.18)",
+                border: "1px solid rgba(245, 6, 29, 0.6)",
+                color: "#fff",
+                padding: "10px 12px",
+                borderRadius: "10px",
+                fontSize: "14px",
+              }}
+            >
+              {erro}
+            </div>
+          )}
+
+          {sucesso && (
+            <div
+              style={{
+                backgroundColor: "rgba(255, 179, 0, 0.18)",
+                border: "1px solid rgba(255, 179, 0, 0.6)",
+                color: "#fff",
+                padding: "10px 12px",
+                borderRadius: "10px",
+                fontSize: "14px",
+              }}
+            >
+              {sucesso}
+            </div>
+          )}
+
           <div
             style={{
               display: "grid",
@@ -410,33 +504,35 @@ export default function Cadastro() {
               gap: "16px",
             }}
           >
-
             <div style={fieldStyle}>
-              <label style={labelStyle}>
-                Nome
-              </label>
+              <label style={labelStyle}>Nome</label>
 
               <input
+                name="nome_user"
                 type="text"
                 placeholder="Seu nome completo"
+                value={formData.nome_user}
+                onChange={handleChange}
                 style={inputStyle}
+                required
               />
             </div>
 
             <div style={fieldStyle}>
-              <label style={labelStyle}>
-                Email empresarial
-              </label>
+              <label style={labelStyle}>Email empresarial</label>
 
               <input
+                name="email"
                 type="email"
                 placeholder="email@empresa.com"
+                value={formData.email}
+                onChange={handleChange}
                 style={inputStyle}
+                required
               />
             </div>
           </div>
 
-         
           <div
             style={{
               display: "grid",
@@ -445,94 +541,98 @@ export default function Cadastro() {
             }}
           >
             <div style={fieldStyle}>
-              <label style={labelStyle}>
-                CNPJ
-              </label>
+              <label style={labelStyle}>CNPJ</label>
 
               <input
+                name="cnpj"
                 type="text"
                 placeholder="00.000.000/0000-00"
+                value={formData.cnpj}
+                onChange={handleChange}
                 style={inputStyle}
+                required
               />
             </div>
 
             <div style={fieldStyle}>
-              <label style={labelStyle}>
-                Empresa
-              </label>
+              <label style={labelStyle}>Empresa</label>
 
               <input
+                name="empresa"
                 type="text"
                 placeholder="Sua empresa"
+                value={formData.empresa}
+                onChange={handleChange}
                 style={inputStyle}
+                required
               />
             </div>
 
             <div style={fieldStyle}>
-              <label style={labelStyle}>
-                Cargo
-              </label>
+              <label style={labelStyle}>Cargo</label>
 
               <input
+                name="cargo"
                 type="text"
                 placeholder="Cargo que ocupa em sua empresa"
+                value={formData.cargo}
+                onChange={handleChange}
                 style={inputStyle}
+                required
               />
             </div>
 
             <div style={fieldStyle}>
-              <label style={labelStyle}>
-                Tipo
-              </label>
+              <label style={labelStyle}>Tipo</label>
 
               <select
-                defaultValue=""
+                name="tipo"
+                value={formData.tipo}
+                onChange={handleChange}
                 style={{
                   ...inputStyle,
                   cursor: "pointer",
                 }}
+                required
               >
                 <option value="" disabled>
                   Selecione o tipo
                 </option>
 
-                <option value="comum">
-                  Comum
-                </option>
-
-                <option value="fornecedor">
-                  Fornecedor
-                </option>
+                <option value="comum">Comum</option>
+                <option value="fornecedor">Fornecedor</option>
               </select>
             </div>
 
-
             <div style={fieldStyle}>
-              <label style={labelStyle}>
-                CEP
-              </label>
+              <label style={labelStyle}>CEP</label>
 
               <input
+                name="cep"
                 type="text"
                 placeholder="00000-000"
+                value={formData.cep}
+                onChange={handleChange}
                 style={inputStyle}
+                required
               />
             </div>
 
             <div style={fieldStyle}>
-              <label style={labelStyle}>
-                Endereço
-              </label>
+              <label style={labelStyle}>Endereço</label>
 
               <input
+                name="endereco"
                 type="text"
                 placeholder="Rua, número, bairro"
+                value={formData.endereco}
+                onChange={handleChange}
                 style={inputStyle}
+                required
               />
             </div>
           </div>
 
-         
           <div
             style={{
               display: "grid",
@@ -541,47 +641,52 @@ export default function Cadastro() {
             }}
           >
             <div style={fieldStyle}>
-              <label style={labelStyle}>
-                Senha
-              </label>
+              <label style={labelStyle}>Senha</label>
 
               <input
+                name="senha"
                 type="password"
                 placeholder="Crie uma senha"
+                value={formData.senha}
+                onChange={handleChange}
                 style={inputStyle}
+                required
               />
             </div>
 
             <div style={fieldStyle}>
-              <label style={labelStyle}>
-                Confirmar senha
-              </label>
+              <label style={labelStyle}>Confirmar senha</label>
 
               <input
+                name="confirmarSenha"
                 type="password"
                 placeholder="Confirme sua senha"
+                value={formData.confirmarSenha}
+                onChange={handleChange}
                 style={inputStyle}
+                required
               />
             </div>
           </div>
 
           <button
             type="submit"
+            disabled={carregando}
             style={{
-              backgroundColor: "#ffb300",
+              backgroundColor: carregando ? "#946b00" : "#ffb300",
               color: "#1a0a0a",
               padding: "12px",
               border: "none",
               borderRadius: "10px",
-              cursor: "pointer",
+              cursor: carregando ? "not-allowed" : "pointer",
               fontWeight: "bold",
               fontSize: "16px",
               marginTop: "4px",
-              boxShadow:
-                "0 0 20px rgba(255,179,0,0.35)",
+              boxShadow: "0 0 20px rgba(255,179,0,0.35)",
+              opacity: carregando ? 0.7 : 1,
             }}
           >
-            Cadastrar
+            {carregando ? "Cadastrando..." : "Cadastrar"}
           </button>
         </form>
 
