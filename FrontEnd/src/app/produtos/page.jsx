@@ -5,23 +5,19 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 
 import "./produtos.css"
+import CardProduto from "@/components/CardProduto";
 
 export default function Produtos() {
+  const [produtos, setProdutos] = useState([])  
   useEffect(() => {
     import("bootstrap/dist/js/bootstrap.bundle.min.js");
   }, []);
+  useEffect(() =>{
+    fetch("http://localhost:3001/api/produtos")
+    .then(res => res.json())
+    .then(data => setProdutos((data.dados)))
+  }, [])
 
-  const produtos = [
-    {
-      id: "id",
-      nome: "Nome do produto",
-      descricao: "Descrição do produto",
-      preco: "R$",
-      categoria: "Categoria do produto",
-      imagem: "Imagem do produto",
-    },
-
-];
 
 const [paginaAtual, setPaginaAtual] = useState(1);
 
@@ -183,66 +179,11 @@ const totalPaginas = Math.ceil(
 
             <div className="col-lg-9">
               <div className="row g-4">
-                {produtosAtuais.map((produto) => (
-                  <div className="col-md-6 col-lg-3" key={produto.id}>
-                    <div
-                      className="borda amplia card h-100 border-0 shadow-lg overflow-hidden"
-                      style={{
-                        background: "#111",
-                        transition: "0.3s",
-                        border: "1px solid rgba(199, 68, 68, 0.14)",
-                      }}
-                    >
-                      <link rel="stylesheet" href="" />
-
-                      <img
-                        src="Imagem do produto aqui"
-                        className="card-img-top"
-                        alt={produto.img}
-                        style={{
-                          height: "220px",
-                          objectFit: "cover",
-                        }}
-                      />
-
-
-                      <div className="card-body d-flex flex-column">
-                        <h5 className="card-title text-white fw-bold">
-                          {produto.nome}
-                        </h5>
-
-                        <p
-                          className="card-text mt-2"
-                          style={{
-                            color: "#cfcfcf",
-                          }}
-                        >
-                          {produto.descricao}
-                        </p>
-
-                        <p
-                          className="card-text mt-2 tam"
-                          style={{
-                            color: "#ffee8b",
-                          }}
-                        >
-                          {produto.categoria}
-                        </p>
-
-                        <p
-                          className="card-text mt-2 fw-bold"
-                          style={{
-                            color: "#5ba100dc",
-                          }}
-                        >
-                          {produto.preco}
-                        </p>
-
-                        
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                  {
+                    produtos.map((produto) =>(
+                      <CardProduto key={produto.id_produto} produto={produto} />
+                    ))
+                  }
 
 
 <nav className="mt-5">
