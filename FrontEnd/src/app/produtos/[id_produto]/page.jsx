@@ -25,6 +25,45 @@ export default function Compra() {
 
   const precoProduto = Number(produto?.preco_produto ?? produto?.preco ?? 0);
 
+  // ==========================================
+  // NOVA FUNÇÃO: ADICIONAR AO CARRINHO (A MÁGICA TÁ AQUI)
+  // ==========================================
+  const adicionarAoCarrinho = () => {
+    if (!produto) return;
+
+    // 1. Pega o que já tem na memória ou cria uma lista vazia
+    const carrinhoAtual = JSON.parse(localStorage.getItem("carrinho") || "[]");
+
+    // 2. Monta o produto com os dados reais da sua API
+    const novoItem = {
+      id: id_produto,
+      name: produto.nome_produto,
+      qty: quantidade,
+      price: precoProduto,
+      img: "/fixadores.png", 
+    };
+
+    // 3. Vê se esse produto já não foi adicionado antes
+    const indexExistente = carrinhoAtual.findIndex((item) => item.id === novoItem.id);
+
+    if (indexExistente > -1) {
+      // Se já estava lá, só soma a nova quantidade
+      carrinhoAtual[indexExistente].qty += quantidade;
+    } else {
+      // Se for novidade, joga no carrinho
+      carrinhoAtual.push(novoItem);
+    }
+
+    // 4. Salva de volta na memória do navegador
+    localStorage.setItem("carrinho", JSON.stringify(carrinhoAtual));
+
+    // 5. Avisa o Header para ele se atualizar imediatamente!
+    window.dispatchEvent(new Event("carrinhoAtualizado"));
+
+    alert("Produto adicionado com sucesso!");
+  };
+  // ==========================================
+
   return (
     <div
       style={{
@@ -298,10 +337,11 @@ export default function Compra() {
                 </div>
               </div>
 
-              {/* BOTÃO */}
+              {/* O SEU BOTÃO (AGORA COM O ONCLICK CONECTADO!) */}
               <div className="mt-5">
                 <button
                   className="btn w-100"
+                  onClick={adicionarAoCarrinho} // <--- A MÁGICA SE CONECTOU AQUI!
                   style={{
                     background: "linear-gradient(90deg,#ffcf40,#ff9d00,#c0012a)",
                     color: "white",

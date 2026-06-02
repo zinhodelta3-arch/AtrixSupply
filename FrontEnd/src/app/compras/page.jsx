@@ -4,17 +4,77 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function Compra() {
+  const { id_produto } = useParams();
+
+  const [produto, setDetalheProduto] = useState();
   const [quantidade, setQuantidade] = useState(1);
 
-  const produto = {
-    nome: "RTX 4090 ASUS ROG STRIX",
-    preco: 12499.9,
-    parcela: "12x de R$ 1.041,65",
-    estoque: "Em estoque",
+  useEffect(() => {
+    import("bootstrap/dist/js/bootstrap.bundle.min.js");
+  }, []);
+
+  useEffect(() => {
+    fetch(`http://localhost:3001/api/produtos/${id_produto}`)
+      .then((res) => res.json())
+      .then((data) => setDetalheProduto(data.dados));
+  }, [id_produto]);
+
+  const precoProduto = Number(produto?.preco_produto ?? produto?.preco ?? 0);
+
+  // ==========================================
+  // FUNÇÃO CORRIGIDA: ADICIONA MÚLTIPLOS ITENS CORRETAMENTE
+  // ==========================================
+  const adicionarAoCarrinho = () => {
+    if (!produto) return;
+
+    // 1. Pega o que já tem na memória do navegador de forma segura
+    let carrinhoAtual = [];
+    try {
+      const dadosStorage = localStorage.getItem("carrinho");
+      if (dadosStorage) {
+        carrinhoAtual = JSON.parse(dadosStorage);
+      }
+    } catch (error) {
+      console.error("Erro ao ler o carrinho:", error);
+      carrinhoAtual = [];
+    }
+
+    // 2. Garante que o ID do produto atual seja uma String para comparação perfeita
+    const idAtual do Produto = String(id_produto || produto.id_produto);
+
+    // 3. Monta o novo item convertendo a quantidade estritamente para Número
+    const novoItem = {
+      id: idAtual do Produto,
+      name: produto.nome_produto,
+      qty: Number(quantidade), 
+      price: precoProduto,
+      img: "/fixadores.png", 
+    };
+
+    // 4. Procura se esse item exato já não está no carrinho
+    const indexExistente = carrinhoAtual.findIndex((item) => String(item.id) === idAtual do Produto);
+
+    if (indexExistente > -1) {
+      // SE JÁ EXISTE: Soma a quantidade nova com a quantidade que já estava lá
+      carrinhoAtual[indexExistente].qty += Number(quantidade);
+    } else {
+      // SE É NOVO: Empurra o novo produto para a lista junto com os outros
+      carrinhoAtual.push(novoItem);
+    }
+
+    // 5. Salva a lista inteira atualizada de volta no cérebro do navegador
+    localStorage.setItem("carrinho", JSON.stringify(carrinhoAtual));
+
+    // 6. Dispara o evento para atualizar o Header imediatamente
+    window.dispatchEvent(new Event("carrinhoAtualizado"));
+
+    alert("Produto adicionado ao carrinho com sucesso!");
   };
+  // ==========================================
 
   return (
     <div
@@ -49,16 +109,12 @@ export default function Compra() {
               fontSize: "2rem",
               fontWeight: "800",
               letterSpacing: "1px",
-              background:
-                "linear-gradient(90deg,#ffcf40,#ff9d00,#c0012a)",
+              background: "linear-gradient(90deg,#ffcf40,#ff9d00,#c0012a)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
-              filter:
-                "drop-shadow(0 0 12px rgba(255,179,0,.22))",
+              filter: "drop-shadow(0 0 12px rgba(255,179,0,.22))",
             }}
-          >
-        
-          </span>
+          ></span>
         </div>
       </div>
 
@@ -78,8 +134,7 @@ export default function Compra() {
                 `,
                 borderRadius: "32px",
                 padding: "30px",
-                border:
-                  "1px solid rgba(255,215,120,.10)",
+                border: "1px solid rgba(255,215,120,.10)",
                 boxShadow: `
                   0 25px 60px rgba(221,25,25,.20),
                   0 0 25px rgba(235,194,13,.08)
@@ -98,14 +153,13 @@ export default function Compra() {
               >
                 <Image
                   src="/fixadores.png"
-                  alt="Produto"
+                  alt={produto?.nome_produto ?? "Produto"}
                   fill
                   priority
                   style={{
                     objectFit: "contain",
                     padding: "30px",
-                    filter:
-                      "drop-shadow(0 25px 40px rgba(0,0,0,.55))",
+                    filter: "drop-shadow(0 25px 40px rgba(0,0,0,.55))",
                   }}
                 />
               </div>
@@ -115,8 +169,7 @@ export default function Compra() {
                 style={{
                   marginTop: "15px",
                   background: "rgba(255,255,255,.03)",
-                  border:
-                    "1px solid rgba(255,255,255,.05)",
+                  border: "1px solid rgba(255,255,255,.05)",
                   borderRadius: "24px",
                   padding: "28px",
                   backdropFilter: "blur(10px)",
@@ -141,14 +194,8 @@ export default function Compra() {
                     fontSize: ".98rem",
                   }}
                 >
-                  Os Fixadores oferecem
-                  desempenho extremo para jogos,
-                  edição profissional, modelagem 3D e
-                  aplicações avançadas. Sua
-                  arquitetura moderna garante gráficos
-                  ultra realistas, ray tracing em
-                  tempo real e máxima estabilidade
-                  mesmo sob altas cargas de uso.
+                  {produto?.descricao ??
+                    "Carregando descrição do produto..."}
                 </p>
               </div>
             </div>
@@ -167,8 +214,7 @@ export default function Compra() {
                 `,
                 borderRadius: "32px",
                 padding: "42px",
-                border:
-                  "1px solid rgba(255,215,120,.10)",
+                border: "1px solid rgba(255,215,120,.10)",
                 boxShadow: `
                   0 25px 60px rgba(221,25,25,.18),
                   0 0 25px rgba(235,194,13,.06)
@@ -186,7 +232,7 @@ export default function Compra() {
                   fontSize: ".82rem",
                 }}
               >
-                Categoria
+                {produto?.categoria ?? "Categoria"}
               </span>
 
               {/* TITULO */}
@@ -198,7 +244,7 @@ export default function Compra() {
                   lineHeight: "1.1",
                 }}
               >
-                {produto.nome}
+                {produto?.nome_produto}
               </h1>
 
               {/* PREÇO */}
@@ -211,13 +257,10 @@ export default function Compra() {
                     marginBottom: "10px",
                   }}
                 >
-                  {produto.preco.toLocaleString(
-                    "pt-BR",
-                    {
-                      style: "currency",
-                      currency: "BRL",
-                    }
-                  )}
+                  {precoProduto.toLocaleString("pt-BR", {
+                    style: "currency",
+                    currency: "BRL",
+                  })}
                 </h2>
 
                 <p
@@ -226,7 +269,7 @@ export default function Compra() {
                     marginBottom: "8px",
                   }}
                 >
-                  {produto.parcela}
+                  {produto?.parcela_produto ?? "12x sem juros"}
                 </p>
 
                 <span
@@ -236,7 +279,7 @@ export default function Compra() {
                   }}
                 >
                   <i className="bi bi-check-circle-fill me-2" />
-                  {produto.estoque}
+                  {produto?.estoque_produto ?? "Em estoque"}
                 </span>
               </div>
 
@@ -259,19 +302,17 @@ export default function Compra() {
                   className="d-flex align-items-center"
                   style={{
                     width: "fit-content",
-                    background:
-                      "rgba(255,255,255,.03)",
-                    border:
-                      "1px solid rgba(255,255,255,.05)",
+                    background: "rgba(255,255,255,.03)",
+                    border: "1px solid rgba(255,255,255,.05)",
                     borderRadius: "18px",
                     overflow: "hidden",
                   }}
                 >
                   <button
                     className="btn"
+                    type="button"
                     onClick={() =>
-                      quantidade > 1 &&
-                      setQuantidade(quantidade - 1)
+                      quantidade > 1 && setQuantidade(quantidade - 1)
                     }
                     style={{
                       width: "58px",
@@ -296,9 +337,8 @@ export default function Compra() {
 
                   <button
                     className="btn"
-                    onClick={() =>
-                      setQuantidade(quantidade + 1)
-                    }
+                    type="button"
+                    onClick={() => setQuantidade(quantidade + 1)}
                     style={{
                       width: "58px",
                       height: "58px",
@@ -311,13 +351,14 @@ export default function Compra() {
                 </div>
               </div>
 
-              {/* BOTÃO */}
+              {/* BOTÃO ADICIONAR */}
               <div className="mt-5">
                 <button
                   className="btn w-100"
+                  type="button"
+                  onClick={adicionarAoCarrinho}
                   style={{
-                    background:
-                      "linear-gradient(90deg,#ffcf40,#ff9d00,#c0012a)",
+                    background: "linear-gradient(90deg,#ffcf40,#ff9d00,#c0012a)",
                     color: "white",
                     border: "none",
                     padding: "18px",
@@ -325,8 +366,7 @@ export default function Compra() {
                     fontWeight: "700",
                     fontSize: "1.05rem",
                     letterSpacing: ".4px",
-                    boxShadow:
-                      "0 14px 28px rgba(192,1,42,.24)",
+                    boxShadow: "0 14px 28px rgba(192,1,42,.24)",
                   }}
                 >
                   <i className="bi bi-lightning-charge-fill me-2" />
@@ -335,9 +375,7 @@ export default function Compra() {
               </div>
 
               {/* INFORMAÇÕES */}
-              <div
-                className="d-flex flex-column gap-3 mt-5"
-              >
+              <div className="d-flex flex-column gap-3 mt-5">
                 {[
                   "Entrega rápida para todo Brasil",
                   "Garantia oficial de 12 meses",
@@ -347,14 +385,11 @@ export default function Compra() {
                     key={index}
                     className="d-flex align-items-center gap-3"
                     style={{
-                      background:
-                        "rgba(218, 123, 123, 0.03)",
-                      border:
-                        "1px solid rgba(255,255,255,.05)",
+                      background: "rgba(218, 123, 123, 0.03)",
+                      border: "1px solid rgba(255,255,255,.05)",
                       borderRadius: "16px",
                       padding: "16px 18px",
-                      color:
-                        "rgba(255,255,255,.75)",
+                      color: "rgba(255,255,255,.75)",
                     }}
                   >
                     <i

@@ -1,22 +1,40 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation"; // Importado usePathname
+import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
 export default function Header() {
   const router = useRouter();
-  const pathname = usePathname(); // Ativado para monitorar a troca de páginas
+  const pathname = usePathname(); 
   
   const [loading, setLoading] = useState(true);
   const [usuario, setUsuario] = useState(null); 
+  const [cartItems, setCartItems] = useState([]); // <--- Começa vazio esperando os produtos reais!
+
+  // ==========================================
+  // FUNÇÃO PARA BUSCAR OS PRODUTOS REAIS DA MEMÓRIA
+  // ==========================================
+  const atualizarCarrinhoDoStorage = () => {
+    try {
+      const carrinhoStorage = localStorage.getItem("carrinho");
+      if (carrinhoStorage) {
+        setCartItems(JSON.parse(carrinhoStorage));
+      } else {
+        setCartItems([]);
+      }
+    } catch (error) {
+      console.error("Erro ao ler o carrinho do localStorage:", error);
+    }
+  };
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       import("bootstrap/dist/js/bootstrap.bundle.min.js");
     }
 
+    // Carrega o usuário logado
     try {
       const usuarioStorage = localStorage.getItem("usuario");
       if (usuarioStorage) {
@@ -31,7 +49,18 @@ export default function Header() {
     } finally {
       setLoading(false); 
     }
-  }, [pathname]); // <<< Roda o efeito toda vez que a URL/página mudar
+
+    // Carrega o carrinho assim que entra na página
+    atualizarCarrinhoDoStorage();
+
+    // ESCUTA O GRITO DO BOTÃO DE COMPRA!
+    window.addEventListener("carrinhoAtualizado", atualizarCarrinhoDoStorage);
+
+    // Desliga o ouvidor se sair do site
+    return () => {
+      window.removeEventListener("carrinhoAtualizado", atualizarCarrinhoDoStorage);
+    };
+  }, [pathname]); // Roda quando muda de página e monitora a URL
 
   const handleLogout = (e) => {
     e.preventDefault(); 
@@ -40,39 +69,14 @@ export default function Header() {
     router.push("/login"); 
   };
 
-  const [cartItems, setCartItems] = useState([
-    { 
-      id: 1, 
-      name: "Parafuso Sextavado de Alta Resistência (M16 x 50mm)", 
-      qty: 250, 
-      price: 4.50, 
-      img: "/engrenagem.png" 
-    },
-    { 
-      id: 2, 
-      name: "Engrenagem Helicoidal de Aço Temperado Módulo 3", 
-      qty: 4, 
-      price: 389.90, 
-      img: "/engrenagem.png" 
-    },
-    { 
-      id: 3, 
-      name: "Rolamento de Esferas Blindado SKF 6204-2Z", 
-      qty: 12, 
-      price: 42.80, 
-      img: "/engrenagem.png" 
-    },
-    { 
-      id: 4, 
-      name: "Porca Autotravante em Aço Inox AISI 316 (M16)", 
-      qty: 200, 
-      price: 2.10, 
-      img: "/engrenagem.png" 
-    }
-  ]);
-
+  // ==========================================
+  // FUNÇÃO PARA APAGAR O ITEM DO CARRINHO REVERSO
+  // ==========================================
   const handleRemoveItem = (idToRemove) => {
-    setCartItems(cartItems.filter(item => item.id !== idToRemove));
+    const novoCarrinho = cartItems.filter(item => item.id !== idToRemove);
+    setCartItems(novoCarrinho);
+    // Remove também da memória para não voltar ao atualizar a página
+    localStorage.setItem("carrinho", JSON.stringify(novoCarrinho));
   };
 
   const subtotal = cartItems.reduce((acc, item) => acc + (item.price * item.qty), 0);
@@ -131,7 +135,6 @@ export default function Header() {
                     </>
                   ) : (
                     <>
-                      {/* Exibe o nome do usuário logado se existir */}
                       {usuario.nome_user && (
                         <span className="dropdown-user-name" style={{ padding: "10px 15px", display: "block", fontWeight: "bold", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
                           Olá, {usuario.nome_user}
@@ -166,7 +169,6 @@ export default function Header() {
                   <Link className="nav-link" href="/produtos">Produtos</Link>
                 </li>
                 
-                {/* Se o usuário estiver logado, exibe as opções restritas */}
                 {usuario && (
                   <>
                     <li className="nav-item">
@@ -219,6 +221,7 @@ export default function Header() {
                       {(item.price * item.qty).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                     </span>
                   </div>
+                  {/* BOTÃO X ATUALIZADO */}
                   <button className="btn cart-item-remove-btn p-0 align-self-center" type="button" onClick={() => handleRemoveItem(item.id)}>
                     <i className="bi bi-x-lg"></i>
                   </button>
