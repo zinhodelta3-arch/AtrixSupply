@@ -1,5 +1,9 @@
 "use client";
 
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation"; 
+import Image from "next/image";
+import { useState, useEffect } from "react";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -10,7 +14,6 @@ import {
   Legend,
   Filler,
 } from "chart.js";
-
 import { Line } from "react-chartjs-2";
 
 ChartJS.register(
@@ -23,24 +26,43 @@ ChartJS.register(
   Filler
 );
 
-
 export default function Dashboard() {
+  const router = useRouter();
+  
+  // Usamos um estado de "loading" para segurar a tela enquanto verificamos quem é o usuário
+  const [loading, setLoading] = useState(true);
+  const [usuario, setUsuario] = useState({ nome_user: "Carregando..." });
+
+  // Toda a lógica de efeitos e redirecionamento VEM AQUI DENTRO
+  useEffect(() => {
+    try {
+      const usuarioStorage = localStorage.getItem("usuario");
+      if (usuarioStorage) {
+        const userParsed = JSON.parse(usuarioStorage);
+        
+        // Verifica se é administrador DEPOIS de pegar os dados
+        if (userParsed.tipo !== 'administrador') {
+          router.push('/not-found');
+        } else {
+          setUsuario(userParsed);
+          setLoading(false); // Libera a tela do Dashboard
+        }
+      } else {
+        // Se não tiver usuário no localStorage, manda pro login
+        router.push('/');
+      }
+    } catch (error) {
+      console.error("Erro ao ler dados do usuário:", error);
+      router.push('/');
+    }
+  }, [router]);
+
+  // DADOS DO GRÁFICO
   const data = {
     labels: [
-      "Jan",
-      "Fev",
-      "Mar",
-      "Abr",
-      "Mai",
-      "Jun",
-      "Jul",
-      "Ago",
-      "Set",
-      "Out",
-      "Nov",
-      "Dez",
+      "Jan", "Fev", "Mar", "Abr", "Mai", "Jun", 
+      "Jul", "Ago", "Set", "Out", "Nov", "Dez",
     ],
-
     datasets: [
       {
         label: "Renda",
@@ -59,12 +81,8 @@ export default function Dashboard() {
   const options = {
     responsive: true,
     maintainAspectRatio: false,
-
     plugins: {
-      legend: {
-        display: false,
-      },
-
+      legend: { display: false },
       tooltip: {
         backgroundColor: "#111113",
         borderColor: "#c0012a",
@@ -73,26 +91,14 @@ export default function Dashboard() {
         bodyColor: "#ffffff",
       },
     },
-
     scales: {
       x: {
-        ticks: {
-          color: "#71717a",
-        },
-
-        grid: {
-          color: "rgba(255,255,255,0.04)",
-        },
+        ticks: { color: "#71717a" },
+        grid: { color: "rgba(255,255,255,0.04)" },
       },
-
       y: {
-        ticks: {
-          color: "#71717a",
-        },
-
-        grid: {
-          color: "rgba(255,255,255,0.04)",
-        },
+        ticks: { color: "#71717a" },
+        grid: { color: "rgba(255,255,255,0.04)" },
       },
     },
   };
@@ -108,16 +114,23 @@ export default function Dashboard() {
   const hoverEnter = (e) => {
     e.currentTarget.style.transform = "translateY(-4px)";
     e.currentTarget.style.background = "#151518";
-    e.currentTarget.style.border =
-      "1px solid rgba(192,1,42,0.45)";
+    e.currentTarget.style.border = "1px solid rgba(192,1,42,0.45)";
   };
 
   const hoverLeave = (e) => {
     e.currentTarget.style.transform = "translateY(0px)";
     e.currentTarget.style.background = "#111113";
-    e.currentTarget.style.border =
-      "1px solid rgba(255,255,255,0.06)";
+    e.currentTarget.style.border = "1px solid rgba(255,255,255,0.06)";
   };
+
+  // Impede que o Dashboard carregue antes da verificação terminar
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "100vh", background: "#09090b", color: "#ffb300" }}>
+        Validando acesso...
+      </div>
+    );
+  }
 
   return (
     <div
@@ -165,20 +178,14 @@ export default function Dashboard() {
               <div>
                 <p
                   className="mb-2"
-                  style={{
-                    color: "#71717a",
-                    fontSize: ".92rem",
-                  }}
+                  style={{ color: "#71717a", fontSize: ".92rem" }}
                 >
                   Total de Pedidos
                 </p>
 
                 <h2
                   className="fw-bold mb-0"
-                  style={{
-                    color: "#ffffff",
-                    letterSpacing: "-1px",
-                  }}
+                  style={{ color: "#ffffff", letterSpacing: "-1px" }}
                 >
                   1.248
                 </h2>
@@ -196,10 +203,7 @@ export default function Dashboard() {
               >
                 <i
                   className="bi bi-bag-check-fill"
-                  style={{
-                    color: "#ff8800",
-                    fontSize: "1.4rem",
-                  }}
+                  style={{ color: "#ff8800", fontSize: "1.4rem" }}
                 />
               </div>
             </div>
@@ -218,20 +222,14 @@ export default function Dashboard() {
               <div>
                 <p
                   className="mb-2"
-                  style={{
-                    color: "#71717a",
-                    fontSize: ".92rem",
-                  }}
+                  style={{ color: "#71717a", fontSize: ".92rem" }}
                 >
                   Renda do Mês
                 </p>
 
                 <h2
                   className="fw-bold mb-0"
-                  style={{
-                    color: "#ffffff",
-                    letterSpacing: "-1px",
-                  }}
+                  style={{ color: "#ffffff", letterSpacing: "-1px" }}
                 >
                   R$ 48.900
                 </h2>
@@ -249,10 +247,7 @@ export default function Dashboard() {
               >
                 <i
                   className="bi bi-currency-dollar"
-                  style={{
-                    color: "#ff8800",
-                    fontSize: "1.4rem",
-                  }}
+                  style={{ color: "#ff8800", fontSize: "1.4rem" }}
                 />
               </div>
             </div>
@@ -271,20 +266,14 @@ export default function Dashboard() {
               <div>
                 <p
                   className="mb-2"
-                  style={{
-                    color: "#71717a",
-                    fontSize: ".92rem",
-                  }}
+                  style={{ color: "#71717a", fontSize: ".92rem" }}
                 >
                   Total de Clientes
                 </p>
 
                 <h2
                   className="fw-bold mb-0"
-                  style={{
-                    color: "#ffffff",
-                    letterSpacing: "-1px",
-                  }}
+                  style={{ color: "#ffffff", letterSpacing: "-1px" }}
                 >
                   8.492
                 </h2>
@@ -302,10 +291,7 @@ export default function Dashboard() {
               >
                 <i
                   className="bi bi-people-fill"
-                  style={{
-                    color: "#ff8800",
-                    fontSize: "1.4rem",
-                  }}
+                  style={{ color: "#ff8800", fontSize: "1.4rem" }}
                 />
               </div>
             </div>
@@ -326,20 +312,14 @@ export default function Dashboard() {
           <div>
             <h4
               className="fw-bold mb-1"
-              style={{
-                color: "#ffffff",
-                letterSpacing: "-0.5px",
-              }}
+              style={{ color: "#ffffff", letterSpacing: "-0.5px" }}
             >
               Renda Anual
             </h4>
 
             <p
               className="mb-0"
-              style={{
-                color: "#71717a",
-                fontSize: ".92rem",
-              }}
+              style={{ color: "#71717a", fontSize: ".92rem" }}
             >
               Crescimento financeiro anual
             </p>
@@ -360,12 +340,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div
-          style={{
-            width: "100%",
-            height: "400px",
-          }}
-        >
+        <div style={{ width: "100%", height: "400px" }}>
           <Line data={data} options={options} />
         </div>
       </div>

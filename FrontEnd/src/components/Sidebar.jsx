@@ -1,20 +1,56 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation"; 
 import Image from "next/image";
+import { useState, useEffect } from "react";
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  
+  // O componente começa "carregando", ou seja, oculto
+  const [loading, setLoading] = useState(true);
+  const [usuario, setUsuario] = useState({ nome_user: "Carregando..." });
+
+  useEffect(() => {
+    try {
+      const usuarioStorage = localStorage.getItem("usuario");
+      
+      if (usuarioStorage) {
+        const userParsed = JSON.parse(usuarioStorage);
+
+        // Verifica o TIPO do usuário (ajuste a propriedade caso o nome no seu BD seja outro)
+        if(userParsed.tipo !== 'administrador'){
+          router.push('/not-found');
+          return; // Para a execução aqui para não exibir a sidebar
+        }
+
+        // Se passou pela validação, seta o usuário e tira a tela de loading
+        setUsuario(userParsed); 
+        setLoading(false);
+      } else {
+        // Se não tem dados no storage, manda pro login
+        router.push('/');
+      }
+    } catch (error) {
+      console.error("Erro ao ler dados do usuário:", error);
+      // Em caso de erro na leitura, redireciona ou oculta a sidebar
+      router.push('/');
+    }
+  }, [router]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("usuario");
+    router.push("/"); 
+  };
 
   const isActive = (path) => pathname === path;
 
   const linkStyle = (active) => ({
     borderRadius: "14px",
     background: active ? "rgba(255,255,255,0.08)" : "transparent",
-    border: active
-      ? "1px solid rgba(255,179,0,0.18)"
-      : "1px solid transparent",
+    border: active ? "1px solid rgba(255,179,0,0.18)" : "1px solid transparent",
     color: active ? "#ffb300" : "#f3f4f6",
     transition: "all .25s ease",
   });
@@ -24,6 +60,12 @@ export default function Sidebar() {
     color: active ? "#ff8800" : "#e4e4e7",
     transition: "all .25s ease",
   });
+
+  // PROTEÇÃO PRINCIPAL: 
+  // Se ainda estiver validando ou deu erro, não renderiza NADA da Sidebar
+  if (loading) {
+    return null; 
+  }
 
   return (
     <aside
@@ -46,164 +88,68 @@ export default function Sidebar() {
         top: 0,
       }}
     >
-  
-      <Link
-        href="/ATRIXsupply"
-        className="d-flex align-items-center text-decoration-none mb-4 px-2"
-      >
+      <Link href="/ATRIXsupply" className="d-flex align-items-center text-decoration-none mb-4 px-2">
         <div className="d-flex justify-content-center align-items-center me-3">
-          <Image
-            src="/logo.png"
-            alt="ATRIX Logo"
-            width={35}
-            height={42}
-            priority
-          />
+          <Image src="/logo.png" alt="ATRIX Logo" width={35} height={42} priority />
         </div>
-
         <div className="d-flex flex-column">
-          <span
-            className="fw-bold"
-            style={{
-              color: "#ffffff",
-              fontSize: "1.05rem",
-              letterSpacing: "-0.5px",
-            }}
-          >
+          <span className="fw-bold" style={{ color: "#ffffff", fontSize: "1.05rem", letterSpacing: "-0.5px" }}>
             ATRIX<span style={{ color: "#ffffff" }}>supply</span>
           </span>
-
-          <span
-            style={{
-              color: "rgba(255,255,255,0.65)",
-              fontSize: ".72rem",
-            }}
-          >
+          <span style={{ color: "rgba(255,255,255,0.65)", fontSize: ".72rem" }}>
             Painel Admin
           </span>
         </div>
       </Link>
 
-     
-      <div
-        className="mb-3"
-        style={{
-          width: "100%",
-          height: "1px",
-          background: "rgba(255,255,255,0.08)",
-        }}
-      />
-
-     
+      <div className="mb-3" style={{ width: "100%", height: "1px", background: "rgba(255,255,255,0.08)" }} />
 
       <ul className="nav nav-pills flex-column gap-1">
-
-       
         <li className="nav-item mb-2">
-          <Link
-            href="/dashboard"
-            className="nav-link d-flex align-items-center px-3 py-2 text-decoration-none"
-            style={linkStyle(isActive("/dashboard"))}
-          >
-            <i
-              className="bi bi-speedometer2 me-3"
-              style={iconStyle(isActive("/dashboard"))}
-            />
-            Dashboard
+          <Link href="/dashboard" className="nav-link d-flex align-items-center px-3 py-2 text-decoration-none" style={linkStyle(isActive("/dashboard"))}>
+            <i className="bi bi-speedometer2 me-3" style={iconStyle(isActive("/dashboard"))} /> Dashboard
           </Link>
         </li>
-
-        
         <li className="nav-item mb-2">
-          <Link
-            href="/dashboard/usuarios"
-            className="nav-link d-flex align-items-center px-3 py-2 text-decoration-none"
-            style={linkStyle(isActive("/dashboard/usuarios"))}
-          >
-            <i
-              className="bi bi-people me-3"
-              style={iconStyle(isActive("/dashboard/usuarios"))}
-            />
-            Usuários
+          <Link href="/dashboard/usuarios" className="nav-link d-flex align-items-center px-3 py-2 text-decoration-none" style={linkStyle(isActive("/dashboard/usuarios"))}>
+            <i className="bi bi-people me-3" style={iconStyle(isActive("/dashboard/usuarios"))} /> Usuários
           </Link>
         </li>
-
-       
         <li className="nav-item mb-2">
-          <Link
-            href="/dashboard/produtos"
-            className="nav-link d-flex align-items-center px-3 py-2 text-decoration-none"
-            style={linkStyle(isActive("/dashboard/produtos"))}
-          >
-            <i
-              className="bi bi-box-seam me-3"
-              style={iconStyle(isActive("/dashboard/produtos"))}
-            />
-            Produtos
+          <Link href="/dashboard/produtos" className="nav-link d-flex align-items-center px-3 py-2 text-decoration-none" style={linkStyle(isActive("/dashboard/produtos"))}>
+            <i className="bi bi-box-seam me-3" style={iconStyle(isActive("/dashboard/produtos"))} /> Produtos
           </Link>
         </li>
-
-       
         <li className="nav-item mb-2">
-          <Link
-            href="/dashboard/pedidos"
-            className="nav-link d-flex align-items-center px-3 py-2 text-decoration-none"
-            style={linkStyle(isActive("/dashboard/pedidos"))}
-          >
-            <i
-              className="bi bi-cart3 me-3"
-              style={iconStyle(isActive("/dashboard/pedidos"))}
-            />
-            Pedidos
+          <Link href="/dashboard/pedidos" className="nav-link d-flex align-items-center px-3 py-2 text-decoration-none" style={linkStyle(isActive("/dashboard/pedidos"))}>
+            <i className="bi bi-cart3 me-3" style={iconStyle(isActive("/dashboard/pedidos"))} /> Pedidos
           </Link>
         </li>
-
-       
         <li className="nav-item mb-2">
-          <Link
-            href="/dashboard/fornecedores"
-            className="nav-link d-flex align-items-center px-3 py-2 text-decoration-none"
-            style={linkStyle(isActive("/dashboard/fornecedores"))}
-          >
-            <i
-              className="bi bi-truck me-3"
-              style={iconStyle(isActive("/dashboard/fornecedores"))}
-            />
-            Fornecedores
+          <Link href="/dashboard/fornecedores" className="nav-link d-flex align-items-center px-3 py-2 text-decoration-none" style={linkStyle(isActive("/dashboard/fornecedores"))}>
+            <i className="bi bi-truck me-3" style={iconStyle(isActive("/dashboard/fornecedores"))} /> Fornecedores
+          </Link>
+        </li>
+        <li className="nav-item mb-2">
+          <Link href="/dashboard/suporte" className="nav-link d-flex align-items-center px-3 py-2 text-decoration-none" style={linkStyle(isActive("/dashboard/suporte"))}>
+            <i className="bi bi-headset me-3" style={iconStyle(isActive("/dashboard/suporte"))} /> Suporte
           </Link>
         </li>
       </ul>
 
-       <li className="nav-item mb-2">
-          <Link
-            href="/dashboard/suporte"
-            className="nav-link d-flex align-items-center px-3 py-2 text-decoration-none"
-            style={linkStyle(isActive("/dashboard/suporte"))}
-          >
-            <i
-              className="bi bi-truck me-3"
-              style={iconStyle(isActive("/dashboard/suporte"))}
-            />
-            Suporte
-          </Link>
-        </li>
-
-
-     
       <div className="mt-auto pt-4">
         <div
           className="d-flex align-items-center justify-content-between p-2"
           style={{
-              background: "rgba(255, 229, 229, 0.06)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              borderRadius: "18px",
-              backdropFilter: "blur(10px)",
+            background: "rgba(255, 229, 229, 0.06)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: "18px",
+            backdropFilter: "blur(10px)",
           }}
         >
-         
           <div className="d-flex align-items-center">
             <div
-              className="d-flex justify-content-center align-items-center fw-bold"
+              className="d-flex justify-content-center align-items-center fw-bold text-uppercase"
               style={{
                 width: "42px",
                 height: "42px",
@@ -214,31 +160,23 @@ export default function Sidebar() {
                 fontSize: ".9rem",
               }}
             >
-              ADM
+              {usuario.nome_user ? usuario.nome_user.substring(0, 3) : "ADM"}
             </div>
 
             <div className="ms-3">
-              <div
-                className="fw-semibold"
-                style={{ color: "#ffffff", fontSize: ".9rem" }}
-              >
+              <div className="fw-semibold" style={{ color: "#ffffff", fontSize: ".9rem" }}>
                 Admin
               </div>
-
-              <div
-                style={{
-                  color: "rgba(255,255,255,0.65)",
-                  fontSize: ".72rem",
-                }}
-              >
-                admin@atrix.com
+              <div style={{ color: "rgba(255,255,255,0.65)", fontSize: ".72rem" }}>
+                {usuario.nome_user}
               </div>
             </div>
           </div>
 
-       
           <button
+            onClick={handleLogout}
             className="btn d-flex align-items-center justify-content-center p-0"
+            title="Sair da conta"
             style={{
               width: "38px",
               height: "38px",
