@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
+const PRODUTOS_URL = `${API_URL}/api/produtos`;
 const LIMITE = 10;
 
 const categorias = [
@@ -38,6 +39,7 @@ function pegarToken() {
     localStorage.getItem("authToken") ||
     localStorage.getItem("accessToken") ||
     localStorage.getItem("usuarioToken") ||
+    localStorage.getItem("jwt") ||
     ""
   );
 }
@@ -126,25 +128,23 @@ export default function Produtos() {
       setCarregando(true);
       setErroLista(null);
 
-      const rota = termo
-        ? `/api/produtos/nome/${encodeURIComponent(termo)}`
-        : "/api/produtos";
+      const url = termo
+        ? `${PRODUTOS_URL}/nome/${encodeURIComponent(termo)}?pagina=${paginaAtual}&limite=${LIMITE}`
+        : `${PRODUTOS_URL}?pagina=${paginaAtual}&limite=${LIMITE}`;
 
-      const resposta = await fetch(
-        `${API_URL}${rota}?pagina=${paginaAtual}&limite=${LIMITE}`,
-        {
-          method: "GET",
-          cache: "no-store",
-        }
-      );
+      const resposta = await fetch(url, {
+        method: "GET",
+        cache: "no-store",
+      });
 
-      const data = await resposta.json();
+      const data = await resposta.json().catch(() => null);
 
-      if (!resposta.ok || !data.sucesso) {
+      if (!resposta.ok || !data?.sucesso) {
         throw new Error(getMensagemErro(data));
       }
 
       setProdutos(Array.isArray(data.dados) ? data.dados : []);
+
       setPaginacao(
         data.paginacao || {
           pagina: paginaAtual,
@@ -153,8 +153,10 @@ export default function Produtos() {
           totalPaginas: 1,
         }
       );
+
       setPagina(data.paginacao?.pagina || paginaAtual);
     } catch (error) {
+      console.error("Erro ao carregar produtos:", error);
       setProdutos([]);
       setErroLista(error.message || "Não foi possível carregar os produtos.");
     } finally {
@@ -261,14 +263,30 @@ export default function Produtos() {
         throw new Error("Você precisa estar logado para criar ou editar produtos.");
       }
 
+      if (!formData.nome_produto.trim()) {
+        throw new Error("O nome do produto é obrigatório.");
+      }
+
+      if (!formData.preco || Number(formData.preco) <= 0) {
+        throw new Error("O preço deve ser maior que zero.");
+      }
+
+      if (formData.estoque === "" || Number(formData.estoque) < 0) {
+        throw new Error("O estoque deve ser maior ou igual a zero.");
+      }
+
+      if (!formData.fornecedor.trim()) {
+        throw new Error("O fornecedor é obrigatório.");
+      }
+
       const body = new FormData();
 
-      body.append("nome_produto", formData.nome_produto);
-      body.append("descricao", formData.descricao);
+      body.append("nome_produto", formData.nome_produto.trim());
+      body.append("descricao", formData.descricao.trim());
       body.append("preco", formData.preco);
       body.append("categoria", formData.categoria);
       body.append("estoque", formData.estoque);
-      body.append("fornecedor", formData.fornecedor);
+      body.append("fornecedor", formData.fornecedor.trim());
 
       if (formData.imagem) {
         body.append("imagem", formData.imagem);
@@ -277,8 +295,8 @@ export default function Produtos() {
       const idProduto = getProdutoId(produtoSelecionado);
 
       const url = modoEdicao
-        ? `${API_URL}/produtos/${idProduto}`
-        : `${API_URL}/produtos`;
+        ? `${PRODUTOS_URL}/${idProduto}`
+        : PRODUTOS_URL;
 
       const resposta = await fetch(url, {
         method: modoEdicao ? "PUT" : "POST",
@@ -288,9 +306,9 @@ export default function Produtos() {
         body,
       });
 
-      const data = await resposta.json();
+      const data = await resposta.json().catch(() => null);
 
-      if (!resposta.ok || !data.sucesso) {
+      if (!resposta.ok || !data?.sucesso) {
         throw new Error(getMensagemErro(data));
       }
 
@@ -309,6 +327,7 @@ export default function Produtos() {
         setModoEdicao(false);
       }, 500);
     } catch (error) {
+      console.error("Erro ao salvar produto:", error);
       setFormErro(error.message || "Não foi possível salvar o produto.");
     } finally {
       setSalvando(false);
@@ -336,21 +355,22 @@ export default function Produtos() {
         throw new Error("Você precisa estar logado para excluir produtos.");
       }
 
-      const resposta = await fetch(`${API_URL}/produtos/${idProduto}`, {
+      const resposta = await fetch(`${PRODUTOS_URL}/${idProduto}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      const data = await resposta.json();
+      const data = await resposta.json().catch(() => null);
 
-      if (!resposta.ok || !data.sucesso) {
+      if (!resposta.ok || !data?.sucesso) {
         throw new Error(getMensagemErro(data));
       }
 
       await carregarProdutos(pagina, pesquisa.trim());
     } catch (error) {
+      console.error("Erro ao excluir produto:", error);
       alert(error.message || "Não foi possível excluir o produto.");
     }
   }
@@ -891,7 +911,11 @@ export default function Produtos() {
                       style={inputStyle}
                     >
                       {categorias.map((categoria) => (
-                        <option key={categoria.value} value={categoria.value}>
+                        <option
+                          key={categoria.value}
+                          value={categoria.value}
+                          style={{ color: "#111" }}
+                        >
                           {categoria.label}
                         </option>
                       ))}
