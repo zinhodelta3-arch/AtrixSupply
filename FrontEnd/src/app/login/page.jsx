@@ -525,7 +525,6 @@ export default function Login() {
               </Link>
             </span>
 
-            <span>Esqueceu sua senha?</span>
           </p>
         </div>
       </div>
