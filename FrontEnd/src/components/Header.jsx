@@ -231,7 +231,7 @@ export default function Header() {
                     Encomendas
                   </Link>
                 </li>
-                {usuario ? (
+                {usuario && usuario.tipo === 'fornecedor' ? (
                   <>
                     <li className="nav-item">
                       <Link className="nav-link" href="/logistica">
