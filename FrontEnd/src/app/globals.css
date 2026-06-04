@@ -53,8 +53,94 @@ a {
 }
 
 /* ==========================================================================
-   1. BASE E REGRAS GERAIS DA NAVBAR
+   1. HEADER / NAVBAR COM BLUR EM CAMADA SEPARADA
    ========================================================================== */
+
+.main-glass-header {
+  position: fixed;
+  top: 20px;
+  left: 0;
+  width: 100%;
+  z-index: 99999;
+  pointer-events: none;
+  background: transparent;
+}
+
+.header-glass-container {
+  position: relative;
+  min-height: 74px;
+  padding: 14px 28px !important;
+  border-radius: 24px;
+  overflow: visible;
+  pointer-events: auto;
+}
+
+/* 
+   CAMADA REAL DO BLUR.
+   Agora ela é separada do nav do Bootstrap.
+*/
+.navbar-glass-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: 24px;
+  pointer-events: none;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(148, 5, 51, 0.22),
+      rgba(192, 1, 42, 0.20),
+      rgba(245, 6, 29, 0.16),
+      rgba(255, 136, 0, 0.13),
+      rgba(255, 179, 0, 0.12)
+    ),
+    rgba(10, 10, 14, 0.34);
+
+  backdrop-filter: blur(36px) saturate(190%) contrast(110%);
+  -webkit-backdrop-filter: blur(36px) saturate(190%) contrast(110%);
+
+  border: 1px solid rgba(255, 255, 255, 0.18);
+
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+/* brilho de vidro */
+.navbar-glass-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+
+  background:
+    radial-gradient(
+      circle at 10% 35%,
+      rgba(255, 207, 64, 0.18),
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at 88% 50%,
+      rgba(192, 1, 42, 0.20),
+      transparent 38%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.11),
+      rgba(255, 255, 255, 0.02)
+    );
+}
+
+.header-navbar-content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
 .photoLogo {
   width: 35px;
   height: 40px;
@@ -65,44 +151,21 @@ a {
   font-size: 1.5rem;
   font-weight: 800;
   letter-spacing: 1px;
+
   background: linear-gradient(90deg, #ffcf40, #ff9d00, #c0012a);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
+
   filter: drop-shadow(0 0 12px rgba(255, 179, 0, 0.22));
   text-decoration: none;
-  margin-top: 0px;
-}
-
-.glass-navbar {
-  position: fixed;
-  top: 20px;
-  left: 0;
-  width: 100%;
-  z-index: 999;
-  pointer-events: none;
-}
-
-.glass-navbar .container {
-  pointer-events: auto;
-  padding: 14px 28px;
-  border-radius: 24px;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  background: linear-gradient(
-    90deg,
-    rgba(148, 5, 51, 0.32),
-    rgba(192, 1, 42, 0.32),
-    rgba(245, 6, 29, 0.32),
-    rgba(255, 136, 0, 0.32),
-    rgba(255, 179, 0, 0.32)
-  );
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  margin-top: 0;
 }
 
 /* ==========================================================================
-   2. LINKS DE NAVEGAÇÃO INTERNA
+   2. LINKS DA NAVBAR
    ========================================================================== */
+
 .nav-link {
   color: white !important;
   font-weight: 500;
@@ -131,35 +194,45 @@ a {
 }
 
 /* ==========================================================================
-   3. BOTÕES INTERATIVOS (CARRINHO E PERFIL)
+   3. BOTÕES INTERATIVOS: CARRINHO E PERFIL
    ========================================================================== */
-.cart-wrapper, .profile-wrapper {
+
+.cart-wrapper,
+.profile-wrapper {
   position: relative;
+  z-index: 5;
 }
 
-.cart-btn, .profile-btn {
+.cart-btn,
+.profile-btn {
   width: 45px;
   height: 45px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.1);
+
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+
   display: flex;
   justify-content: center;
   align-items: center;
+
   color: white;
   transition: 0.3s ease;
   cursor: pointer;
 }
 
-.cart-btn:hover, .profile-btn:hover {
-  background: rgba(255, 255, 255, 0.14);
+.cart-btn:hover,
+.profile-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
   transform: scale(1.05);
   color: #ffb300;
 }
 
-.cart-btn i, .profile-btn i {
+.cart-btn i,
+.profile-btn i {
   font-size: 1.2rem;
 }
 
@@ -167,49 +240,70 @@ a {
   position: absolute;
   top: -3px;
   right: -3px;
+
   background: #ebc90d;
   color: #0f0f11;
+
   font-size: 0.65rem;
   font-weight: 700;
+
   width: 18px;
   height: 18px;
   border-radius: 50%;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
+
+/* ==========================================================================
+   4. PERFIL / DROPDOWN
+   ========================================================================== */
 
 .profile-dropdown {
   position: absolute;
   top: 55px;
   right: 0;
+
   width: 180px;
   padding: 14px;
+
   border-radius: 18px;
-  background: rgba(20, 20, 20, 0.9);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+
+  background: rgba(20, 20, 20, 0.88);
+
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+
+  border: 1px solid rgba(255, 255, 255, 0.1);
+
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.35);
+
   opacity: 0;
   visibility: hidden;
   transform: translateY(10px);
+
   transition: 0.3s ease;
+  z-index: 20;
 }
 
 .profile-wrapper:hover .profile-dropdown {
   opacity: 1;
   visibility: visible;
-  transform: translateY(0px);
+  transform: translateY(0);
 }
 
 .profile-dropdown a {
   display: block;
+
   text-decoration: none;
   color: white;
+
   padding: 10px 12px;
   border-radius: 10px;
+
   transition: 0.3s ease;
   font-size: 0.95rem;
 }
@@ -219,33 +313,73 @@ a {
   color: #ffb300;
 }
 
-.navbar-toggler-icon {
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.9%29' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+.dropdown-user-name {
+  color: white;
 }
 
 /* ==========================================================================
-   4. ABA LATERAL DO CARRINHO (MODIFICADA PARA PADRONIZAÇÃO DE TAMANHOS)
+   5. BOTÃO MOBILE BOOTSTRAP
    ========================================================================== */
+
+.navbar-toggler {
+  position: relative;
+  z-index: 5;
+
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border-radius: 14px;
+
+  padding: 8px 10px !important;
+  box-shadow: none !important;
+}
+
+.navbar-toggler:focus {
+  box-shadow: 0 0 0 3px rgba(255, 179, 0, 0.16) !important;
+}
+
+.navbar-toggler-icon {
+  width: 1.35em;
+  height: 1.35em;
+
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.92%29' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+/* ==========================================================================
+   6. ABA LATERAL DO CARRINHO
+   ========================================================================== */
+
 .custom-cart-sidebar {
-  background: linear-gradient(145deg, rgba(28, 29, 31, 0.95) 0%, rgba(17, 15, 17, 0.95) 100%) !important;
-  border-left: 1px solid rgba(255, 215, 120, 0.10) !important;
-  box-shadow: -15px 0 50px rgba(221, 25, 25, 0.15), -5px 0 20px rgba(235, 194, 13, 0.05) !important;
+  background: linear-gradient(
+    145deg,
+    rgba(28, 29, 31, 0.95) 0%,
+    rgba(17, 15, 17, 0.95) 100%
+  ) !important;
+
+  border-left: 1px solid rgba(255, 215, 120, 0.1) !important;
+
+  box-shadow:
+    -15px 0 50px rgba(221, 25, 25, 0.15),
+    -5px 0 20px rgba(235, 194, 13, 0.05) !important;
+
   width: 420px !important;
   max-width: 100%;
 }
 
 .sidebar-premium-header {
-  border-bottom: 1px solid rgba(255, 215, 120, 0.10) !important;
+  border-bottom: 1px solid rgba(255, 215, 120, 0.1) !important;
   padding: 24px !important;
+
   backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .sidebar-premium-title {
   font-size: 1.4rem;
   font-weight: 800;
   letter-spacing: 0.5px;
+
   background: linear-gradient(90deg, #ffcf40, #ff9d00, #c0012a);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -264,38 +398,48 @@ a {
   border-radius: 10px;
 }
 
-/* TAMANHO PADRÃO DO CARD DE ITEM (ALTURA CORRIGIDA PARA 100px) */
 .cart-item-card {
   height: 100px;
+
   background: rgba(24, 23, 21, 0.74);
+
   border: 1px solid rgba(247, 48, 21, 0.842);
   border-radius: 20px;
+
   padding: 12px 16px;
   margin-top: 10px;
+
   display: flex;
-  align-items: center; /* Centraliza verticalmente o conteúdo interno */
+  align-items: center;
   gap: 16px;
+
   transition: 0.3s ease;
 }
 
 .cart-item-card:hover {
   border-color: rgba(224, 165, 26, 0.945);
   background: rgba(20, 20, 20, 0.808);
+
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 }
 
-/* CAIXA DA FOTO PADRONIZADA */
 .cart-item-img-container {
   width: 68px;
   height: 68px;
+
   background: rgba(0, 0, 0, 0.3);
+
   border-radius: 14px;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   padding: 6px;
+
   border: 1px solid rgba(255, 255, 255, 0.02);
-  flex-shrink: 0; /* Impede a imagem de amassar */
+
+  flex-shrink: 0;
 }
 
 .cart-item-img-container img {
@@ -306,94 +450,122 @@ a {
 
 .cart-item-name {
   color: white;
+
   font-weight: 700;
   font-size: 0.95rem;
+
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis; /* Corta textos gigantes com "..." para manter o padrão */
+  text-overflow: ellipsis;
+}
+
+.cart-item-qty {
+  color: rgba(255, 255, 255, 0.48) !important;
 }
 
 .cart-item-price {
   color: #ffe082;
+
   font-weight: 800;
   font-size: 1.05rem;
 }
 
-/* BOTÃO DE REMOVER (X) - TOTALMENTE ENQUADRADO E PERFEITO */
 .cart-item-remove-btn {
-  color: var(--color3); 
+  color: var(--color3, #f5061d);
+
   font-size: 1.1rem;
+
   background: transparent;
   border: none;
+
   width: 36px;
   height: 36px;
-  display: inline-flex; /* Garante alinhamento interno flexível */
+
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50% !important; /* Deixa o hover perfeitamente circular */
-  flex-shrink: 0; /* CRUCIAL: Impede que textos grandes esmaguem o círculo do botão */
+
+  border-radius: 50% !important;
+
+  flex-shrink: 0;
+
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
   cursor: pointer;
 }
 
 .cart-item-remove-btn:hover {
-  color: #e7be07 !important; 
-  background: var(--color2); 
-  transform: scale(1.1) rotate(90deg); 
-  box-shadow: 0 0 12px rgba(245, 6, 29, 0.6); 
+  color: #e7be07 !important;
+  background: var(--color2, rgba(192, 1, 42, 0.4));
+
+  transform: scale(1.1) rotate(90deg);
+
+  box-shadow: 0 0 12px rgba(245, 6, 29, 0.6);
 }
 
 .cart-item-remove-btn:active {
   transform: scale(0.95);
 }
 
-/* Rodapé do Carrinho */
 .sidebar-premium-footer {
   border-top: 1px solid rgba(255, 49, 49, 0.1) !important;
-  padding-top: 0px;
+  padding-top: 0;
 }
 
 .tracking-label {
   letter-spacing: 1px;
-  color: #ffe082 !important; 
+  color: #ffe082 !important;
 }
 
 .sidebar-total-price {
   color: #ffe082;
+
   font-weight: 800;
   font-size: 1.7rem;
 }
 
 .btn-premium-checkout {
   background: linear-gradient(90deg, #ffcf40, #ff9d00, #c0012a) !important;
+
   color: white !important;
+
   border: none !important;
+
   padding: 14px !important;
   border-radius: 18px !important;
+
   font-weight: 700 !important;
   font-size: 1.05rem !important;
-  letter-spacing: .5px;
+  letter-spacing: 0.5px;
+
   box-shadow: 0 14px 28px rgba(192, 1, 42, 0.28) !important;
+
   transition: 0.3s ease !important;
 }
 
 .btn-premium-checkout:hover {
   transform: translateY(-2px);
+
   box-shadow: 0 18px 36px rgba(192, 1, 42, 0.4) !important;
+
   filter: brightness(1.1);
 }
 
 .btn-premium-checkout:disabled {
   background: #2e2e32 !important;
   color: #727278 !important;
+
   box-shadow: none !important;
+
   cursor: not-allowed;
+
   transform: none !important;
 }
 
 /* ==========================================================================
-   5. COMPORTAMENTO RESPONSIVO
+   7. RESPONSIVO
    ========================================================================== */
+
 @media (min-width: 992px) {
   .navbar-center {
     position: absolute;
@@ -403,16 +575,76 @@ a {
 }
 
 @media (max-width: 992px) {
+  .main-glass-header {
+    top: 12px;
+  }
+
+  .header-glass-container {
+    min-height: auto;
+    padding: 12px 18px !important;
+    border-radius: 20px;
+  }
+
+  .navbar-glass-bg {
+    border-radius: 20px;
+  }
+
   .navbar-center {
     position: static;
     transform: none;
     padding: 20px 0 10px 0;
   }
+
   .navbar-collapse {
     width: 100%;
   }
+
+  .nav-link {
+    display: inline-block;
+    margin: 6px 0;
+  }
 }
 
+@media (max-width: 576px) {
+  .navbar-brand-premium {
+    font-size: 1.2rem;
+  }
+
+  .photoLogo {
+    width: 30px;
+    height: 35px;
+  }
+
+  .cart-btn,
+  .profile-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .custom-cart-sidebar {
+    width: 100% !important;
+  }
+
+  .cart-item-card {
+    height: auto;
+    min-height: 100px;
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .cart-item-img-container {
+    width: 60px;
+    height: 60px;
+  }
+
+  .cart-item-name {
+    font-size: 0.88rem;
+  }
+
+  .cart-item-price {
+    font-size: 0.95rem;
+  }
+}
 /* =========================
    FOOTER
 ========================= */

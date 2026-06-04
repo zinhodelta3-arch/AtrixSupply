@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import * as THREE from "three";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -76,6 +77,252 @@ export default function Login() {
     }
   };
 
+  useEffect(() => {
+    const mount = mountRef.current;
+    if (!mount) return;
+
+    const scene = new THREE.Scene();
+
+    const camera = new THREE.PerspectiveCamera(
+      75,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      1000
+    );
+
+    camera.position.z = 5;
+
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+    });
+
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    mount.appendChild(renderer.domElement);
+
+    const PARTICLE_COUNT = 1800;
+
+    const positions = new Float32Array(PARTICLE_COUNT * 3);
+    const colors = new Float32Array(PARTICLE_COUNT * 3);
+    const sizes = new Float32Array(PARTICLE_COUNT);
+
+    const velocities = [];
+
+    const palette = [
+      new THREE.Color("#940533"),
+      new THREE.Color("#c0012a"),
+      new THREE.Color("#f5061d"),
+      new THREE.Color("#ff8800"),
+      new THREE.Color("#ffb300"),
+    ];
+
+    const initParticle = (i) => {
+      positions[i * 3] = (Math.random() - 0.5) * 14;
+      positions[i * 3 + 1] = -6 + Math.random() * 3;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 4;
+
+      const col = palette[Math.floor(Math.random() * palette.length)];
+
+      colors[i * 3] = col.r;
+      colors[i * 3 + 1] = col.g;
+      colors[i * 3 + 2] = col.b;
+
+      sizes[i] = Math.random() * 12 + 3;
+
+      velocities[i] = {
+        vx: (Math.random() - 0.5) * 0.015,
+        vy: Math.random() * 0.025 + 0.008,
+        life: 0,
+        maxLife: Math.random() * 200 + 80,
+      };
+    };
+
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      initParticle(i);
+
+      positions[i * 3 + 1] += Math.random() * 12 - 6;
+
+      velocities[i].life = Math.random() * velocities[i].maxLife;
+    }
+
+    const geometry = new THREE.BufferGeometry();
+
+    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    geometry.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
+
+    const canvas2d = document.createElement("canvas");
+
+    canvas2d.width = 64;
+    canvas2d.height = 64;
+
+    const ctx = canvas2d.getContext("2d");
+
+    const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+
+    grad.addColorStop(0, "rgba(255,255,255,1)");
+    grad.addColorStop(0.4, "rgba(255,255,255,0.6)");
+    grad.addColorStop(1, "rgba(255,255,255,0)");
+
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 64, 64);
+
+    const sprite = new THREE.CanvasTexture(canvas2d);
+
+    const material = new THREE.PointsMaterial({
+      size: 0.12,
+      map: sprite,
+      vertexColors: true,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      sizeAttenuation: true,
+    });
+
+    const particles = new THREE.Points(geometry, material);
+
+    scene.add(particles);
+
+    const orbColors = [
+      "#940533",
+      "#c0012a",
+      "#f5061d",
+      "#ff8800",
+      "#ffb300",
+      "#940533",
+    ];
+
+    const orbs = orbColors.map((color) => {
+      const orbGeo = new THREE.SphereGeometry(
+        0.5 + Math.random() * 0.8,
+        16,
+        16
+      );
+
+      const orbMat = new THREE.MeshBasicMaterial({
+        color: new THREE.Color(color),
+        transparent: true,
+        opacity: 0.07,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      });
+
+      const orb = new THREE.Mesh(orbGeo, orbMat);
+
+      orb.position.set(
+        (Math.random() - 0.5) * 10,
+        (Math.random() - 0.5) * 8,
+        -2 + Math.random() * 2
+      );
+
+      scene.add(orb);
+
+      return {
+        mesh: orb,
+        geometry: orbGeo,
+        material: orbMat,
+      };
+    });
+
+    let frameId;
+    let time = 0;
+
+    const animate = () => {
+      frameId = requestAnimationFrame(animate);
+
+      time += 0.01;
+
+      const posArr = geometry.attributes.position.array;
+      const colArr = geometry.attributes.color.array;
+      const sizeArr = geometry.attributes.size.array;
+
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        const v = velocities[i];
+
+        v.life += 1;
+
+        posArr[i * 3] += v.vx + Math.sin(time + i * 0.5) * 0.003;
+        posArr[i * 3 + 1] += v.vy;
+
+        const progress = v.life / v.maxLife;
+
+        const alpha =
+          progress < 0.2
+            ? progress / 0.2
+            : progress > 0.7
+            ? 1 - (progress - 0.7) / 0.3
+            : 1;
+
+        const col =
+          progress < 0.4
+            ? palette[Math.random() > 0.5 ? 0 : 1]
+            : progress < 0.7
+            ? palette[2 + Math.floor(Math.random() * 2)]
+            : palette[4];
+
+        colArr[i * 3] = col.r * alpha;
+        colArr[i * 3 + 1] = col.g * alpha;
+        colArr[i * 3 + 2] = col.b * alpha;
+
+        sizeArr[i] = (Math.random() * 10 + 3) * (1 - progress * 0.5);
+
+        if (v.life >= v.maxLife || posArr[i * 3 + 1] > 7) {
+          initParticle(i);
+        }
+      }
+
+      geometry.attributes.position.needsUpdate = true;
+      geometry.attributes.color.needsUpdate = true;
+      geometry.attributes.size.needsUpdate = true;
+
+      orbs.forEach((orbData, idx) => {
+        const orb = orbData.mesh;
+
+        orb.position.y += Math.sin(time * 0.4 + idx * 1.2) * 0.005;
+        orb.position.x += Math.cos(time * 0.3 + idx * 0.9) * 0.004;
+
+        orb.material.opacity = 0.05 + Math.sin(time * 0.5 + idx) * 0.03;
+      });
+
+      renderer.render(scene, camera);
+    };
+
+    animate();
+
+    const onResize = () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+
+      camera.updateProjectionMatrix();
+
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    };
+
+    window.addEventListener("resize", onResize);
+
+    return () => {
+      cancelAnimationFrame(frameId);
+
+      window.removeEventListener("resize", onResize);
+
+      if (mount.contains(renderer.domElement)) {
+        mount.removeChild(renderer.domElement);
+      }
+
+      geometry.dispose();
+      material.dispose();
+      sprite.dispose();
+
+      orbs.forEach((orbData) => {
+        orbData.geometry.dispose();
+        orbData.material.dispose();
+      });
+
+      renderer.dispose();
+    };
+  }, []);
+
   return (
     <div
       style={{
@@ -85,6 +332,33 @@ export default function Login() {
         overflow: "hidden",
       }}
     >
+      <style jsx global>{`
+        .login-input {
+          color: #ffffff !important;
+        }
+
+        .login-input::placeholder {
+          color: rgba(255, 255, 255, 0.68) !important;
+          opacity: 1 !important;
+        }
+
+        .login-input:focus {
+          background-color: rgba(26, 10, 10, 0.82) !important;
+          border-color: #ffb300 !important;
+          color: #ffffff !important;
+          box-shadow: 0 0 0 0.2rem rgba(255, 179, 0, 0.15) !important;
+        }
+
+        .login-input:-webkit-autofill,
+        .login-input:-webkit-autofill:hover,
+        .login-input:-webkit-autofill:focus {
+          -webkit-text-fill-color: #ffffff !important;
+          -webkit-box-shadow: 0 0 0px 1000px rgba(26, 10, 10, 0.95) inset !important;
+          caret-color: #ffffff !important;
+          border-color: #ffb300 !important;
+        }
+      `}</style>
+
       <div
         ref={mountRef}
         style={{
@@ -110,6 +384,7 @@ export default function Login() {
           minHeight: "100vh",
           position: "relative",
           zIndex: 2,
+          padding: "20px",
         }}
       >
         <div
@@ -173,7 +448,7 @@ export default function Login() {
 
               <input
                 type="email"
-                className="form-control"
+                className="form-control login-input"
                 placeholder="Digite seu email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -194,7 +469,7 @@ export default function Login() {
 
               <input
                 type="password"
-                className="form-control"
+                className="form-control login-input"
                 placeholder="Digite sua senha"
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
@@ -215,7 +490,7 @@ export default function Login() {
               className="btn w-100 mt-1"
               disabled={loading}
               style={{
-                backgroundColor: "#ffb300",
+                backgroundColor: loading ? "#946b00" : "#ffb300",
                 color: "#1a0a0a",
                 borderRadius: "10px",
                 fontWeight: "bold",

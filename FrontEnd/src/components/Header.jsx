@@ -20,7 +20,6 @@ export default function Header() {
 
       if (carrinhoStorage) {
         const carrinhoParseado = JSON.parse(carrinhoStorage);
-
         setCartItems(Array.isArray(carrinhoParseado) ? carrinhoParseado : []);
       } else {
         setCartItems([]);
@@ -70,7 +69,6 @@ export default function Header() {
     atualizarCarrinhoDoStorage();
 
     window.addEventListener("carrinhoAtualizado", atualizarCarrinhoDoStorage);
-
     window.addEventListener("storage", atualizarCarrinhoDoStorage);
 
     return () => {
@@ -122,15 +120,11 @@ export default function Header() {
 
   return (
     <>
-      <header style={{ background: "transparent", border: "none", boxShadow: "none" }}>
-        <nav
-          className="glass-navbar navbar navbar-expand-lg p-0"
-          style={{
-            background: "transparent",
-            backgroundColor: "transparent",
-          }}
-        >
-          <div className="container position-relative d-flex align-items-center justify-content-between">
+      <header className="main-glass-header">
+        <div className="container header-glass-container">
+          <div className="navbar-glass-bg" aria-hidden="true"></div>
+
+          <nav className="navbar navbar-expand-lg p-0 header-navbar-content">
             <div className="d-flex align-items-center gap-2">
               <Link
                 className="navbar-brand-premium d-flex align-items-center gap-2 text-decoration-none"
@@ -238,8 +232,8 @@ export default function Header() {
                 </li>
               </ul>
             </div>
-          </div>
-        </nav>
+          </nav>
+        </div>
       </header>
 
       <div

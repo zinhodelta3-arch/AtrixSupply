@@ -57,7 +57,7 @@ export default function CardProduto({ produto }) {
             className="card-img-top"
             alt={nomeProduto}
             onError={(event) => {
-              event.currentTarget.src = "/placeholder.png";
+              event.currentTarget.src = "/logo.png";
             }}
             style={{
               height: "220px",
