@@ -701,7 +701,7 @@ export default function Cadastro() {
           Já tem conta?{" "}
 
           <Link
-            href="/"
+            href="/login"
             style={{
               color: "#0d6efd",
               textDecoration: "none",

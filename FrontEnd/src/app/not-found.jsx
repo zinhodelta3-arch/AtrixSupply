@@ -1,11 +1,16 @@
 "use client";
 
-import { useEffect } from "react";
-import Link from "next/link";
+import { useEffect, useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import "bootstrap-icons/font/bootstrap-icons.css";
+
+function limparEstadoVisualNotFound() {
+  if (typeof document === "undefined") return;
+
+  document.body.classList.remove("atrix-not-found-active");
+}
 
 const pageBackground = `
   radial-gradient(circle at top left, rgba(255,136,0,.14), transparent 28%),
@@ -71,24 +76,85 @@ const diagnostics = [
   },
 ];
 
+function obterUsuarioLocal() {
+  if (typeof window === "undefined") return null;
+
+  const chaves = ["usuario", "user", "dadosUsuario", "authUser"];
+
+  for (const chave of chaves) {
+    const valor = localStorage.getItem(chave);
+
+    if (!valor) continue;
+
+    try {
+      return JSON.parse(valor);
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
+}
+
+function obterTipoUsuario(usuario) {
+  return String(
+    usuario?.tipo ||
+      usuario?.tipo_user ||
+      usuario?.role ||
+      usuario?.nivel ||
+      usuario?.dados?.tipo ||
+      usuario?.dados?.tipo_user ||
+      usuario?.usuario?.tipo ||
+      ""
+  )
+    .trim()
+    .toLowerCase();
+}
+
+function usuarioEhAdministrador(usuario) {
+  const tipoUsuario = obterTipoUsuario(usuario);
+
+  return tipoUsuario === "admin" || tipoUsuario === "administrador";
+}
+
 export default function NotFound() {
   const router = useRouter();
+  const pathname = usePathname();
+
+  const [usuario, setUsuario] = useState(null);
+
+  const ehAdministrador = usuarioEhAdministrador(usuario);
+  const rotaPrincipal = ehAdministrador ? "/dashboard" : "/";
+  const textoBotaoPrincipal = ehAdministrador
+    ? "Ir para o dashboard"
+    : "Voltar para o início";
+  const iconeBotaoPrincipal = ehAdministrador
+    ? "bi-speedometer2"
+    : "bi-house-door-fill";
 
   useEffect(() => {
-    document.body.classList.add("atrix-not-found-active");
+  document.body.classList.add("atrix-not-found-active");
+  setUsuario(obterUsuarioLocal());
 
-    return () => {
-      document.body.classList.remove("atrix-not-found-active");
-    };
-  }, []);
+  return () => {
+    limparEstadoVisualNotFound();
+  };
+}, []);
 
+  function irParaRotaPrincipal() {
+    limparEstadoVisualNotFound();
+    router.replace(rotaPrincipal);
+  }
+
+  function voltarComSeguranca() {
+    limparEstadoVisualNotFound();
+    router.replace(rotaPrincipal);
+  }
   return (
     <>
       <style jsx global>{`
         body.atrix-not-found-active .main-glass-header,
-        body.atrix-not-found-active .footer-custom,
-        body.atrix-not-found-active header,
-        body.atrix-not-found-active footer {
+        body.atrix-not-found-active .footer-custom {
           display: none !important;
         }
 
@@ -335,33 +401,19 @@ export default function NotFound() {
                   transition={{ delay: 0.34, duration: 0.6 }}
                   className="d-flex flex-wrap gap-3"
                 >
-                  <Link
-                    href="/"
+                  <button
+                    type="button"
+                    onClick={irParaRotaPrincipal}
                     className="btn d-inline-flex align-items-center gap-2 px-4 py-3"
-                    style={{
-                      ...buttonGradient,
-                      textDecoration: "none",
-                    }}
+                    style={buttonGradient}
                   >
-                    <i className="bi bi-house-door-fill" />
-                    Voltar para o início
-                  </Link>
-
-                  <Link
-                    href="/produtos"
-                    className="btn d-inline-flex align-items-center gap-2 px-4 py-3"
-                    style={{
-                      ...ghostButtonStyle,
-                      textDecoration: "none",
-                    }}
-                  >
-                    <i className="bi bi-box-seam-fill" />
-                    Ver produtos
-                  </Link>
+                    <i className={`bi ${iconeBotaoPrincipal}`} />
+                    {textoBotaoPrincipal}
+                  </button>
 
                   <button
                     type="button"
-                    onClick={() => router.back()}
+                    onClick={voltarComSeguranca}
                     className="btn d-inline-flex align-items-center gap-2 px-4 py-3"
                     style={ghostButtonStyle}
                   >
