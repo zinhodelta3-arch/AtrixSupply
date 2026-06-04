@@ -15,6 +15,44 @@ const PRODUTOS_URL = `${API_URL}/api/produtos`;
 
 const PEDIDOS_POR_PAGINA = 6;
 
+const pageBackground = `
+  radial-gradient(circle at top left, rgba(255,136,0,.10), transparent 25%),
+  radial-gradient(circle at bottom right, rgba(192,1,42,.16), transparent 30%),
+  linear-gradient(145deg,#08080a,#101014,#160d12)
+`;
+
+const heroGradient = "linear-gradient(135deg,#940533,#c0012a,#f5061d,#ff8800)";
+
+const panelStyle = {
+  background: "rgba(17,17,17,.95)",
+  border: "1px solid rgba(255,255,255,0.12)",
+  backdropFilter: "blur(12px)",
+  boxShadow: "0 24px 70px rgba(0,0,0,.35)",
+};
+
+const cardStyle = {
+  background: "rgba(17,17,17,.96)",
+  border: "1px solid rgba(255,255,255,.08)",
+  borderRadius: "24px",
+  boxShadow: "0 25px 70px rgba(0,0,0,.35)",
+};
+
+const inputStyle = {
+  background: "#1c1c1c",
+  border: "1px solid #3b3b3b",
+  color: "white",
+  borderRadius: "14px",
+  padding: "12px 14px",
+};
+
+const buttonGradient = {
+  background: "linear-gradient(to right, #940533, #ff8800)",
+  border: "none",
+  color: "white",
+  borderRadius: "14px",
+  fontWeight: "700",
+};
+
 const statusOptions = [
   { value: "Todos", label: "Todos" },
   { value: "carrinho", label: "Carrinho" },
@@ -79,25 +117,6 @@ function montarHeaders() {
   };
 }
 
-async function tratarResposta(response) {
-  const data = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    const detalhes = Array.isArray(data?.detalhes)
-      ? data.detalhes.map((item) => item.mensagem).join(" | ")
-      : null;
-
-    throw new Error(
-      detalhes ||
-        data?.mensagem ||
-        data?.erro ||
-        "Não foi possível concluir a operação."
-    );
-  }
-
-  return data;
-}
-
 function getMensagemErro(data) {
   if (data?.detalhes?.length) {
     return data.detalhes.map((erro) => erro.mensagem).join(" | ");
@@ -107,7 +126,7 @@ function getMensagemErro(data) {
 }
 
 function getImagemUrl(imagem) {
-  if (!imagem) return "/placeholder.png";
+  if (!imagem) return "/logo.png";
 
   if (String(imagem).startsWith("http")) return imagem;
 
@@ -405,7 +424,7 @@ export default function Pedidos() {
       <main
         className="d-flex justify-content-center align-items-center text-white"
         style={{
-          background: "#000",
+          background: pageBackground,
           minHeight: "100vh",
         }}
       >
@@ -423,20 +442,27 @@ export default function Pedidos() {
   return (
     <main
       style={{
-        background: "#000",
+        background: pageBackground,
         minHeight: "100vh",
+        color: "white",
       }}
     >
       <section
         className="py-5 text-white"
         style={{
-          background: "linear-gradient(to right, #c0012a, #ff8800)",
+          background: heroGradient,
+          borderBottom: "1px solid rgba(255,255,255,.08)",
+          boxShadow: "0 25px 80px rgba(192,1,42,.18)",
         }}
       >
         <div className="container py-4">
+          <span className="badge bg-warning text-dark mb-3 px-3 py-2">
+            Área do Cliente
+          </span>
+
           <h1 className="display-4 fw-bold">Meus Pedidos</h1>
 
-          <p className="lead mt-3 col-lg-8">
+          <p className="lead mt-3 col-lg-8 mb-0">
             Acompanhe seus pedidos, entregas e informações das suas compras em
             tempo real.
           </p>
@@ -445,14 +471,13 @@ export default function Pedidos() {
 
       <section className="py-5">
         <div className="container-fluid px-4">
-          <div className="row">
-            <div className="col-lg-3 mb-4">
-              <div
-                className="position-sticky p-4 rounded-4 shadow-lg"
+          <div className="row g-4">
+            <div className="col-lg-3">
+              <aside
+                className="position-sticky p-4 rounded-4"
                 style={{
                   top: "20px",
-                  background: "#111",
-                  border: "1px solid rgba(255,255,255,.14)",
+                  ...panelStyle,
                 }}
               >
                 <div className="text-center">
@@ -464,6 +489,7 @@ export default function Pedidos() {
                       overflow: "hidden",
                       margin: "0 auto",
                       border: "2px solid rgba(255,255,255,.14)",
+                      boxShadow: "0 18px 40px rgba(0,0,0,.35)",
                     }}
                   >
                     <Image
@@ -500,45 +526,67 @@ export default function Pedidos() {
                       {
                         titulo: "Pedidos",
                         valor: resumo.total,
+                        icon: "bi-bag-check",
                       },
                       {
                         titulo: "Em andamento",
                         valor: resumo.emAndamento,
+                        icon: "bi-arrow-repeat",
                       },
                       {
                         titulo: "Finalizados",
                         valor: resumo.finalizados,
+                        icon: "bi-check-circle",
                       },
-                    ].map((item, index) => (
+                    ].map((item) => (
                       <div
-                        key={index}
+                        key={item.titulo}
+                        className="d-flex align-items-center gap-3"
                         style={{
-                          background: "rgba(255,255,255,.03)",
-                          border: "1px solid rgba(255,255,255,.08)",
+                          background: "rgba(255,255,255,.035)",
+                          border: "1px solid rgba(255,255,255,.06)",
                           borderRadius: "18px",
-                          padding: "18px",
+                          padding: "15px",
                         }}
                       >
-                        <span
+                        <div
+                          className="d-flex align-items-center justify-content-center"
                           style={{
-                            color: "#cfcfcf",
-                            fontSize: ".82rem",
-                            textTransform: "uppercase",
-                            letterSpacing: ".5px",
+                            width: "46px",
+                            height: "46px",
+                            borderRadius: "14px",
+                            background: "rgba(255,136,0,.14)",
+                            color: "#ffb300",
+                            flexShrink: 0,
                           }}
                         >
-                          {item.titulo}
-                        </span>
+                          <i className={`bi ${item.icon}`} />
+                        </div>
 
-                        <h3
-                          style={{
-                            color: "white",
-                            marginTop: "8px",
-                            fontWeight: "700",
-                          }}
-                        >
-                          {String(item.valor).padStart(2, "0")}
-                        </h3>
+                        <div>
+                          <span
+                            style={{
+                              color: "rgba(255,255,255,.58)",
+                              fontSize: ".82rem",
+                              textTransform: "uppercase",
+                              letterSpacing: ".5px",
+                            }}
+                          >
+                            {item.titulo}
+                          </span>
+
+                          <h3
+                            style={{
+                              color: "white",
+                              marginTop: "4px",
+                              marginBottom: 0,
+                              fontWeight: "700",
+                              fontSize: "1.35rem",
+                            }}
+                          >
+                            {String(item.valor).padStart(2, "0")}
+                          </h3>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -557,11 +605,7 @@ export default function Pedidos() {
                     placeholder="Digite o nome do produto..."
                     value={buscaProduto}
                     onChange={(e) => setBuscaProduto(e.target.value)}
-                    style={{
-                      background: "#151518",
-                      border: "1px solid rgba(255,255,255,0.06)",
-                      color: "#fff",
-                    }}
+                    style={inputStyle}
                   />
                 </div>
 
@@ -574,11 +618,7 @@ export default function Pedidos() {
                     className="form-select"
                     value={statusSelecionado}
                     onChange={(e) => setStatusSelecionado(e.target.value)}
-                    style={{
-                      background: "#151518",
-                      border: "1px solid rgba(255,255,255,0.06)",
-                      color: "#fff",
-                    }}
+                    style={inputStyle}
                   >
                     {statusOptions.map((status) => (
                       <option
@@ -597,16 +637,13 @@ export default function Pedidos() {
                   onClick={irParaProdutos}
                   className="btn w-100 text-white fw-semibold mt-4"
                   style={{
-                    background: "linear-gradient(to right, #c0012a, #ff8800)",
-                    border: "none",
-                    borderRadius: "14px",
+                    ...buttonGradient,
                     padding: "12px",
-                    transition: ".3s",
                   }}
                 >
                   Comprar produtos
                 </button>
-              </div>
+              </aside>
             </div>
 
             <div className="col-lg-9">
@@ -623,25 +660,31 @@ export default function Pedidos() {
                     height: "320px",
                     borderRadius: "28px",
                     border: "1px solid rgba(255,255,255,.06)",
-                    background: "rgba(255,255,255,.02)",
+                    background: "rgba(255,255,255,.03)",
                   }}
                 >
                   <div className="spinner-border text-warning mb-3" />
+
                   <h4 className="text-white fw-bold">
                     Carregando pedidos...
                   </h4>
+
+                  <p
+                    className="mb-0"
+                    style={{
+                      color: "rgba(255,255,255,.58)",
+                    }}
+                  >
+                    Buscando suas compras atualizadas.
+                  </p>
                 </div>
               ) : (
                 <div className="row g-4">
                   {pedidosAtuais.map((pedido) => (
                     <div className="col-12" key={pedido.id_pedido}>
-                      <div
-                        className="card border-0 overflow-hidden shadow-lg"
-                        style={{
-                          background: "#111",
-                          border: "1px solid rgba(255,255,255,.14)",
-                          transition: ".3s",
-                        }}
+                      <article
+                        className="card border-0 overflow-hidden"
+                        style={cardStyle}
                       >
                         <div className="row g-0">
                           <div className="col-md-3">
@@ -650,18 +693,19 @@ export default function Pedidos() {
                               alt={pedido.produto}
                               className="w-100"
                               onError={(event) => {
-                                event.currentTarget.src = "/placeholder.png";
+                                event.currentTarget.src = "/logo.png";
                               }}
                               style={{
                                 objectFit: "cover",
                                 height: "320px",
-                                borderRadius: "12px",
+                                borderRadius: "18px",
+                                padding: "10px",
                               }}
                             />
                           </div>
 
                           <div className="col-md-9">
-                            <div className="card-body h-100 d-flex flex-column">
+                            <div className="card-body h-100 d-flex flex-column p-4">
                               <div className="d-flex justify-content-between align-items-start flex-wrap gap-3">
                                 <div>
                                   <p
@@ -686,6 +730,7 @@ export default function Pedidos() {
                                 </div>
 
                                 <button
+                                  type="button"
                                   className="btn"
                                   data-bs-toggle="modal"
                                   data-bs-target="#modalExcluir"
@@ -806,12 +851,10 @@ export default function Pedidos() {
 
                               <div className="mt-auto d-flex gap-3 flex-wrap">
                                 <button
+                                  type="button"
                                   className="btn text-white fw-semibold"
                                   style={{
-                                    background:
-                                      "linear-gradient(to right, #940533, #ff8800)",
-                                    border: "none",
-                                    borderRadius: "12px",
+                                    ...buttonGradient,
                                     padding: "12px 18px",
                                   }}
                                 >
@@ -819,6 +862,7 @@ export default function Pedidos() {
                                 </button>
 
                                 <button
+                                  type="button"
                                   className="btn btn-outline-light"
                                   style={{
                                     borderRadius: "12px",
@@ -831,7 +875,7 @@ export default function Pedidos() {
                             </div>
                           </div>
                         </div>
-                      </div>
+                      </article>
                     </div>
                   ))}
 
@@ -843,7 +887,7 @@ export default function Pedidos() {
                           height: "300px",
                           borderRadius: "28px",
                           border: "1px solid rgba(255,255,255,.06)",
-                          background: "rgba(255,255,255,.02)",
+                          background: "rgba(255,255,255,.03)",
                         }}
                       >
                         <i
@@ -877,13 +921,14 @@ export default function Pedidos() {
 
                   {pedidosFiltrados.length > 0 && (
                     <nav className="mt-5">
-                      <ul className="pagination justify-content-center">
+                      <ul className="pagination justify-content-center flex-wrap gap-2">
                         <li
                           className={`page-item ${
                             paginaAtual === 1 ? "disabled" : ""
                           }`}
                         >
                           <button
+                            type="button"
                             className="page-link paginacao-btn"
                             onClick={() =>
                               setPaginaAtual((prev) => Math.max(prev - 1, 1))
@@ -893,25 +938,29 @@ export default function Pedidos() {
                           </button>
                         </li>
 
-                        {[...Array(totalPaginas)].map((_, index) => (
-                          <li
-                            key={index}
-                            className={`page-item ${
-                              paginaAtual === index + 1 ? "active" : ""
-                            }`}
-                          >
-                            <button
-                              className={
-                                paginaAtual === index + 1
-                                  ? "page-link paginacao-btn-active"
-                                  : "page-link paginacao-btn"
-                              }
-                              onClick={() => setPaginaAtual(index + 1)}
+                        {[...Array(totalPaginas)].map((_, index) => {
+                          const numeroPagina = index + 1;
+                          const ativo = paginaAtual === numeroPagina;
+
+                          return (
+                            <li
+                              key={numeroPagina}
+                              className={`page-item ${ativo ? "active" : ""}`}
                             >
-                              {index + 1}
-                            </button>
-                          </li>
-                        ))}
+                              <button
+                                type="button"
+                                className={
+                                  ativo
+                                    ? "page-link paginacao-btn-active"
+                                    : "page-link paginacao-btn"
+                                }
+                                onClick={() => setPaginaAtual(numeroPagina)}
+                              >
+                                {numeroPagina}
+                              </button>
+                            </li>
+                          );
+                        })}
 
                         <li
                           className={`page-item ${
@@ -919,6 +968,7 @@ export default function Pedidos() {
                           }`}
                         >
                           <button
+                            type="button"
                             className="page-link paginacao-btn"
                             onClick={() =>
                               setPaginaAtual((prev) =>
@@ -949,11 +999,22 @@ export default function Pedidos() {
           <div
             className="modal-content border-0"
             style={{
-              background: "#111",
+              background: "rgba(17,17,17,.98)",
               borderRadius: "24px",
+              border: "1px solid rgba(255,255,255,.08)",
+              color: "white",
+              overflow: "hidden",
             }}
           >
-            <div className="modal-body p-4 text-center">
+            <div
+              className="modal-body p-4 text-center"
+              style={{
+                background: `
+                  radial-gradient(circle at top left, rgba(255,136,0,.10), transparent 35%),
+                  linear-gradient(145deg,#111,#181016)
+                `,
+              }}
+            >
               <i
                 className="bi bi-exclamation-triangle-fill"
                 style={{
@@ -987,6 +1048,7 @@ export default function Pedidos() {
 
               <div className="d-flex gap-3 mt-4">
                 <button
+                  type="button"
                   className="btn btn-outline-light w-50"
                   data-bs-dismiss="modal"
                   disabled={excluindo}
@@ -995,10 +1057,12 @@ export default function Pedidos() {
                 </button>
 
                 <button
+                  type="button"
                   className="btn w-50 text-white"
                   style={{
                     background: "linear-gradient(to right, #c0012a, #ff4d4d)",
                     border: "none",
+                    borderRadius: "12px",
                   }}
                   data-bs-dismiss="modal"
                   disabled={excluindo}
