@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -51,6 +52,25 @@ const buttonGradient = {
   color: "white",
   borderRadius: "14px",
   fontWeight: "700",
+};
+
+const modalSurface = {
+  background: `
+    radial-gradient(circle at top left, rgba(255,136,0,.10), transparent 35%),
+    radial-gradient(circle at bottom right, rgba(192,1,42,.16), transparent 34%),
+    linear-gradient(145deg,#111,#181016)
+  `,
+  border: "1px solid rgba(255,255,255,.08)",
+  borderRadius: "28px",
+  color: "white",
+  overflow: "hidden",
+};
+
+const modalInfoBox = {
+  background: "rgba(255,255,255,.035)",
+  border: "1px solid rgba(255,255,255,.08)",
+  borderRadius: "18px",
+  padding: "18px",
 };
 
 const statusOptions = [
@@ -213,6 +233,138 @@ function getEntregaLabel(pedido) {
   return "Em andamento";
 }
 
+function getNivelStatus(status) {
+  switch (status) {
+    case "carrinho":
+      return 0;
+    case "pendente":
+      return 1;
+    case "processando":
+      return 2;
+    case "enviado":
+      return 3;
+    case "entregue":
+      return 4;
+    case "cancelado":
+      return -1;
+    default:
+      return 1;
+  }
+}
+
+function getEtapasRastreamento(pedido) {
+  if (!pedido) return [];
+
+  if (pedido.status === "cancelado") {
+    return [
+      {
+        titulo: "Pedido recebido",
+        descricao: "Seu pedido entrou no sistema da Atrix Supply.",
+        icon: "bi-receipt-cutoff",
+        data: pedido.dataPedidoFormatada,
+        estado: "done",
+      },
+      {
+        titulo: "Pedido cancelado",
+        descricao: "Este pedido foi cancelado e não seguirá para entrega.",
+        icon: "bi-x-octagon-fill",
+        data: pedido.dataEntregaFormatada || "Sem data informada",
+        estado: "cancelled",
+      },
+    ];
+  }
+
+  const nivelAtual = getNivelStatus(pedido.status);
+
+  const etapas = [
+    {
+      status: "pendente",
+      titulo: "Pedido recebido",
+      descricao: "Recebemos seu pedido e ele já está registrado no sistema.",
+      icon: "bi-receipt-cutoff",
+      data: pedido.dataPedidoFormatada,
+      nivel: 1,
+    },
+    {
+      status: "processando",
+      titulo: "Pedido em processamento",
+      descricao: "A equipe está validando o pedido e preparando a separação do produto.",
+      icon: "bi-box-seam-fill",
+      data: "Em preparação",
+      nivel: 2,
+    },
+    {
+      status: "enviado",
+      titulo: "Pedido enviado",
+      descricao: "O pedido saiu para transporte ou está aguardando despacho final.",
+      icon: "bi-truck",
+      data: pedido.status === "enviado" ? "Em rota" : "Aguardando envio",
+      nivel: 3,
+    },
+    {
+      status: "entregue",
+      titulo: "Entrega concluída",
+      descricao: "O pedido foi entregue ao destino informado.",
+      icon: "bi-check-circle-fill",
+      data: pedido.dataEntregaFormatada || "Aguardando confirmação",
+      nivel: 4,
+    },
+  ];
+
+  return etapas.map((etapa) => {
+    if (nivelAtual > etapa.nivel) {
+      return {
+        ...etapa,
+        estado: "done",
+      };
+    }
+
+    if (nivelAtual === etapa.nivel) {
+      return {
+        ...etapa,
+        estado: "active",
+      };
+    }
+
+    return {
+      ...etapa,
+      estado: "pending",
+    };
+  });
+}
+
+function getEtapaStyle(estado) {
+  if (estado === "done") {
+    return {
+      color: "#5ba100dc",
+      background: "rgba(91,161,0,.13)",
+      border: "1px solid rgba(91,161,0,.28)",
+    };
+  }
+
+  if (estado === "active") {
+    return {
+      color: "#ffb300",
+      background: "rgba(255,179,0,.13)",
+      border: "1px solid rgba(255,179,0,.28)",
+    };
+  }
+
+  if (estado === "cancelled") {
+    return {
+      color: "#ff5a5a",
+      background: "rgba(255,90,90,.13)",
+      border: "1px solid rgba(255,90,90,.28)",
+    };
+  }
+
+  return {
+    color: "rgba(255,255,255,.38)",
+    background: "rgba(255,255,255,.04)",
+    border: "1px solid rgba(255,255,255,.08)",
+  };
+}
+
 function normalizarPedido(pedido, produto) {
   const status = String(pedido?.status || "pendente").toLowerCase();
 
@@ -243,6 +395,9 @@ export default function Pedidos() {
 
   const [pedidoParaExcluir, setPedidoParaExcluir] = useState(null);
   const [excluindo, setExcluindo] = useState(false);
+
+  const [pedidoDetalhe, setPedidoDetalhe] = useState(null);
+  const [pedidoRastreamento, setPedidoRastreamento] = useState(null);
 
   const [buscaProduto, setBuscaProduto] = useState("");
   const [statusSelecionado, setStatusSelecionado] = useState("Todos");
@@ -433,6 +588,10 @@ export default function Pedidos() {
       finalizados,
     };
   }, [pedidos]);
+
+  const etapasRastreamento = useMemo(() => {
+    return getEtapasRastreamento(pedidoRastreamento);
+  }, [pedidoRastreamento]);
 
   useEffect(() => {
     setPaginaAtual(1);
@@ -868,22 +1027,30 @@ export default function Pedidos() {
                                 <button
                                   type="button"
                                   className="btn text-white fw-semibold"
+                                  data-bs-toggle="modal"
+                                  data-bs-target="#modalDetalhesPedido"
+                                  onClick={() => setPedidoDetalhe(pedido)}
                                   style={{
                                     ...buttonGradient,
                                     padding: "12px 18px",
                                   }}
                                 >
+                                  <i className="bi bi-eye-fill me-2" />
                                   Ver detalhes
                                 </button>
 
                                 <button
                                   type="button"
                                   className="btn btn-outline-light"
+                                  data-bs-toggle="modal"
+                                  data-bs-target="#modalRastrearPedido"
+                                  onClick={() => setPedidoRastreamento(pedido)}
                                   style={{
                                     borderRadius: "12px",
                                     padding: "12px 18px",
                                   }}
                                 >
+                                  <i className="bi bi-truck me-2" />
                                   Rastrear
                                 </button>
                               </div>
@@ -1003,6 +1170,453 @@ export default function Pedidos() {
           </div>
         </div>
       </section>
+
+      <div
+        className="modal fade"
+        id="modalDetalhesPedido"
+        tabIndex="-1"
+        aria-hidden="true"
+      >
+        <div className="modal-dialog modal-dialog-centered modal-xl">
+          <div className="modal-content border-0" style={modalSurface}>
+            <div className="modal-header border-0 px-4 px-lg-5 pt-4">
+              <div>
+                <span
+                  className="badge mb-2"
+                  style={{
+                    background: pedidoDetalhe
+                      ? `${pedidoDetalhe.cor}22`
+                      : "rgba(255,179,0,.12)",
+                    color: pedidoDetalhe?.cor || "#ffb300",
+                    border: pedidoDetalhe
+                      ? `1px solid ${pedidoDetalhe.cor}55`
+                      : "1px solid rgba(255,179,0,.22)",
+                    borderRadius: "999px",
+                    padding: "8px 12px",
+                  }}
+                >
+                  Pedido #{pedidoDetalhe?.id_pedido || "—"}
+                </span>
+
+                <h3 className="modal-title fw-bold text-white">
+                  Detalhes do pedido
+                </h3>
+              </div>
+
+              <button
+                type="button"
+                className="btn-close btn-close-white shadow-none"
+                data-bs-dismiss="modal"
+                aria-label="Fechar"
+              />
+            </div>
+
+            <div className="modal-body px-4 px-lg-5 pb-5">
+              {pedidoDetalhe && (
+                <div className="row g-4 align-items-stretch">
+                  <div className="col-lg-5">
+                    <div
+                      className="h-100"
+                      style={{
+                        ...modalInfoBox,
+                        padding: "14px",
+                      }}
+                    >
+                      <img
+                        src={pedidoDetalhe.imagem}
+                        alt={pedidoDetalhe.produto}
+                        onError={(event) => {
+                          event.currentTarget.src = "/logo.png";
+                        }}
+                        style={{
+                          width: "100%",
+                          height: "360px",
+                          objectFit: "cover",
+                          borderRadius: "20px",
+                          background: "rgba(0,0,0,.25)",
+                        }}
+                      />
+
+                      <div className="p-3">
+                        <h4 className="fw-bold text-white mb-2">
+                          {pedidoDetalhe.produto}
+                        </h4>
+
+                        <p
+                          className="mb-0"
+                          style={{
+                            color: "rgba(255,255,255,.58)",
+                            lineHeight: 1.7,
+                          }}
+                        >
+                          Produto vinculado ao pedido #{pedidoDetalhe.id_pedido}.
+                          Para mais informações técnicas, acesse a página do produto.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="col-lg-7">
+                    <div className="row g-3">
+                      {[
+                        {
+                          label: "Status",
+                          value: pedidoDetalhe.statusLabel,
+                          color: pedidoDetalhe.cor,
+                          icon: "bi-activity",
+                        },
+                        {
+                          label: "Valor",
+                          value: formatarPreco(pedidoDetalhe.preco),
+                          color: "#5ba100dc",
+                          icon: "bi-cash-coin",
+                        },
+                        {
+                          label: "Data do pedido",
+                          value: pedidoDetalhe.dataPedidoFormatada,
+                          color: "#ffb300",
+                          icon: "bi-calendar-check",
+                        },
+                        {
+                          label: "Entrega",
+                          value: getEntregaLabel(pedidoDetalhe),
+                          color: "#8ab4ff",
+                          icon: "bi-truck",
+                        },
+                        {
+                          label: "ID do pedido",
+                          value: `#${pedidoDetalhe.id_pedido}`,
+                          color: "#ff8800",
+                          icon: "bi-hash",
+                        },
+                        {
+                          label: "ID do produto",
+                          value: `#${pedidoDetalhe.id_produto || "N/A"}`,
+                          color: "#f5061d",
+                          icon: "bi-box-seam",
+                        },
+                      ].map((item) => (
+                        <div className="col-md-6" key={item.label}>
+                          <div style={modalInfoBox} className="h-100">
+                            <div className="d-flex align-items-center gap-3">
+                              <div
+                                className="d-flex align-items-center justify-content-center"
+                                style={{
+                                  width: "46px",
+                                  height: "46px",
+                                  borderRadius: "14px",
+                                  background: `${item.color}18`,
+                                  border: `1px solid ${item.color}33`,
+                                  color: item.color,
+                                  flexShrink: 0,
+                                }}
+                              >
+                                <i className={`bi ${item.icon}`} />
+                              </div>
+
+                              <div>
+                                <span
+                                  style={{
+                                    color: "rgba(255,255,255,.52)",
+                                    fontSize: ".78rem",
+                                    textTransform: "uppercase",
+                                    letterSpacing: ".6px",
+                                    fontWeight: 800,
+                                  }}
+                                >
+                                  {item.label}
+                                </span>
+
+                                <h6
+                                  className="mb-0 mt-1 fw-bold"
+                                  style={{
+                                    color: item.color,
+                                  }}
+                                >
+                                  {item.value}
+                                </h6>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="mt-4" style={modalInfoBox}>
+                      <h5 className="fw-bold text-white mb-3">
+                        Resumo operacional
+                      </h5>
+
+                      <p
+                        className="mb-0"
+                        style={{
+                          color: "rgba(255,255,255,.64)",
+                          lineHeight: 1.8,
+                        }}
+                      >
+                        Este pedido está com status{" "}
+                        <strong style={{ color: pedidoDetalhe.cor }}>
+                          {pedidoDetalhe.statusLabel}
+                        </strong>
+                        . A entrega aparece como{" "}
+                        <strong style={{ color: "#ffb300" }}>
+                          {getEntregaLabel(pedidoDetalhe)}
+                        </strong>
+                        . As informações exibidas são baseadas nos dados atuais da
+                        API de pedidos e produtos.
+                      </p>
+                    </div>
+
+                    <div className="d-flex gap-3 flex-wrap mt-4">
+                      {pedidoDetalhe.id_produto && (
+                        <Link
+                          href={`/produtos/${pedidoDetalhe.id_produto}`}
+                          className="btn text-white fw-semibold"
+                          data-bs-dismiss="modal"
+                          style={{
+                            ...buttonGradient,
+                            padding: "12px 18px",
+                            textDecoration: "none",
+                          }}
+                        >
+                          <i className="bi bi-box-arrow-up-right me-2" />
+                          Ver produto
+                        </Link>
+                      )}
+
+                      <button
+                        type="button"
+                        className="btn btn-outline-light"
+                        data-bs-dismiss="modal"
+                        style={{
+                          borderRadius: "14px",
+                          padding: "12px 18px",
+                          fontWeight: 700,
+                        }}
+                      >
+                        Fechar detalhes
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        className="modal fade"
+        id="modalRastrearPedido"
+        tabIndex="-1"
+        aria-hidden="true"
+      >
+        <div className="modal-dialog modal-dialog-centered modal-lg">
+          <div className="modal-content border-0" style={modalSurface}>
+            <div className="modal-header border-0 px-4 px-lg-5 pt-4">
+              <div>
+                <span className="badge bg-warning text-dark mb-2 px-3 py-2">
+                  Rastreamento
+                </span>
+
+                <h3 className="modal-title fw-bold text-white">
+                  Pedido #{pedidoRastreamento?.id_pedido || "—"}
+                </h3>
+
+                <p
+                  className="mb-0 mt-2"
+                  style={{
+                    color: "rgba(255,255,255,.58)",
+                  }}
+                >
+                  {pedidoRastreamento?.produto || "Produto não informado"}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                className="btn-close btn-close-white shadow-none"
+                data-bs-dismiss="modal"
+                aria-label="Fechar"
+              />
+            </div>
+
+            <div className="modal-body px-4 px-lg-5 pb-5">
+              {pedidoRastreamento && (
+                <>
+                  <div
+                    className="mb-4"
+                    style={{
+                      ...modalInfoBox,
+                      borderColor: `${pedidoRastreamento.cor}33`,
+                    }}
+                  >
+                    <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                      <div>
+                        <span
+                          style={{
+                            color: "rgba(255,255,255,.55)",
+                            fontSize: ".8rem",
+                            textTransform: "uppercase",
+                            letterSpacing: ".6px",
+                            fontWeight: 800,
+                          }}
+                        >
+                          Status atual
+                        </span>
+
+                        <h4
+                          className="fw-bold mt-1 mb-0"
+                          style={{
+                            color: pedidoRastreamento.cor,
+                          }}
+                        >
+                          {pedidoRastreamento.statusLabel}
+                        </h4>
+                      </div>
+
+                      <div
+                        className="text-end"
+                        style={{
+                          color: "rgba(255,255,255,.64)",
+                        }}
+                      >
+                        <strong className="d-block text-white">
+                          {getEntregaLabel(pedidoRastreamento)}
+                        </strong>
+                        <span style={{ fontSize: ".88rem" }}>
+                          Pedido feito em {pedidoRastreamento.dataPedidoFormatada}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="d-flex flex-column gap-3">
+                    {etapasRastreamento.map((etapa, index) => {
+                      const visual = getEtapaStyle(etapa.estado);
+                      const ultima = index === etapasRastreamento.length - 1;
+
+                      return (
+                        <div
+                          key={`${etapa.titulo}-${index}`}
+                          className="d-flex gap-3 position-relative"
+                        >
+                          {!ultima && (
+                            <div
+                              style={{
+                                position: "absolute",
+                                left: "24px",
+                                top: "54px",
+                                bottom: "-16px",
+                                width: "2px",
+                                background:
+                                  etapa.estado === "done"
+                                    ? "rgba(91,161,0,.45)"
+                                    : "rgba(255,255,255,.10)",
+                              }}
+                            />
+                          )}
+
+                          <div
+                            className="d-flex align-items-center justify-content-center"
+                            style={{
+                              width: "50px",
+                              height: "50px",
+                              borderRadius: "16px",
+                              flexShrink: 0,
+                              zIndex: 2,
+                              ...visual,
+                            }}
+                          >
+                            <i className={`bi ${etapa.icon}`} />
+                          </div>
+
+                          <div
+                            className="flex-grow-1"
+                            style={{
+                              ...modalInfoBox,
+                              opacity: etapa.estado === "pending" ? 0.72 : 1,
+                            }}
+                          >
+                            <div className="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                              <div>
+                                <h5
+                                  className="fw-bold mb-2"
+                                  style={{
+                                    color:
+                                      etapa.estado === "pending"
+                                        ? "rgba(255,255,255,.62)"
+                                        : "white",
+                                  }}
+                                >
+                                  {etapa.titulo}
+                                </h5>
+
+                                <p
+                                  className="mb-0"
+                                  style={{
+                                    color: "rgba(255,255,255,.58)",
+                                    lineHeight: 1.7,
+                                  }}
+                                >
+                                  {etapa.descricao}
+                                </p>
+                              </div>
+
+                              <span
+                                className="badge"
+                                style={{
+                                  ...visual,
+                                  borderRadius: "999px",
+                                  padding: "8px 10px",
+                                  fontWeight: 800,
+                                }}
+                              >
+                                {etapa.data}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div
+                    className="mt-4"
+                    style={{
+                      background: "rgba(255,179,0,.08)",
+                      border: "1px solid rgba(255,179,0,.18)",
+                      borderRadius: "18px",
+                      padding: "16px",
+                      color: "rgba(255,255,255,.70)",
+                    }}
+                  >
+                    <i className="bi bi-info-circle-fill me-2 text-warning" />
+                    Este rastreamento usa o status atual do pedido. Quando o
+                    backend tiver transportadora/código de rastreio, essa área pode
+                    ser conectada ao rastreio real.
+                  </div>
+
+                  <div className="d-flex justify-content-end mt-4">
+                    <button
+                      type="button"
+                      className="btn btn-outline-light"
+                      data-bs-dismiss="modal"
+                      style={{
+                        borderRadius: "14px",
+                        padding: "12px 18px",
+                        fontWeight: 700,
+                      }}
+                    >
+                      Fechar rastreamento
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div
         className="modal fade"
