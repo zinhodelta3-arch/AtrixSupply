@@ -1,6 +1,40 @@
 import LogisticaModel from '../models/LogisticaModel.js';
 import UsuarioModel from '../models/UsuarioModel.js';
 
+const VEICULOS_VALIDOS = ['caminhao', 'van', 'moto', 'carro', 'bicicleta', 'nao_selecionado'];
+const DISPONIBILIDADES_VALIDAS = ['disponivel', 'ocupado', 'manutencao'];
+
+function normalizarTexto(valor) {
+    return String(valor || '')
+        .trim()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[\s-]+/g, '_');
+}
+
+function normalizarVeiculo(veiculo) {
+    if (veiculo === undefined || veiculo === null || veiculo === '') {
+        return 'nao_selecionado';
+    }
+
+    const veiculoNormalizado = normalizarTexto(veiculo);
+
+    return VEICULOS_VALIDOS.includes(veiculoNormalizado) ? veiculoNormalizado : null;
+}
+
+function normalizarDisponibilidade(disponibilidade) {
+    if (disponibilidade === undefined || disponibilidade === null || disponibilidade === '') {
+        return 'disponivel';
+    }
+
+    const disponibilidadeNormalizada = normalizarTexto(disponibilidade);
+
+    return DISPONIBILIDADES_VALIDAS.includes(disponibilidadeNormalizada)
+        ? disponibilidadeNormalizada
+        : null;
+}
+
 // Controller para operações de logística
 class LogisticaController {
 
@@ -60,7 +94,16 @@ class LogisticaController {
     // GET /logistica/veiculo/:veiculo - Listar por tipo de veículo (com paginação)
     static async buscarPorVeiculo(req, res) {
         try {
-            let veiculo = req.params.veiculo || 'não selecionado';
+            const veiculo = normalizarVeiculo(req.params.veiculo);
+
+            if (!veiculo) {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'Veículo inválido',
+                    mensagem: 'Forneça um veículo válido'
+                });
+            }
+
             let pagina = parseInt(req.query.pagina) || 1;
             let limite = parseInt(req.query.limite) || 10;
             const offset = (pagina - 1) * limite;
@@ -189,6 +232,8 @@ class LogisticaController {
         try {
             const { id_dono, nome_logistica, veiculo, disponibilidade, destino } = req.body || {};
             const erros = [];
+            const veiculoNormalizado = normalizarVeiculo(veiculo);
+            const disponibilidadeNormalizada = normalizarDisponibilidade(disponibilidade);
 
             // Validar id_dono
             if (!id_dono || isNaN(id_dono) || parseInt(id_dono) <= 0) {
@@ -212,27 +257,19 @@ class LogisticaController {
             }
 
             // Validar veículo
-            const veiculosValidos = ['caminhão', 'van', 'moto', 'carro', 'bicicleta', 'não selecionado'];
-
-            if (veiculo !== undefined && veiculo !== null && veiculo !== '') {
-                if (typeof veiculo !== 'string' || !veiculosValidos.includes(veiculo.toLowerCase())) {
-                    erros.push({
-                        campo: 'veiculo',
-                        mensagem: 'Veículo inválido'
-                    });
-                }
+            if (!veiculoNormalizado) {
+                erros.push({
+                    campo: 'veiculo',
+                    mensagem: 'Veículo inválido'
+                });
             }
 
             // Validar disponibilidade
-            const disponibilidadesValidas = ['disponivel', 'ocupado', 'manutencao'];
-
-            if (disponibilidade !== undefined && disponibilidade !== null && disponibilidade !== '') {
-                if (typeof disponibilidade !== 'string' || !disponibilidadesValidas.includes(disponibilidade.toLowerCase())) {
-                    erros.push({
-                        campo: 'disponibilidade',
-                        mensagem: 'Disponibilidade inválida'
-                    });
-                }
+            if (!disponibilidadeNormalizada) {
+                erros.push({
+                    campo: 'disponibilidade',
+                    mensagem: 'Disponibilidade inválida'
+                });
             }
 
             // Validar destino
@@ -265,8 +302,8 @@ class LogisticaController {
             const dadosLogistica = {
                 id_dono: parseInt(id_dono),
                 nome_logistica: nome_logistica.trim(),
-                veiculo: veiculo ? veiculo.toLowerCase() : 'não selecionado',
-                disponibilidade: disponibilidade ? disponibilidade.toLowerCase() : 'disponivel',
+                veiculo: veiculoNormalizado,
+                disponibilidade: disponibilidadeNormalizada,
                 destino: destino ? destino.trim() : null
             };
 
@@ -337,9 +374,9 @@ class LogisticaController {
             }
 
             if (veiculo !== undefined) {
-                const veiculosValidos = ['caminhão', 'van', 'moto', 'carro', 'bicicleta', 'não selecionado'];
+                const veiculoNormalizado = normalizarVeiculo(veiculo);
 
-                if (typeof veiculo !== 'string' || !veiculosValidos.includes(veiculo.toLowerCase())) {
+                if (!veiculoNormalizado) {
                     return res.status(400).json({
                         sucesso: false,
                         erro: 'Veículo inválido',
@@ -347,13 +384,13 @@ class LogisticaController {
                     });
                 }
 
-                dadosAtualizacao.veiculo = veiculo.toLowerCase();
+                dadosAtualizacao.veiculo = veiculoNormalizado;
             }
 
             if (disponibilidade !== undefined) {
-                const disponibilidadesValidas = ['disponivel', 'ocupado', 'manutencao'];
+                const disponibilidadeNormalizada = normalizarDisponibilidade(disponibilidade);
 
-                if (typeof disponibilidade !== 'string' || !disponibilidadesValidas.includes(disponibilidade.toLowerCase())) {
+                if (!disponibilidadeNormalizada) {
                     return res.status(400).json({
                         sucesso: false,
                         erro: 'Disponibilidade inválida',
@@ -361,7 +398,7 @@ class LogisticaController {
                     });
                 }
 
-                dadosAtualizacao.disponibilidade = disponibilidade.toLowerCase();
+                dadosAtualizacao.disponibilidade = disponibilidadeNormalizada;
             }
 
             if (destino !== undefined) {

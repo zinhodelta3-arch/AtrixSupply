@@ -12,10 +12,14 @@ class PedidosModel {
                             p.*,
                             u.nome_user,
                             u.email,
-                            pr.nome_produto
+                            pr.nome_produto,
+                            pr.preco,
+                            pr.categoria
                             FROM pedidos p
                             LEFT JOIN usuarios u ON u.id_user = p.id_user
-                            LEFT JOIN produtos pr ON pr.id_produto = p.id_produto`;
+                            LEFT JOIN produtos pr ON pr.id_produto = p.id_produto
+                            ORDER BY p.id_pedido DESC
+                            LIMIT ? OFFSET ?`;
 
                 const [pedidos] = await connection.query(sql, [limite, offset]);
 
@@ -128,7 +132,9 @@ class PedidosModel {
                         p.*,
                         u.nome_user,
                         u.email,
-                        pr.nome_produto
+                        pr.nome_produto,
+                        pr.preco,
+                        pr.categoria
                     FROM pedidos p
                     LEFT JOIN usuarios u ON u.id_user = p.id_user
                     LEFT JOIN produtos pr ON pr.id_produto = p.id_produto
@@ -179,10 +185,18 @@ class PedidosModel {
             const connection = await getConnection();
             try {
                 const sql =  `
-                    SELECT *
-                    FROM pedidos
-                    WHERE status = ?
-                    ORDER BY id_pedido DESC
+                    SELECT
+                        p.*,
+                        u.nome_user,
+                        u.email,
+                        pr.nome_produto,
+                        pr.preco,
+                        pr.categoria
+                    FROM pedidos p
+                    LEFT JOIN usuarios u ON u.id_user = p.id_user
+                    LEFT JOIN produtos pr ON pr.id_produto = p.id_produto
+                    WHERE p.status = ?
+                    ORDER BY p.id_pedido DESC
                     LIMIT ? OFFSET ?
                     `;
 

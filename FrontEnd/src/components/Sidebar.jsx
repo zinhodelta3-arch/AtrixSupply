@@ -21,7 +21,9 @@ export default function Sidebar() {
         const userParsed = JSON.parse(usuarioStorage);
 
         // Verifica o TIPO do usuário (ajuste a propriedade caso o nome no seu BD seja outro)
-        if(userParsed.tipo !== 'administrador'){
+        const tipoUsuario = String(userParsed.tipo || "").toLowerCase();
+
+        if(tipoUsuario !== 'administrador' && tipoUsuario !== 'admin'){
           router.push('/not-found');
           return; // Para a execução aqui para não exibir a sidebar
         }
@@ -126,8 +128,8 @@ export default function Sidebar() {
           </Link>
         </li>
         <li className="nav-item mb-2">
-          <Link href="/dashboard/logistica" className="nav-link d-flex align-items-center px-3 py-2 text-decoration-none" style={linkStyle(isActive("/dashboard/fornecedores"))}>
-            <i className="bi bi-truck me-3" style={iconStyle(isActive("/dashboard/fornecedores"))} /> Logística
+          <Link href="/dashboard/logistica" className="nav-link d-flex align-items-center px-3 py-2 text-decoration-none" style={linkStyle(isActive("/dashboard/logistica"))}>
+            <i className="bi bi-truck me-3" style={iconStyle(isActive("/dashboard/logistica"))} /> Logística
           </Link>
         </li>
         <li className="nav-item mb-2">
