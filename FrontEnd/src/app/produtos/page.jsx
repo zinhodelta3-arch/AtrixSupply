@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname, useRouter } from "next/navigation"; 
 import { useEffect, useMemo, useState } from "react";
 
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -75,6 +76,8 @@ function getMensagemErro(data) {
 }
 
 export default function Produtos() {
+  const router = useRouter();
+
   const [produtos, setProdutos] = useState([]);
   const [paginaAtual, setPaginaAtual] = useState(1);
 
@@ -89,6 +92,30 @@ export default function Produtos() {
   useEffect(() => {
     import("bootstrap/dist/js/bootstrap.bundle.min.js");
   }, []);
+
+  useEffect(() => {
+    try {
+      const usuarioStorage = localStorage.getItem("usuario");
+      if (usuarioStorage) {
+        const userParsed = JSON.parse(usuarioStorage);
+        
+        // Verifica se é administrador DEPOIS de pegar os dados
+        if (userParsed.tipo !== 'fornecedor') {
+          router.push('/');
+        } else {
+          setUsuario(userParsed);
+          setLoading(false); // Libera a tela do Dashboard
+        }
+      } else {
+        // Se não tiver usuário no localStorage, manda pro login
+        router.push('/');
+      }
+    } catch (error) {
+      console.error("Erro ao ler dados do usuário:", error);
+      router.push('/');
+    }
+  }, [router]);
+
 
   useEffect(() => {
     async function carregarProdutos() {
@@ -183,6 +210,14 @@ export default function Produtos() {
     setPrecoMaximo(Math.ceil(maiorPrecoDisponivel));
     setSomenteEstoque(false);
     setPaginaAtual(1);
+  }
+  
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "100vh", background: "#09090b", color: "#ffb300" }}>
+        Validando acesso...
+      </div>
+    );
   }
 
   return (
