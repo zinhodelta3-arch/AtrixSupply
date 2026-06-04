@@ -13,7 +13,7 @@ CREATE TABLE encomendas (
     status ENUM(
         'pendente', 'em_andamento', 'finalizado', 'cancelado') NOT NULL DEFAULT 'pendente',
     orcamento DECIMAL(10,2) NULL,
-    data_com DATE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    data_com DATE NOT NULL,
     data_entrega DATE NULL,
     id_logistica INT NULL,
 
