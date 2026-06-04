@@ -565,7 +565,7 @@ export default function LogisticaFornecedor() {
   }
 
   return (
-    <div
+    <main
       style={{
         minHeight: "100vh",
         background: pageBackground,
@@ -574,71 +574,76 @@ export default function LogisticaFornecedor() {
       }}
     >
       <section
-        className="px-4 px-lg-5 py-5"
+        className="py-5 text-white"
         style={{
           background: heroGradient,
           borderBottom: "1px solid rgba(255,255,255,.08)",
+          minHeight: "245px",
+          display: "flex",
+          alignItems: "center",
         }}
       >
-        <div className="d-flex justify-content-between align-items-center flex-wrap gap-4">
-          <div className="d-flex align-items-center gap-3">
-            <div
-              className="d-flex justify-content-center align-items-center"
+        <div className="container-fluid px-4 px-lg-5 py-4">
+          <div className="d-flex justify-content-between align-items-center flex-wrap gap-4">
+            <div className="d-flex align-items-center gap-3">
+              <div
+                className="d-flex justify-content-center align-items-center"
+                style={{
+                  width: "60px",
+                  height: "60px",
+                  borderRadius: "20px",
+                  background: "rgba(255,255,255,.10)",
+                  border: "1px solid rgba(255,255,255,.12)",
+                }}
+              >
+                <i
+                  className="bi bi-truck"
+                  style={{
+                    fontSize: "1.6rem",
+                    color: "#ffcf40",
+                  }}
+                />
+              </div>
+
+              <div>
+                <span className="badge bg-warning text-dark mb-2 px-3 py-2">
+                  Central logística
+                </span>
+
+                <h1
+                  style={{
+                    margin: 0,
+                    fontWeight: "800",
+                    fontSize: "2rem",
+                    color: "white",
+                  }}
+                >
+                  Painel Logístico
+                </h1>
+
+                <p
+                  style={{
+                    margin: "6px 0 0",
+                    color: "rgba(255,255,255,.72)",
+                  }}
+                >
+                  Controle de veículos, disponibilidade, destinos e ações rápidas
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={abrirModalCriacao}
+              className="btn"
               style={{
-                width: "60px",
-                height: "60px",
-                borderRadius: "20px",
-                background: "rgba(255,255,255,.10)",
-                border: "1px solid rgba(255,255,255,.12)",
+                ...buttonGradient,
+                padding: "14px 24px",
               }}
             >
-              <i
-                className="bi bi-truck"
-                style={{
-                  fontSize: "1.6rem",
-                  color: "#ffcf40",
-                }}
-              />
-            </div>
-
-            <div>
-              <span className="badge bg-warning text-dark mb-2 px-3 py-2">
-                Central logística
-              </span>
-
-              <h1
-                style={{
-                  margin: 0,
-                  fontWeight: "800",
-                  fontSize: "2rem",
-                  color: "white",
-                }}
-              >
-                Painel Logístico
-              </h1>
-
-              <p
-                style={{
-                  margin: "6px 0 0",
-                  color: "rgba(255,255,255,.72)",
-                }}
-              >
-                Controle de veículos, disponibilidade, destinos e ações rápidas
-              </p>
-            </div>
+              <i className="bi bi-plus-circle-fill me-2" />
+              Nova Logística
+            </button>
           </div>
-
-          <button
-            onClick={abrirModalCriacao}
-            className="btn"
-            style={{
-              ...buttonGradient,
-              padding: "14px 24px",
-            }}
-          >
-            <i className="bi bi-plus-circle-fill me-2" />
-            Nova Logística
-          </button>
         </div>
       </section>
 
@@ -1589,6 +1594,6 @@ export default function LogisticaFornecedor() {
           </div>
         </div>
       )}
-    </div>
+    </main>
   );
 }

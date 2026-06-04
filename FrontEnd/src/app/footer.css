@@ -1,0 +1,93 @@
+/* =========================
+   FOOTER
+========================= */
+
+.footer-custom {
+  margin-top: auto;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  background:
+    linear-gradient(
+      90deg,
+      rgba(158, 56, 88, 0.55),
+      rgba(192, 1, 42, 0.50),
+      rgba(245, 6, 29, 0.45),
+      rgba(255, 136, 0, 0.40),
+      rgba(255, 179, 0, 0.35)
+    ),
+    rgba(15, 15, 17, 0.96);
+  border-top: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.25);
+  color: white;
+}
+
+.footer-custom::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(148, 5, 51, 0.20),
+    rgba(255, 136, 0, 0.12)
+  );
+  pointer-events: none;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  color: white;
+}
+
+.footer-custom .container {
+  padding-top: 4rem;
+  padding-bottom: 1.5rem;
+}
+
+.footer-text {
+  line-height: 1.8;
+  opacity: 0.9;
+  margin: 0;
+}
+
+.footer-link {
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+  transition: 0.25s ease;
+  width: fit-content;
+}
+
+.footer-link:hover {
+  color: white;
+  transform: translateX(4px);
+}
+
+.social-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  text-decoration: none;
+  font-size: 1.1rem;
+  transition: 0.3s ease;
+}
+
+.social-icon:hover {
+  background: rgba(255, 255, 255, 0.95);
+  color: #c0012a;
+  transform: translateY(-4px);
+}
+
+.footer-divider {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.footer-copy {
+  font-size: 0.92rem;
+  opacity: 0.8;
+}

@@ -17,31 +17,38 @@ const ROTAS_USUARIOS = [
 ];
 
 const pageBackground = `
-  radial-gradient(circle at top left, rgba(255,179,0,.06), transparent 25%),
-  radial-gradient(circle at bottom right, rgba(192,1,42,.10), transparent 25%),
+  radial-gradient(circle at top left, rgba(255,136,0,.10), transparent 25%),
+  radial-gradient(circle at bottom right, rgba(192,1,42,.16), transparent 30%),
+  linear-gradient(145deg,#08080a,#101014,#160d12)
+`;
+
+const surfaceGradient = `
   linear-gradient(
     145deg,
-    #0c0d10 0%,
-    #121317 30%,
-    #181418 55%,
-    #1d1218 100%
+    rgba(17,17,17,.96),
+    rgba(25,18,22,.96)
+  )
+`;
+
+const innerSurfaceGradient = `
+  linear-gradient(
+    145deg,
+    rgba(255,255,255,.035),
+    rgba(255,255,255,.015)
   )
 `;
 
 const panelStyle = {
-  background: `
-    linear-gradient(
-      145deg,
-      rgba(22,23,27,.96),
-      rgba(28,22,25,.96)
-    )
-  `,
+  background: surfaceGradient,
   borderRadius: "30px",
-  border: "1px solid rgba(255,215,120,.10)",
-  boxShadow: `
-    0 25px 60px rgba(221,25,25,.18),
-    0 0 25px rgba(235,194,13,.06)
-  `,
+  border: "1px solid rgba(255,255,255,.10)",
+  boxShadow: "none",
+};
+
+const innerPanelStyle = {
+  background: innerSurfaceGradient,
+  border: "1px solid rgba(255,255,255,.06)",
+  boxShadow: "none",
 };
 
 const inputStyle = {
@@ -50,15 +57,16 @@ const inputStyle = {
   color: "white",
   borderRadius: "16px",
   padding: "13px 15px",
+  boxShadow: "none",
 };
 
 const buttonGradient = {
-  background: "linear-gradient(90deg,#ffcf40,#ff9d00,#c0012a)",
+  background: "linear-gradient(90deg,#940533,#c0012a,#ff8800)",
   color: "white",
   border: "none",
   borderRadius: "16px",
   fontWeight: "800",
-  boxShadow: "0 16px 34px rgba(192,1,42,.24)",
+  boxShadow: "none",
 };
 
 function obterToken() {
@@ -123,16 +131,45 @@ function obterIdUsuario(usuario) {
     usuario?.id ||
     usuario?.userId ||
     usuario?.idUser ||
+    usuario?.sub ||
     usuario?.dados?.id_user ||
     usuario?.dados?.id_usuario ||
     usuario?.dados?.id ||
     usuario?.dados?.userId ||
     usuario?.dados?.idUser ||
+    usuario?.dados?.sub ||
+    usuario?.dados?.usuario?.id_user ||
+    usuario?.dados?.usuario?.id_usuario ||
+    usuario?.dados?.usuario?.id ||
     usuario?.usuario?.id_user ||
     usuario?.usuario?.id_usuario ||
     usuario?.usuario?.id ||
     ""
   );
+}
+
+function normalizarUsuarioPayload(data) {
+  return (
+    data?.dados?.usuario ||
+    data?.dados?.user ||
+    data?.dados ||
+    data?.usuario ||
+    data?.user ||
+    data ||
+    null
+  );
+}
+
+function normalizarUsuarioComIdSeguro(usuarioApi, usuarioBase) {
+  const idApi = obterIdUsuario(usuarioApi);
+  const idBase = obterIdUsuario(usuarioBase);
+  const idSeguro = idBase || idApi;
+
+  return {
+    ...(usuarioBase || {}),
+    ...(usuarioApi || {}),
+    id_user: idSeguro || usuarioApi?.id_user || usuarioBase?.id_user,
+  };
 }
 
 function montarHeaders() {
@@ -171,6 +208,7 @@ async function buscarUsuarioPorId(idUsuario) {
       const response = await fetch(`${baseUrl}/${idUsuario}`, {
         method: "GET",
         headers: montarHeaders(),
+        cache: "no-store",
       });
 
       if (response.status === 404) {
@@ -179,18 +217,19 @@ async function buscarUsuarioPorId(idUsuario) {
       }
 
       const data = await tratarResposta(response);
+      const usuario = normalizarUsuarioPayload(data);
 
       return {
-        usuario: data?.dados || null,
+        usuario,
         baseUrl,
       };
     } catch (error) {
       ultimoErro = error;
 
       if (
-        error.message?.includes("Credenciais") ||
-        error.message?.includes("token") ||
-        error.message?.includes("autoriz")
+        error.message?.toLowerCase().includes("credenciais") ||
+        error.message?.toLowerCase().includes("token") ||
+        error.message?.toLowerCase().includes("autoriz")
       ) {
         break;
       }
@@ -229,9 +268,11 @@ async function atualizarUsuarioPorId(idUsuario, body, rotaPreferida) {
     } catch (error) {
       ultimoErro = error;
 
-      if (!error.message?.includes("Rota")) {
-        break;
+      if (error.message?.includes("Rota de atualização não encontrada")) {
+        continue;
       }
+
+      break;
     }
   }
 
@@ -306,6 +347,7 @@ export default function Perfil() {
   const router = useRouter();
 
   const [perfil, setPerfil] = useState(null);
+  const [idUsuarioLogado, setIdUsuarioLogado] = useState("");
   const [rotaUsuariosAtiva, setRotaUsuariosAtiva] = useState(null);
 
   const [carregando, setCarregando] = useState(true);
@@ -348,17 +390,21 @@ export default function Perfil() {
         return;
       }
 
+      setIdUsuarioLogado(String(idUsuario));
+
       const { usuario, baseUrl } = await buscarUsuarioPorId(idUsuario);
 
       if (!usuario) {
         throw new Error("Perfil não encontrado.");
       }
 
-      setPerfil(usuario);
+      const usuarioNormalizado = normalizarUsuarioComIdSeguro(usuario, usuarioLocal);
+
+      setPerfil(usuarioNormalizado);
       setRotaUsuariosAtiva(baseUrl);
 
       if (typeof window !== "undefined") {
-        localStorage.setItem("usuario", JSON.stringify(usuario));
+        localStorage.setItem("usuario", JSON.stringify(usuarioNormalizado));
       }
     } catch (error) {
       console.error("Erro ao carregar perfil:", error);
@@ -409,8 +455,13 @@ export default function Perfil() {
       setFormErro(null);
       setFeedback(null);
 
-      if (!perfil?.id_user) {
-        setFormErro("ID do usuário não encontrado.");
+      const idParaAtualizar =
+        idUsuarioLogado ||
+        obterIdUsuario(obterUsuarioLocal()) ||
+        obterIdUsuario(perfil);
+
+      if (!idParaAtualizar) {
+        setFormErro("ID do usuário logado não encontrado.");
         return;
       }
 
@@ -464,7 +515,7 @@ export default function Perfil() {
       }
 
       const { data, baseUrl } = await atualizarUsuarioPorId(
-        perfil.id_user,
+        idParaAtualizar,
         body,
         rotaUsuariosAtiva
       );
@@ -475,6 +526,7 @@ export default function Perfil() {
       await carregarPerfil();
 
       setModalAberto(false);
+
       setFormData((prev) => ({
         ...prev,
         senha: "",
@@ -486,6 +538,11 @@ export default function Perfil() {
       setSalvando(false);
     }
   }
+
+  const idPerfilSeguro =
+    idUsuarioLogado ||
+    obterIdUsuario(perfil) ||
+    obterIdUsuario(obterUsuarioLocal());
 
   const tipoCor = getCorTipo(perfil?.tipo);
   const iniciais = pegarIniciais(perfil?.nome_user);
@@ -552,7 +609,7 @@ export default function Perfil() {
         className="d-flex justify-content-center align-items-center text-white"
         style={{
           minHeight: "100vh",
-          background: "linear-gradient(145deg,#0c0d10,#121317,#1e1217)",
+          background: pageBackground,
         }}
       >
         <div className="text-center">
@@ -574,16 +631,14 @@ export default function Perfil() {
         className="d-flex justify-content-center align-items-center text-white p-4"
         style={{
           minHeight: "100vh",
-          background: "linear-gradient(145deg,#0c0d10,#121317,#1e1217)",
+          background: pageBackground,
         }}
       >
         <div
           className="text-center"
           style={{
             maxWidth: "560px",
-            background: "rgba(22,23,27,.96)",
-            border: "1px solid rgba(255,215,120,.14)",
-            borderRadius: "24px",
+            ...panelStyle,
             padding: "35px",
           }}
         >
@@ -602,8 +657,7 @@ export default function Perfil() {
           <div
             className="text-start mt-4"
             style={{
-              background: "rgba(255,255,255,.04)",
-              border: "1px solid rgba(255,255,255,.08)",
+              ...innerPanelStyle,
               borderRadius: "18px",
               padding: "18px",
               color: "rgba(255,255,255,.7)",
@@ -647,6 +701,7 @@ export default function Perfil() {
         style={{
           borderBottom: "1px solid rgba(255,255,255,.05)",
           backdropFilter: "blur(10px)",
+          background: "rgba(0,0,0,.10)",
         }}
       >
         <div className="d-flex align-items-center gap-3">
@@ -656,14 +711,9 @@ export default function Perfil() {
               width: "60px",
               height: "60px",
               borderRadius: "20px",
-              background: `
-                linear-gradient(
-                  145deg,
-                  rgba(255,179,0,.25),
-                  rgba(192,1,42,.18)
-                )
-              `,
+              background: "rgba(255,255,255,.04)",
               border: "1px solid rgba(255,255,255,.08)",
+              boxShadow: "none",
             }}
           >
             <i
@@ -716,7 +766,13 @@ export default function Perfil() {
 
       <div className="container-fluid px-4 px-lg-5 py-5">
         {feedback && (
-          <div className="alert alert-success mb-4">
+          <div
+            className="alert alert-success mb-4"
+            style={{
+              borderRadius: "18px",
+              border: "none",
+            }}
+          >
             {feedback}
           </div>
         )}
@@ -739,8 +795,8 @@ export default function Perfil() {
                     borderRadius: "34px",
                     position: "relative",
                     overflow: "hidden",
-                    border: "2px solid rgba(255,215,120,.24)",
-                    boxShadow: "0 22px 45px rgba(0,0,0,.45)",
+                    border: "2px solid rgba(255,255,255,.10)",
+                    boxShadow: "none",
                   }}
                 >
                   <Image
@@ -764,11 +820,12 @@ export default function Perfil() {
                     position: "relative",
                     zIndex: 2,
                     borderRadius: "20px",
-                    background: "linear-gradient(145deg,#ffcf40,#c0012a)",
-                    border: "4px solid rgba(22,23,27,1)",
+                    background: "linear-gradient(145deg,#940533,#c0012a,#ff8800)",
+                    border: "4px solid rgba(17,17,17,1)",
                     fontWeight: "900",
                     color: "white",
                     letterSpacing: ".5px",
+                    boxShadow: "none",
                   }}
                 >
                   {iniciais}
@@ -813,8 +870,7 @@ export default function Perfil() {
               <div
                 className="mt-5"
                 style={{
-                  background: "rgba(255,255,255,.03)",
-                  border: "1px solid rgba(255,255,255,.06)",
+                  ...innerPanelStyle,
                   borderRadius: "24px",
                   padding: "24px",
                 }}
@@ -854,8 +910,7 @@ export default function Perfil() {
                     key={item.titulo}
                     className="d-flex align-items-center gap-3"
                     style={{
-                      background: "rgba(255,255,255,.03)",
-                      border: "1px solid rgba(255,255,255,.05)",
+                      ...innerPanelStyle,
                       borderRadius: "20px",
                       padding: "16px",
                     }}
@@ -944,7 +999,7 @@ export default function Perfil() {
                     padding: "10px 13px",
                   }}
                 >
-                  ID #{perfil?.id_user}
+                  ID #{idPerfilSeguro || "---"}
                 </span>
               </div>
 
@@ -954,8 +1009,7 @@ export default function Perfil() {
                     <div
                       className="h-100"
                       style={{
-                        background: "rgba(255,255,255,.035)",
-                        border: "1px solid rgba(255,255,255,.06)",
+                        ...innerPanelStyle,
                         borderRadius: "24px",
                         padding: "24px",
                       }}
@@ -1016,11 +1070,7 @@ export default function Perfil() {
               <div
                 className="mt-4"
                 style={{
-                  background: `
-                    radial-gradient(circle at top left, rgba(255,207,64,.08), transparent 35%),
-                    rgba(255,255,255,.03)
-                  `,
-                  border: "1px solid rgba(255,255,255,.06)",
+                  ...innerPanelStyle,
                   borderRadius: "24px",
                   padding: "26px",
                 }}
@@ -1090,16 +1140,9 @@ export default function Perfil() {
               maxHeight: "92vh",
               overflowY: "auto",
               borderRadius: "28px",
-              background: `
-                radial-gradient(circle at top left, rgba(255,207,64,.12), transparent 30%),
-                linear-gradient(
-                  145deg,
-                  rgba(20,21,26,.98),
-                  rgba(33,23,29,.98)
-                )
-              `,
-              border: "1px solid rgba(255,215,120,.14)",
-              boxShadow: "0 40px 120px rgba(0,0,0,.65)",
+              background: surfaceGradient,
+              border: "1px solid rgba(255,255,255,.10)",
+              boxShadow: "none",
               color: "white",
             }}
           >
@@ -1119,6 +1162,7 @@ export default function Perfil() {
                     borderRadius: "18px",
                     background: "rgba(255,179,0,.12)",
                     border: "1px solid rgba(255,255,255,.08)",
+                    boxShadow: "none",
                   }}
                 >
                   <i
@@ -1149,6 +1193,14 @@ export default function Perfil() {
                   >
                     Atualize suas informações pessoais.
                   </p>
+
+                  <small
+                    style={{
+                      color: "rgba(255,255,255,.42)",
+                    }}
+                  >
+                    ID autenticado: #{idPerfilSeguro || "---"}
+                  </small>
                 </div>
               </div>
 
@@ -1164,6 +1216,7 @@ export default function Perfil() {
                   background: "rgba(255,255,255,.04)",
                   border: "1px solid rgba(255,255,255,.08)",
                   color: "white",
+                  boxShadow: "none",
                 }}
               >
                 <i className="bi bi-x-lg" />
@@ -1326,6 +1379,7 @@ export default function Perfil() {
                     borderRadius: "16px",
                     padding: "12px 20px",
                     fontWeight: "700",
+                    boxShadow: "none",
                   }}
                 >
                   Cancelar

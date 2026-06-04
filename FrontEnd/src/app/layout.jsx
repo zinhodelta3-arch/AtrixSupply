@@ -1,9 +1,12 @@
 import { Geist, Geist_Mono } from "next/font/google";
 
 import "./globals.css";
+import "./header-cart.css";
+import "./footer.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "lucide-react"
+
 
 import LayoutWrapper from "@/components/LayoutWrapper";
 
