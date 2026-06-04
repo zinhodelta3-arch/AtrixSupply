@@ -19,6 +19,45 @@ const veiculosValidos = [
   "não selecionado",
 ];
 
+const pageBackground = `
+  radial-gradient(circle at top left, rgba(255,136,0,.10), transparent 25%),
+  radial-gradient(circle at bottom right, rgba(192,1,42,.16), transparent 30%),
+  linear-gradient(145deg,#08080a,#101014,#160d12)
+`;
+
+const heroGradient = "linear-gradient(135deg,#940533,#c0012a,#f5061d,#ff8800)";
+
+const surfaceGradient = `
+  linear-gradient(
+    145deg,
+    rgba(17,17,17,.96),
+    rgba(25,18,22,.96)
+  )
+`;
+
+const panelStyle = {
+  background: surfaceGradient,
+  borderRadius: "30px",
+  border: "1px solid rgba(255,255,255,.10)",
+  boxShadow: "none",
+};
+
+const inputStyle = {
+  background: "rgba(255,255,255,.04)",
+  border: "1px solid rgba(255,255,255,.08)",
+  color: "white",
+  borderRadius: "16px",
+  padding: "13px 15px",
+};
+
+const buttonGradient = {
+  background: "linear-gradient(90deg,#940533,#c0012a,#ff8800)",
+  border: "none",
+  color: "white",
+  borderRadius: "16px",
+  fontWeight: "800",
+};
+
 function obterToken() {
   if (typeof window === "undefined") return "";
 
@@ -507,7 +546,7 @@ export default function LogisticaFornecedor() {
         className="d-flex justify-content-center align-items-center text-white"
         style={{
           minHeight: "100vh",
-          background: "linear-gradient(145deg,#08080a,#101014,#160d12)",
+          background: pageBackground,
         }}
       >
         <div className="text-center">
@@ -529,117 +568,88 @@ export default function LogisticaFornecedor() {
     <div
       style={{
         minHeight: "100vh",
-        background: `
-          radial-gradient(circle at top left, rgba(255,179,0,.06), transparent 25%),
-          radial-gradient(circle at bottom right, rgba(192,1,42,.10), transparent 25%),
-          linear-gradient(
-            145deg,
-            #0c0d10 0%,
-            #121317 30%,
-            #181418 55%,
-            #1d1218 100%
-          )
-        `,
+        background: pageBackground,
         color: "white",
         overflow: "hidden",
       }}
     >
-      <div
-        className="px-4 px-lg-5 py-4 d-flex justify-content-between align-items-center flex-wrap gap-3"
+      <section
+        className="px-4 px-lg-5 py-5"
         style={{
-          borderBottom: "1px solid rgba(255,255,255,.05)",
-          backdropFilter: "blur(10px)",
+          background: heroGradient,
+          borderBottom: "1px solid rgba(255,255,255,.08)",
         }}
       >
-        <div className="d-flex align-items-center gap-3">
-          <div
-            className="d-flex justify-content-center align-items-center"
+        <div className="d-flex justify-content-between align-items-center flex-wrap gap-4">
+          <div className="d-flex align-items-center gap-3">
+            <div
+              className="d-flex justify-content-center align-items-center"
+              style={{
+                width: "60px",
+                height: "60px",
+                borderRadius: "20px",
+                background: "rgba(255,255,255,.10)",
+                border: "1px solid rgba(255,255,255,.12)",
+              }}
+            >
+              <i
+                className="bi bi-truck"
+                style={{
+                  fontSize: "1.6rem",
+                  color: "#ffcf40",
+                }}
+              />
+            </div>
+
+            <div>
+              <span className="badge bg-warning text-dark mb-2 px-3 py-2">
+                Central logística
+              </span>
+
+              <h1
+                style={{
+                  margin: 0,
+                  fontWeight: "800",
+                  fontSize: "2rem",
+                  color: "white",
+                }}
+              >
+                Painel Logístico
+              </h1>
+
+              <p
+                style={{
+                  margin: "6px 0 0",
+                  color: "rgba(255,255,255,.72)",
+                }}
+              >
+                Controle de veículos, disponibilidade, destinos e ações rápidas
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={abrirModalCriacao}
+            className="btn"
             style={{
-              width: "60px",
-              height: "60px",
-              borderRadius: "20px",
-              background: `
-                linear-gradient(
-                  145deg,
-                  rgba(255,179,0,.25),
-                  rgba(192,1,42,.18)
-                )
-              `,
-              border: "1px solid rgba(255,255,255,.08)",
+              ...buttonGradient,
+              padding: "14px 24px",
             }}
           >
-            <i
-              className="bi bi-truck"
-              style={{
-                fontSize: "1.6rem",
-                color: "#ffcf40",
-              }}
-            />
-          </div>
-
-          <div>
-            <h1
-              style={{
-                margin: 0,
-                fontWeight: "800",
-                fontSize: "2rem",
-                background: "linear-gradient(90deg,#ffcf40,#ff9d00,#c0012a)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-              }}
-            >
-              Painel Logístico
-            </h1>
-
-            <p
-              style={{
-                margin: 0,
-                color: "rgba(255,255,255,.55)",
-              }}
-            >
-              Controle de veículos, disponibilidade, destinos e ações rápidas
-            </p>
-          </div>
+            <i className="bi bi-plus-circle-fill me-2" />
+            Nova Logística
+          </button>
         </div>
-
-        <button
-          onClick={abrirModalCriacao}
-          className="btn"
-          style={{
-            background: "linear-gradient(90deg,#ffcf40,#ff9d00,#c0012a)",
-            border: "none",
-            color: "white",
-            borderRadius: "16px",
-            padding: "14px 24px",
-            fontWeight: "700",
-            boxShadow: "0 12px 24px rgba(192,1,42,.24)",
-          }}
-        >
-          <i className="bi bi-plus-circle-fill me-2" />
-          Nova Logística
-        </button>
-      </div>
+      </section>
 
       <div className="container-fluid px-4 px-lg-5 py-5">
         <div className="row g-4">
           <div className="col-xl-3">
-            <div
+            <aside
               style={{
-                background: `
-                  linear-gradient(
-                    145deg,
-                    rgba(22,23,27,.96),
-                    rgba(28,22,25,.96)
-                  )
-                `,
-                borderRadius: "30px",
+                ...panelStyle,
                 padding: "30px",
-                border: "1px solid rgba(255,215,120,.10)",
                 height: "100%",
-                boxShadow: `
-                  0 25px 60px rgba(221,25,25,.18),
-                  0 0 25px rgba(235,194,13,.06)
-                `,
               }}
             >
               <div className="text-center">
@@ -652,7 +662,6 @@ export default function LogisticaFornecedor() {
                     overflow: "hidden",
                     position: "relative",
                     border: "2px solid rgba(255,255,255,.08)",
-                    boxShadow: "0 20px 40px rgba(0,0,0,.35)",
                   }}
                 >
                   <Image
@@ -717,6 +726,7 @@ export default function LogisticaFornecedor() {
                       border: "1px solid rgba(255,255,255,.05)",
                       borderRadius: "20px",
                       padding: "18px",
+                      boxShadow: "none",
                     }}
                   >
                     <div
@@ -725,7 +735,7 @@ export default function LogisticaFornecedor() {
                         width: "52px",
                         height: "52px",
                         borderRadius: "16px",
-                        background: "rgba(255,179,0,.12)",
+                        background: "rgba(255,179,0,.10)",
                       }}
                     >
                       <i
@@ -760,27 +770,15 @@ export default function LogisticaFornecedor() {
                   </div>
                 ))}
               </div>
-            </div>
+            </aside>
           </div>
 
           <div className="col-xl-9">
-            <div
+            <section
               style={{
-                background: `
-                  linear-gradient(
-                    145deg,
-                    rgba(22,23,27,.96),
-                    rgba(28,22,25,.96)
-                  )
-                `,
-                borderRadius: "30px",
-                border: "1px solid rgba(255,215,120,.10)",
+                ...panelStyle,
                 padding: "35px",
                 height: "100%",
-                boxShadow: `
-                  0 25px 60px rgba(221,25,25,.18),
-                  0 0 25px rgba(235,194,13,.06)
-                `,
               }}
             >
               <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
@@ -853,10 +851,7 @@ export default function LogisticaFornecedor() {
                     }}
                     className="form-select"
                     style={{
-                      background: "rgba(255,255,255,.04)",
-                      border: "1px solid rgba(255,255,255,.08)",
-                      color: "white",
-                      borderRadius: "16px",
+                      ...inputStyle,
                       width: "190px",
                     }}
                   >
@@ -881,10 +876,7 @@ export default function LogisticaFornecedor() {
                     }}
                     className="form-select"
                     style={{
-                      background: "rgba(255,255,255,.04)",
-                      border: "1px solid rgba(255,255,255,.08)",
-                      color: "white",
-                      borderRadius: "16px",
+                      ...inputStyle,
                       width: "190px",
                     }}
                   >
@@ -968,21 +960,16 @@ export default function LogisticaFornecedor() {
                       const atualizando = statusAtualizandoId === item.id_logistica;
 
                       return (
-                        <div
+                        <article
                           key={item.id_logistica}
                           style={{
                             position: "relative",
-                            background: `
-                              linear-gradient(
-                                145deg,
-                                rgba(30,32,38,.95),
-                                rgba(38,24,29,.95)
-                              )
-                            `,
+                            background: "rgba(255,255,255,.035)",
                             borderRadius: "28px",
                             padding: "28px",
-                            border: "1px solid rgba(255,255,255,.05)",
+                            border: "1px solid rgba(255,255,255,.06)",
                             overflow: "hidden",
+                            boxShadow: "none",
                           }}
                         >
                           <div
@@ -1079,6 +1066,7 @@ export default function LogisticaFornecedor() {
                                   border: "1px solid rgba(255,255,255,.05)",
                                   borderRadius: "22px",
                                   padding: "22px",
+                                  boxShadow: "none",
                                 }}
                               >
                                 <p
@@ -1156,6 +1144,7 @@ export default function LogisticaFornecedor() {
                                     border: "1px solid rgba(255,255,255,.06)",
                                     borderRadius: "14px",
                                     padding: "10px 12px",
+                                    boxShadow: "none",
                                   }}
                                 >
                                   <label
@@ -1263,7 +1252,7 @@ export default function LogisticaFornecedor() {
                               </div>
                             </div>
                           </div>
-                        </div>
+                        </article>
                       );
                     })}
 
@@ -1341,7 +1330,7 @@ export default function LogisticaFornecedor() {
                   </div>
                 </div>
               )}
-            </div>
+            </section>
           </div>
         </div>
       </div>
@@ -1366,19 +1355,9 @@ export default function LogisticaFornecedor() {
               maxHeight: "92vh",
               overflowY: "auto",
               borderRadius: "32px",
-              background: `
-                radial-gradient(circle at top left, rgba(255,207,64,.12), transparent 30%),
-                linear-gradient(
-                  145deg,
-                  rgba(20,21,26,.98),
-                  rgba(33,23,29,.98)
-                )
-              `,
-              border: "1px solid rgba(255,215,120,.14)",
-              boxShadow: `
-                0 40px 120px rgba(0,0,0,.65),
-                0 0 40px rgba(255,179,0,.08)
-              `,
+              background: surfaceGradient,
+              border: "1px solid rgba(255,255,255,.10)",
+              boxShadow: "none",
               color: "white",
             }}
           >
@@ -1396,7 +1375,7 @@ export default function LogisticaFornecedor() {
                     width: "54px",
                     height: "54px",
                     borderRadius: "18px",
-                    background: "rgba(255,179,0,.12)",
+                    background: "rgba(255,179,0,.10)",
                     border: "1px solid rgba(255,255,255,.08)",
                   }}
                 >
@@ -1468,13 +1447,7 @@ export default function LogisticaFornecedor() {
                           atualizarCampo("id_dono", event.target.value)
                         }
                         placeholder="Ex: 1"
-                        style={{
-                          background: "rgba(255,255,255,.04)",
-                          border: "1px solid rgba(255,255,255,.08)",
-                          color: "white",
-                          borderRadius: "16px",
-                          padding: "13px 15px",
-                        }}
+                        style={inputStyle}
                       />
                     </div>
                   )}
@@ -1492,13 +1465,7 @@ export default function LogisticaFornecedor() {
                         atualizarCampo("nome_logistica", event.target.value)
                       }
                       placeholder="Ex: Rota Express São Paulo"
-                      style={{
-                        background: "rgba(255,255,255,.04)",
-                        border: "1px solid rgba(255,255,255,.08)",
-                        color: "white",
-                        borderRadius: "16px",
-                        padding: "13px 15px",
-                      }}
+                      style={inputStyle}
                     />
                   </div>
 
@@ -1513,13 +1480,7 @@ export default function LogisticaFornecedor() {
                       onChange={(event) =>
                         atualizarCampo("veiculo", event.target.value)
                       }
-                      style={{
-                        background: "rgba(255,255,255,.04)",
-                        border: "1px solid rgba(255,255,255,.08)",
-                        color: "white",
-                        borderRadius: "16px",
-                        padding: "13px 15px",
-                      }}
+                      style={inputStyle}
                     >
                       {veiculosValidos.map((veiculo) => (
                         <option key={veiculo} value={veiculo} style={{ color: "#111" }}>
@@ -1540,13 +1501,7 @@ export default function LogisticaFornecedor() {
                       onChange={(event) =>
                         atualizarCampo("disponibilidade", event.target.value)
                       }
-                      style={{
-                        background: "rgba(255,255,255,.04)",
-                        border: "1px solid rgba(255,255,255,.08)",
-                        color: "white",
-                        borderRadius: "16px",
-                        padding: "13px 15px",
-                      }}
+                      style={inputStyle}
                     >
                       <option value="disponivel" style={{ color: "#111" }}>
                         Disponível
@@ -1575,13 +1530,7 @@ export default function LogisticaFornecedor() {
                         atualizarCampo("destino", event.target.value)
                       }
                       placeholder="Ex: São Paulo, SP"
-                      style={{
-                        background: "rgba(255,255,255,.04)",
-                        border: "1px solid rgba(255,255,255,.08)",
-                        color: "white",
-                        borderRadius: "16px",
-                        padding: "13px 15px",
-                      }}
+                      style={inputStyle}
                     />
                   </div>
                 </div>
@@ -1619,14 +1568,9 @@ export default function LogisticaFornecedor() {
                   disabled={salvando}
                   className="btn"
                   style={{
-                    background: "linear-gradient(90deg,#ffcf40,#ff9d00,#c0012a)",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "16px",
+                    ...buttonGradient,
                     padding: "12px 24px",
-                    fontWeight: "800",
                     minWidth: "170px",
-                    boxShadow: "0 16px 34px rgba(192,1,42,.24)",
                   }}
                 >
                   {salvando ? (

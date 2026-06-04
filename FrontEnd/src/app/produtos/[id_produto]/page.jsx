@@ -10,6 +10,48 @@ const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").rep
 const PRODUTOS_URL = `${API_URL}/api/produtos`;
 const IMAGEM_PADRAO_PRODUTO = "/logo.png";
 
+const pageBackground = `
+  radial-gradient(circle at top left, rgba(255,136,0,.10), transparent 25%),
+  radial-gradient(circle at bottom right, rgba(192,1,42,.16), transparent 30%),
+  linear-gradient(145deg,#08080a,#101014,#160d12)
+`;
+
+const surfaceGradient = `
+  linear-gradient(
+    145deg,
+    rgba(17,17,17,.96),
+    rgba(25,18,22,.96)
+  )
+`;
+
+const softSurfaceGradient = `
+  linear-gradient(
+    145deg,
+    rgba(255,255,255,.035),
+    rgba(255,255,255,.015)
+  )
+`;
+
+const panelStyle = {
+  background: surfaceGradient,
+  borderRadius: "34px",
+  border: "1px solid rgba(255,255,255,.10)",
+  boxShadow: "none",
+};
+
+const innerPanelStyle = {
+  background: softSurfaceGradient,
+  border: "1px solid rgba(255,255,255,.06)",
+  boxShadow: "none",
+};
+
+const buttonGradient = {
+  background: "linear-gradient(90deg,#940533,#c0012a,#ff8800)",
+  color: "white",
+  border: "none",
+  boxShadow: "none",
+};
+
 function obterToken() {
   if (typeof window === "undefined") return "";
 
@@ -112,8 +154,8 @@ function getToastStyle(tipo) {
     return {
       icon: "bi-check-circle-fill",
       cor: "#5cff95",
-      fundo: "rgba(32, 130, 75, .18)",
-      borda: "rgba(92, 255, 149, .35)",
+      fundo: "rgba(32,130,75,.16)",
+      borda: "rgba(92,255,149,.28)",
     };
   }
 
@@ -121,16 +163,16 @@ function getToastStyle(tipo) {
     return {
       icon: "bi-exclamation-triangle-fill",
       cor: "#ffcf40",
-      fundo: "rgba(255, 179, 0, .16)",
-      borda: "rgba(255, 207, 64, .35)",
+      fundo: "rgba(255,179,0,.13)",
+      borda: "rgba(255,207,64,.28)",
     };
   }
 
   return {
     icon: "bi-x-circle-fill",
     cor: "#ff5a5a",
-    fundo: "rgba(255, 90, 90, .16)",
-    borda: "rgba(255, 90, 90, .35)",
+    fundo: "rgba(255,90,90,.14)",
+    borda: "rgba(255,90,90,.28)",
   };
 }
 
@@ -139,7 +181,6 @@ export default function Compra() {
   const router = useRouter();
 
   const id_produto = params?.id_produto;
-
   const toastTimerRef = useRef(null);
 
   const [produto, setProduto] = useState(null);
@@ -311,8 +352,7 @@ export default function Compra() {
         className="d-flex justify-content-center align-items-center text-white"
         style={{
           minHeight: "100vh",
-          background:
-            "linear-gradient(145deg, #0c0d10 0%, #121317 40%, #1d1218 100%)",
+          background: pageBackground,
         }}
       >
         <div className="text-center">
@@ -330,17 +370,14 @@ export default function Compra() {
         className="d-flex justify-content-center align-items-center text-white p-4"
         style={{
           minHeight: "100vh",
-          background:
-            "linear-gradient(145deg, #0c0d10 0%, #121317 40%, #1d1218 100%)",
+          background: pageBackground,
         }}
       >
         <div
           className="text-center"
           style={{
             width: "min(520px, 100%)",
-            background: "rgba(22,23,27,.96)",
-            border: "1px solid rgba(255,215,120,.12)",
-            borderRadius: "28px",
+            ...panelStyle,
             padding: "36px",
           }}
         >
@@ -361,9 +398,7 @@ export default function Compra() {
             onClick={() => router.push("/produtos")}
             className="btn mt-3"
             style={{
-              background: "linear-gradient(90deg,#ffcf40,#ff9d00,#c0012a)",
-              color: "white",
-              border: "none",
+              ...buttonGradient,
               borderRadius: "16px",
               padding: "12px 22px",
               fontWeight: "800",
@@ -382,17 +417,7 @@ export default function Compra() {
     <main
       style={{
         minHeight: "100vh",
-        background: `
-          radial-gradient(circle at top left, rgba(255,179,0,.07), transparent 28%),
-          radial-gradient(circle at bottom right, rgba(192,1,42,.13), transparent 26%),
-          linear-gradient(
-            145deg,
-            #0c0d10 0%,
-            #121317 32%,
-            #181418 58%,
-            #251018 100%
-          )
-        `,
+        background: pageBackground,
         color: "white",
         overflow: "hidden",
       }}
@@ -408,15 +433,9 @@ export default function Compra() {
             right: "24px",
             zIndex: 9999,
             width: "min(380px, calc(100vw - 32px))",
-            background: `
-              linear-gradient(
-                145deg,
-                rgba(18,19,24,.96),
-                rgba(35,22,28,.96)
-              )
-            `,
+            background: surfaceGradient,
             border: `1px solid ${toastVisual.borda}`,
-            boxShadow: "0 24px 70px rgba(0,0,0,.45)",
+            boxShadow: "none",
             borderRadius: "22px",
             padding: "16px",
             backdropFilter: "blur(16px)",
@@ -482,6 +501,7 @@ export default function Compra() {
         style={{
           borderBottom: "1px solid rgba(255,255,255,.05)",
           backdropFilter: "blur(12px)",
+          background: "rgba(0,0,0,.12)",
         }}
       >
         <div className="container-fluid">
@@ -535,18 +555,8 @@ export default function Compra() {
             <div
               className="h-100"
               style={{
-                background: `
-                  linear-gradient(
-                    145deg,
-                    rgba(22,23,27,.96),
-                    rgba(28,22,25,.96)
-                  )
-                `,
-                borderRadius: "34px",
+                ...panelStyle,
                 padding: "28px",
-                border: "1px solid rgba(255,215,120,.10)",
-                boxShadow:
-                  "0 28px 70px rgba(221,25,25,.18), 0 0 28px rgba(235,194,13,.06)",
               }}
             >
               <div
@@ -554,10 +564,10 @@ export default function Compra() {
                 style={{
                   minHeight: "560px",
                   borderRadius: "28px",
-                  background:
-                    "radial-gradient(circle at center, rgba(255,179,0,.08), rgba(255,255,255,.025), transparent 70%)",
+                  background: softSurfaceGradient,
                   border: "1px solid rgba(255,255,255,.06)",
                   overflow: "hidden",
+                  boxShadow: "none",
                 }}
               >
                 <img
@@ -576,7 +586,7 @@ export default function Compra() {
                     height: "520px",
                     objectFit: "contain",
                     padding: "32px",
-                    filter: "drop-shadow(0 30px 45px rgba(0,0,0,.6))",
+                    filter: "none",
                   }}
                 />
               </div>
@@ -603,8 +613,7 @@ export default function Compra() {
                     <div
                       className="h-100"
                       style={{
-                        background: "rgba(255,255,255,.035)",
-                        border: "1px solid rgba(255,255,255,.06)",
+                        ...innerPanelStyle,
                         borderRadius: "20px",
                         padding: "18px",
                       }}
@@ -647,18 +656,8 @@ export default function Compra() {
             <div
               className="h-100"
               style={{
-                background: `
-                  linear-gradient(
-                    145deg,
-                    rgba(22,23,27,.98),
-                    rgba(34,22,28,.98)
-                  )
-                `,
-                borderRadius: "34px",
+                ...panelStyle,
                 padding: "36px",
-                border: "1px solid rgba(255,215,120,.10)",
-                boxShadow:
-                  "0 28px 70px rgba(221,25,25,.16), 0 0 28px rgba(235,194,13,.05)",
               }}
             >
               <div className="d-flex justify-content-between align-items-start gap-3 flex-wrap">
@@ -717,9 +716,7 @@ export default function Compra() {
               <div
                 className="mt-4"
                 style={{
-                  background:
-                    "radial-gradient(circle at top left, rgba(255,207,64,.08), transparent 38%), rgba(255,255,255,.035)",
-                  border: "1px solid rgba(255,255,255,.06)",
+                  ...innerPanelStyle,
                   borderRadius: "26px",
                   padding: "24px",
                 }}
@@ -762,8 +759,7 @@ export default function Compra() {
               <div
                 className="mt-4"
                 style={{
-                  background: "rgba(255,255,255,.03)",
-                  border: "1px solid rgba(255,255,255,.06)",
+                  ...innerPanelStyle,
                   borderRadius: "24px",
                   padding: "22px",
                 }}
@@ -803,6 +799,7 @@ export default function Compra() {
                       border: "1px solid rgba(255,255,255,.07)",
                       borderRadius: "18px",
                       overflow: "hidden",
+                      boxShadow: "none",
                     }}
                   >
                     <button
@@ -855,8 +852,7 @@ export default function Compra() {
               <div
                 className="mt-4"
                 style={{
-                  background: "rgba(255,255,255,.025)",
-                  border: "1px solid rgba(255,255,255,.055)",
+                  ...innerPanelStyle,
                   borderRadius: "22px",
                   padding: "18px",
                 }}
@@ -889,19 +885,15 @@ export default function Compra() {
                   onClick={adicionarAoCarrinho}
                   disabled={!estoqueInfo.disponivel}
                   style={{
+                    ...buttonGradient,
                     background: estoqueInfo.disponivel
-                      ? "linear-gradient(90deg,#ffcf40,#ff9d00,#c0012a)"
+                      ? buttonGradient.background
                       : "rgba(255,255,255,.12)",
-                    color: "white",
-                    border: "none",
                     padding: "17px",
                     borderRadius: "18px",
                     fontWeight: "900",
                     fontSize: "1.03rem",
                     letterSpacing: ".3px",
-                    boxShadow: estoqueInfo.disponivel
-                      ? "0 16px 32px rgba(192,1,42,.25)"
-                      : "none",
                     cursor: estoqueInfo.disponivel ? "pointer" : "not-allowed",
                   }}
                 >
@@ -917,6 +909,7 @@ export default function Compra() {
                     borderRadius: "18px",
                     padding: "15px",
                     fontWeight: "800",
+                    boxShadow: "none",
                   }}
                 >
                   Continuar comprando
@@ -942,8 +935,7 @@ export default function Compra() {
                     key={item.texto}
                     className="d-flex align-items-center gap-3"
                     style={{
-                      background: "rgba(255,255,255,.03)",
-                      border: "1px solid rgba(255,255,255,.05)",
+                      ...innerPanelStyle,
                       borderRadius: "16px",
                       padding: "15px 17px",
                       color: "rgba(255,255,255,.72)",
@@ -968,16 +960,9 @@ export default function Compra() {
         <section
           className="mt-4"
           style={{
-            background: `
-              linear-gradient(
-                145deg,
-                rgba(22,23,27,.96),
-                rgba(28,22,25,.96)
-              )
-            `,
-            borderRadius: "30px",
+            ...panelStyle,
             padding: "32px",
-            border: "1px solid rgba(255,215,120,.10)",
+            borderRadius: "30px",
           }}
         >
           <div className="row g-4">
@@ -1026,13 +1011,13 @@ export default function Compra() {
                     key={label}
                     className="d-flex justify-content-between gap-3"
                     style={{
-                      background: "rgba(255,255,255,.03)",
-                      border: "1px solid rgba(255,255,255,.05)",
+                      ...innerPanelStyle,
                       borderRadius: "14px",
                       padding: "13px 15px",
                     }}
                   >
                     <span style={{ color: "rgba(255,255,255,.5)" }}>{label}</span>
+
                     <strong style={{ color: "rgba(255,255,255,.86)" }}>
                       {value}
                     </strong>
