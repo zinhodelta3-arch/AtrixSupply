@@ -285,6 +285,18 @@
 }
 
 /* ==========================================================================
+   CAMADA DO OFFCANVAS ACIMA DO HEADER
+========================================================================== */
+
+.offcanvas-backdrop {
+  z-index: 100000 !important;
+}
+
+.offcanvas.custom-cart-sidebar {
+  z-index: 100010 !important;
+}
+
+/* ==========================================================================
    ABA LATERAL DO CARRINHO
 ========================================================================== */
 
@@ -339,6 +351,19 @@
   border-radius: 10px;
 }
 
+.cart-empty-state {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.cart-empty-state i {
+  color: #ffcf40;
+}
+
+.cart-empty-state p {
+  color: rgba(255, 255, 255, 0.78);
+  font-weight: 600;
+}
+
 .cart-item-card {
   height: 100px;
 
@@ -390,9 +415,9 @@
 }
 
 .cart-item-name {
-  color: white;
+  color: #ffffff;
 
-  font-weight: 700;
+  font-weight: 800;
   font-size: 0.95rem;
 
   white-space: nowrap;
@@ -401,13 +426,15 @@
 }
 
 .cart-item-qty {
-  color: rgba(255, 255, 255, 0.48) !important;
+  color: rgba(255, 207, 64, 0.86) !important;
+  font-weight: 700;
+  margin-top: 3px;
 }
 
 .cart-item-price {
-  color: #ffe082;
+  color: #5cff95;
 
-  font-weight: 800;
+  font-weight: 900;
   font-size: 1.05rem;
 }
 
@@ -455,13 +482,13 @@
 
 .tracking-label {
   letter-spacing: 1px;
-  color: #ffe082 !important;
+  color: rgba(255, 207, 64, 0.88) !important;
 }
 
 .sidebar-total-price {
-  color: #ffe082;
+  color: #5cff95;
 
-  font-weight: 800;
+  font-weight: 900;
   font-size: 1.7rem;
 }
 
@@ -475,7 +502,7 @@
   padding: 14px !important;
   border-radius: 18px !important;
 
-  font-weight: 700 !important;
+  font-weight: 800 !important;
   font-size: 1.05rem !important;
   letter-spacing: 0.5px;
 

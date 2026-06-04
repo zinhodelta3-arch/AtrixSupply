@@ -147,13 +147,27 @@ export default function Header() {
   };
 
   const handleRemoveItem = (idToRemove) => {
-    const novoCarrinho = cartItems.filter((item) => item.id !== idToRemove);
+    const novoCarrinho = cartItems.filter(
+      (item) => String(item.id) !== String(idToRemove)
+    );
 
     setCartItems(novoCarrinho);
     localStorage.setItem("carrinho", JSON.stringify(novoCarrinho));
 
     window.dispatchEvent(new Event("carrinhoAtualizado"));
   };
+
+  const handleCheckout = () => {
+    if (cartItems.length === 0) return;
+
+    setTimeout(() => {
+      router.push("/finalizarpedido");
+    }, 120);
+  };
+
+  const totalItensCarrinho = cartItems.reduce((acc, item) => {
+    return acc + Number(item.qty || 1);
+  }, 0);
 
   const subtotal = cartItems.reduce((acc, item) => {
     const preco = Number(item.price || 0);
@@ -205,9 +219,9 @@ export default function Header() {
                   >
                     <i className="bi bi-cart3"></i>
 
-                    {cartItems.length > 0 && (
+                    {totalItensCarrinho > 0 && (
                       <span className="cart-badge">
-                        {cartItems.length}
+                        {totalItensCarrinho}
                       </span>
                     )}
                   </button>
@@ -331,7 +345,7 @@ export default function Header() {
           <div className="offcanvas-body d-flex flex-column justify-content-between">
             <div className="cart-items-wrapper">
               {cartItems.length === 0 ? (
-                <div className="text-center text-muted mt-5">
+                <div className="cart-empty-state text-center mt-5">
                   <i className="bi bi-bag-x fs-1 mb-3 d-block"></i>
                   <p>Seu carrinho está vazio.</p>
                 </div>
@@ -339,7 +353,13 @@ export default function Header() {
                 cartItems.map((item) => (
                   <div key={item.id} className="cart-item-card d-flex gap-3">
                     <div className="cart-item-img-container">
-                      <img src={item.img} alt={item.name} />
+                      <img
+                        src={item.img || "/logo.png"}
+                        alt={item.name || "Produto"}
+                        onError={(event) => {
+                          event.currentTarget.src = "/logo.png";
+                        }}
+                      />
                     </div>
 
                     <div
@@ -353,7 +373,7 @@ export default function Header() {
                         {item.name}
                       </h6>
 
-                      <span className="cart-item-qty text-muted small">
+                      <span className="cart-item-qty small">
                         Qtd: {item.qty}
                       </span>
 
@@ -372,6 +392,7 @@ export default function Header() {
                       className="btn cart-item-remove-btn p-0 align-self-center"
                       type="button"
                       onClick={() => handleRemoveItem(item.id)}
+                      aria-label="Remover produto do carrinho"
                     >
                       <i className="bi bi-x-lg"></i>
                     </button>
@@ -382,7 +403,7 @@ export default function Header() {
 
             <div className="sidebar-premium-footer">
               <div className="d-flex justify-content-between mb-4 align-items-center mt-3">
-                <span className="text-muted text-uppercase fw-bold small tracking-label">
+                <span className="text-uppercase fw-bold small tracking-label">
                   Subtotal
                 </span>
 
@@ -395,6 +416,8 @@ export default function Header() {
                 className="btn btn-premium-checkout w-100 d-flex align-items-center justify-content-center gap-2"
                 type="button"
                 disabled={cartItems.length === 0}
+                data-bs-dismiss={cartItems.length > 0 ? "offcanvas" : undefined}
+                onClick={handleCheckout}
               >
                 <i className="bi bi-lightning-charge-fill" />
                 Finalizar Compra
