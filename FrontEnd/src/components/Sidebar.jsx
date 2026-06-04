@@ -126,8 +126,8 @@ export default function Sidebar() {
           </Link>
         </li>
         <li className="nav-item mb-2">
-          <Link href="/dashboard/fornecedores" className="nav-link d-flex align-items-center px-3 py-2 text-decoration-none" style={linkStyle(isActive("/dashboard/fornecedores"))}>
-            <i className="bi bi-truck me-3" style={iconStyle(isActive("/dashboard/fornecedores"))} /> Fornecedores
+          <Link href="/dashboard/logistica" className="nav-link d-flex align-items-center px-3 py-2 text-decoration-none" style={linkStyle(isActive("/dashboard/fornecedores"))}>
+            <i className="bi bi-truck me-3" style={iconStyle(isActive("/dashboard/fornecedores"))} /> Logística
           </Link>
         </li>
         <li className="nav-item mb-2">

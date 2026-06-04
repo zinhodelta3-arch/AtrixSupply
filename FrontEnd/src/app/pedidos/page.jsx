@@ -108,6 +108,17 @@ function obterIdUsuario(usuario) {
   );
 }
 
+function obterTipoUsuario(usuario) {
+  return String(
+    usuario?.tipo ||
+      usuario?.dados?.tipo ||
+      usuario?.usuario?.tipo ||
+      ""
+  )
+    .trim()
+    .toLowerCase();
+}
+
 function montarHeaders() {
   const token = obterToken();
 
@@ -248,13 +259,21 @@ export default function Pedidos() {
   async function verificarAcessoECarregarPedidos() {
     try {
       setVerificandoAcesso(true);
+      setCarregando(true);
+      setErroLista("");
 
       const token = obterToken();
       const usuarioLocal = obterUsuarioLocal();
       const idUsuario = obterIdUsuario(usuarioLocal);
+      const tipoUsuario = obterTipoUsuario(usuarioLocal);
 
       if (!token || !idUsuario) {
         router.replace("/login");
+        return;
+      }
+
+      if (tipoUsuario !== "comum") {
+        router.replace("/");
         return;
       }
 
@@ -432,7 +451,7 @@ export default function Pedidos() {
           <div className="spinner-border text-warning mb-3" />
           <h4 className="fw-bold">Verificando acesso...</h4>
           <p className="text-secondary mb-0">
-            Você precisa estar logado para acessar seus pedidos.
+            Apenas usuários comuns podem acessar seus pedidos.
           </p>
         </div>
       </main>
@@ -510,11 +529,7 @@ export default function Pedidos() {
                   </h4>
 
                   <p style={{ color: "#cfcfcf" }}>
-                    {usuario?.tipo === "fornecedor"
-                      ? "Fornecedor"
-                      : usuario?.tipo === "admin" || usuario?.tipo === "administrador"
-                      ? "Administrador"
-                      : "Cliente"}
+                    Cliente
                   </p>
                 </div>
 

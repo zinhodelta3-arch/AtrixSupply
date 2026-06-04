@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation"; 
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -86,7 +86,10 @@ export default function Produtos() {
   const [precoMaximo, setPrecoMaximo] = useState(0);
   const [somenteEstoque, setSomenteEstoque] = useState(false);
 
-  const [loading, setLoading] = useState(true);
+  const [validandoAcesso, setValidandoAcesso] = useState(true);
+  const [acessoPermitido, setAcessoPermitido] = useState(false);
+  const [carregandoProdutos, setCarregandoProdutos] = useState(true);
+
   const [erro, setErro] = useState("");
 
   useEffect(() => {
@@ -96,31 +99,46 @@ export default function Produtos() {
   useEffect(() => {
     try {
       const usuarioStorage = localStorage.getItem("usuario");
-      if (usuarioStorage) {
-        const userParsed = JSON.parse(usuarioStorage);
-        
-        // Verifica se é administrador DEPOIS de pegar os dados
-        if (userParsed.tipo !== 'fornecedor') {
-          router.push('/');
-        } else {
-          setUsuario(userParsed);
-          setLoading(false); // Libera a tela do Dashboard
-        }
-      } else {
-        // Se não tiver usuário no localStorage, manda pro login
-        router.push('/');
+
+      if (!usuarioStorage) {
+        setAcessoPermitido(true);
+        return;
       }
+
+      const usuarioParseado = JSON.parse(usuarioStorage);
+
+      if (!usuarioParseado) {
+        localStorage.removeItem("usuario");
+        setAcessoPermitido(true);
+        return;
+      }
+
+      const tipoUsuario = String(usuarioParseado?.tipo || "")
+        .trim()
+        .toLowerCase();
+
+      if (tipoUsuario !== "comum") {
+        router.replace("/");
+        return;
+      }
+
+      setAcessoPermitido(true);
     } catch (error) {
-      console.error("Erro ao ler dados do usuário:", error);
-      router.push('/');
+      console.error("Erro ao validar acesso do usuário:", error);
+
+      localStorage.removeItem("usuario");
+      setAcessoPermitido(true);
+    } finally {
+      setValidandoAcesso(false);
     }
   }, [router]);
 
-
   useEffect(() => {
+    if (!acessoPermitido) return;
+
     async function carregarProdutos() {
       try {
-        setLoading(true);
+        setCarregandoProdutos(true);
         setErro("");
 
         const response = await fetch(PRODUTOS_URL, {
@@ -149,12 +167,12 @@ export default function Produtos() {
         setErro(error.message || "Não foi possível carregar os produtos.");
         setProdutos([]);
       } finally {
-        setLoading(false);
+        setCarregandoProdutos(false);
       }
     }
 
     carregarProdutos();
-  }, []);
+  }, [acessoPermitido]);
 
   const maiorPrecoDisponivel = useMemo(() => {
     return produtos.reduce((maior, produto) => {
@@ -211,11 +229,33 @@ export default function Produtos() {
     setSomenteEstoque(false);
     setPaginaAtual(1);
   }
-  
-  if (loading) {
+
+  if (validandoAcesso || !acessoPermitido) {
     return (
-      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "100vh", background: "#09090b", color: "#ffb300" }}>
-        Validando acesso...
+      <div
+        className="d-flex flex-column justify-content-center align-items-center text-center px-4"
+        style={{
+          minHeight: "100vh",
+          background: "#09090b",
+          color: "#ffb300",
+        }}
+      >
+        <div className="spinner-border text-warning mb-3" role="status" />
+
+        <h3 className="fw-bold">
+          {validandoAcesso ? "Validando acesso..." : "Acesso negado"}
+        </h3>
+
+        <p
+          className="mb-0"
+          style={{
+            color: "rgba(255,255,255,.65)",
+          }}
+        >
+          {validandoAcesso
+            ? "Estamos verificando seu tipo de usuário."
+            : "Apenas usuários comuns ou visitantes podem acessar esta página."}
+        </p>
       </div>
     );
   }
@@ -329,6 +369,7 @@ export default function Produtos() {
                 <div className="mb-4">
                   <label className="form-label text-white d-flex justify-content-between">
                     <span>Faixa de preço</span>
+
                     <span style={{ color: "#ffb300", fontWeight: "700" }}>
                       até{" "}
                       {Number(precoMaximo || 0).toLocaleString("pt-BR", {
@@ -409,7 +450,7 @@ export default function Produtos() {
             </div>
 
             <div className="col-lg-9">
-              {loading && (
+              {carregandoProdutos && (
                 <div
                   className="text-center py-5 rounded-4"
                   style={{
@@ -440,7 +481,7 @@ export default function Produtos() {
                 </div>
               )}
 
-              {!loading && !erro && produtosFiltrados.length === 0 && (
+              {!carregandoProdutos && !erro && produtosFiltrados.length === 0 && (
                 <div
                   className="text-center py-5 rounded-4"
                   style={{
@@ -468,7 +509,7 @@ export default function Produtos() {
               )}
 
               <div className="row g-4">
-                {!loading &&
+                {!carregandoProdutos &&
                   !erro &&
                   produtosAtuais.map((produto) => (
                     <CardProduto
@@ -478,7 +519,7 @@ export default function Produtos() {
                   ))}
               </div>
 
-              {!loading && !erro && produtosFiltrados.length > 0 && (
+              {!carregandoProdutos && !erro && produtosFiltrados.length > 0 && (
                 <nav className="mt-5">
                   <ul className="pagination justify-content-center flex-wrap gap-2">
                     <li className={`page-item ${paginaAtual === 1 ? "disabled" : ""}`}>

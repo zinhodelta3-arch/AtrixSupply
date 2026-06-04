@@ -6,6 +6,41 @@ import { useEffect, useState } from "react";
 
 const ALERT_PRODUTO_ADICIONADO = "Produto adicionado com sucesso!";
 
+function normalizarTipoUsuario(usuario) {
+  if (!usuario) return "";
+
+  if (typeof usuario === "string") {
+    return usuario.trim().toLowerCase();
+  }
+
+  return String(
+    usuario?.tipo ||
+      usuario?.tipo_user ||
+      usuario?.role ||
+      usuario?.nivel ||
+      usuario?.dados?.tipo ||
+      usuario?.dados?.tipo_user ||
+      usuario?.usuario?.tipo ||
+      ""
+  )
+    .trim()
+    .toLowerCase();
+}
+
+function obterNomeUsuario(usuario) {
+  if (!usuario || typeof usuario === "string") return "";
+
+  return (
+    usuario?.nome_user ||
+    usuario?.nome ||
+    usuario?.name ||
+    usuario?.dados?.nome_user ||
+    usuario?.dados?.nome ||
+    usuario?.usuario?.nome_user ||
+    ""
+  );
+}
+
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
@@ -13,6 +48,18 @@ export default function Header() {
   const [loading, setLoading] = useState(true);
   const [usuario, setUsuario] = useState(null);
   const [cartItems, setCartItems] = useState([]);
+
+  const tipoUsuario = normalizarTipoUsuario(usuario);
+  const nomeUsuario = obterNomeUsuario(usuario);
+
+  const usuarioLogado = Boolean(usuario);
+  const usuarioFornecedor = tipoUsuario === "fornecedor" || tipoUsuario === "supplier";
+  const usuarioComum = tipoUsuario === "comum";
+  const usuarioSemTipo = usuarioLogado && !tipoUsuario;
+
+  const exibirLinksCliente = !usuarioLogado || usuarioComum || usuarioSemTipo;
+  const exibirCarrinho = usuarioLogado && (usuarioComum || usuarioSemTipo);
+  const exibirOpcoesFornecedor = usuarioLogado && usuarioFornecedor;
 
   const atualizarCarrinhoDoStorage = () => {
     try {
@@ -36,7 +83,7 @@ export default function Header() {
 
       if (usuarioStorage) {
         const userParsed = JSON.parse(usuarioStorage);
-        setUsuario(userParsed);
+        setUsuario(userParsed || null);
       } else {
         setUsuario(null);
       }
@@ -46,6 +93,11 @@ export default function Header() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const atualizarDadosLocais = () => {
+    carregarUsuarioDoStorage();
+    atualizarCarrinhoDoStorage();
   };
 
   useEffect(() => {
@@ -65,15 +117,14 @@ export default function Header() {
 
     window.alert = alertFiltrado;
 
-    carregarUsuarioDoStorage();
-    atualizarCarrinhoDoStorage();
+    atualizarDadosLocais();
 
     window.addEventListener("carrinhoAtualizado", atualizarCarrinhoDoStorage);
-    window.addEventListener("storage", atualizarCarrinhoDoStorage);
+    window.addEventListener("storage", atualizarDadosLocais);
 
     return () => {
       window.removeEventListener("carrinhoAtualizado", atualizarCarrinhoDoStorage);
-      window.removeEventListener("storage", atualizarCarrinhoDoStorage);
+      window.removeEventListener("storage", atualizarDadosLocais);
 
       if (window.alert === alertFiltrado) {
         window.alert = alertOriginal;
@@ -90,6 +141,8 @@ export default function Header() {
     localStorage.removeItem("jwt");
 
     setUsuario(null);
+    setCartItems([]);
+
     router.push("/login");
   };
 
@@ -135,32 +188,30 @@ export default function Header() {
                   className="photoLogo"
                   alt="Logo Atrix Supply"
                 />
+
                 <span>Atrix Supply</span>
               </Link>
             </div>
 
             <div className="d-flex align-items-center gap-3 order-lg-3">
-              {usuario ? (
-                <>
-                  <div className="cart-wrapper">
-                    <button
-                      className="cart-btn"
-                      type="button"
-                      data-bs-toggle="offcanvas"
-                      data-bs-target="#offcanvasCarrinho"
-                      aria-controls="offcanvasCarrinho"
-                    >
-                      <i className="bi bi-cart3"></i>
+              {exibirCarrinho && (
+                <div className="cart-wrapper">
+                  <button
+                    className="cart-btn"
+                    type="button"
+                    data-bs-toggle="offcanvas"
+                    data-bs-target="#offcanvasCarrinho"
+                    aria-controls="offcanvasCarrinho"
+                  >
+                    <i className="bi bi-cart3"></i>
 
-                      {cartItems.length > 0 && (
-                        <span className="cart-badge">{cartItems.length}</span>
-                      )}
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                </>
+                    {cartItems.length > 0 && (
+                      <span className="cart-badge">
+                        {cartItems.length}
+                      </span>
+                    )}
+                  </button>
+                </div>
               )}
 
               <div className="profile-wrapper">
@@ -169,14 +220,14 @@ export default function Header() {
                 </div>
 
                 <div className="profile-dropdown">
-                  {!usuario ? (
+                  {!usuarioLogado ? (
                     <>
                       <Link href="/login">Entrar</Link>
                       <Link href="/cadastro">Cadastrar</Link>
                     </>
                   ) : (
                     <>
-                      {usuario.nome_user && (
+                      {nomeUsuario && (
                         <span
                           className="dropdown-user-name"
                           style={{
@@ -186,11 +237,12 @@ export default function Header() {
                             borderBottom: "1px solid rgba(255,255,255,0.1)",
                           }}
                         >
-                          Olá, {usuario.nome_user}
+                          Olá, {nomeUsuario}
                         </span>
                       )}
 
                       <Link href="/perfil">Perfil</Link>
+
                       <Link onClick={handleLogout} href="#">
                         Logout
                       </Link>
@@ -214,33 +266,41 @@ export default function Header() {
 
             <div className="collapse navbar-collapse order-lg-2" id="navbarNav">
               <ul className="navbar-nav navbar-center gap-lg-4">
-                <li className="nav-item">
-                  <Link className="nav-link" href="/produtos">
-                    Produtos
-                  </Link>
-                </li>
-
-                <li className="nav-item">
-                  <Link className="nav-link" href="/pedidos">
-                    Pedidos
-                  </Link>
-                </li>
-
-                <li className="nav-item">
-                  <Link className="nav-link" href="/encomendas">
-                    Encomendas
-                  </Link>
-                </li>
-                {usuario && usuario.tipo === 'fornecedor' ? (
+                {exibirLinksCliente && (
                   <>
+                    <li className="nav-item">
+                      <Link className="nav-link" href="/produtos">
+                        Produtos
+                      </Link>
+                    </li>
+
+                    <li className="nav-item">
+                      <Link className="nav-link" href="/pedidos">
+                        Pedidos
+                      </Link>
+                    </li>
+
+                    <li className="nav-item">
+                      <Link className="nav-link" href="/encomendas">
+                        Encomendas
+                      </Link>
+                    </li>
+                  </>
+                )}
+
+                {exibirOpcoesFornecedor && (
+                  <>
+                    <li className="nav-item">
+                      <Link className="nav-link" href="/encomendasrecebe">
+                        Encomendas
+                      </Link>
+                    </li>
+
                     <li className="nav-item">
                       <Link className="nav-link" href="/logistica">
                         Logística
                       </Link>
                     </li>
-                  </>
-                ) : (
-                  <>
                   </>
                 )}
               </ul>
@@ -249,98 +309,100 @@ export default function Header() {
         </div>
       </header>
 
-      <div
-        className="offcanvas offcanvas-end custom-cart-sidebar"
-        tabIndex="-1"
-        id="offcanvasCarrinho"
-      >
-        <div className="offcanvas-header sidebar-premium-header">
-          <h5 className="offcanvas-title sidebar-premium-title">
-            <i className="bi bi-cart3 me-2"></i>
-            Seu Carrinho
-          </h5>
-
-          <button
-            type="button"
-            className="btn-close btn-close-white shadow-none"
-            data-bs-dismiss="offcanvas"
-          ></button>
-        </div>
-
-        <div className="offcanvas-body d-flex flex-column justify-content-between">
-          <div className="cart-items-wrapper">
-            {cartItems.length === 0 ? (
-              <div className="text-center text-muted mt-5">
-                <i className="bi bi-bag-x fs-1 mb-3 d-block"></i>
-                <p>Seu carrinho está vazio.</p>
-              </div>
-            ) : (
-              cartItems.map((item) => (
-                <div key={item.id} className="cart-item-card d-flex gap-3">
-                  <div className="cart-item-img-container">
-                    <img src={item.img} alt={item.name} />
-                  </div>
-
-                  <div
-                    className="d-flex flex-column justify-content-center flex-grow-1"
-                    style={{ minWidth: 0 }}
-                  >
-                    <h6
-                      className="cart-item-name m-0 text-truncate"
-                      title={item.name}
-                    >
-                      {item.name}
-                    </h6>
-
-                    <span className="cart-item-qty text-muted small">
-                      Qtd: {item.qty}
-                    </span>
-
-                    <span className="cart-item-price mt-1">
-                      {(Number(item.price || 0) * Number(item.qty || 1)).toLocaleString(
-                        "pt-BR",
-                        {
-                          style: "currency",
-                          currency: "BRL",
-                        }
-                      )}
-                    </span>
-                  </div>
-
-                  <button
-                    className="btn cart-item-remove-btn p-0 align-self-center"
-                    type="button"
-                    onClick={() => handleRemoveItem(item.id)}
-                  >
-                    <i className="bi bi-x-lg"></i>
-                  </button>
-                </div>
-              ))
-            )}
-          </div>
-
-          <div className="sidebar-premium-footer">
-            <div className="d-flex justify-content-between mb-4 align-items-center mt-3">
-              <span className="text-muted text-uppercase fw-bold small tracking-label">
-                Subtotal
-              </span>
-
-              <span className="sidebar-total-price">
-                {subtotalFormatado}
-              </span>
-            </div>
+      {exibirCarrinho && (
+        <div
+          className="offcanvas offcanvas-end custom-cart-sidebar"
+          tabIndex="-1"
+          id="offcanvasCarrinho"
+        >
+          <div className="offcanvas-header sidebar-premium-header">
+            <h5 className="offcanvas-title sidebar-premium-title">
+              <i className="bi bi-cart3 me-2"></i>
+              Seu Carrinho
+            </h5>
 
             <button
-              className="btn btn-premium-checkout w-100 d-flex align-items-center justify-content-center gap-2"
               type="button"
-              disabled={cartItems.length === 0}
-            >
-              <i className="bi bi-lightning-charge-fill" />
-              Finalizar Compra
-            </button>
+              className="btn-close btn-close-white shadow-none"
+              data-bs-dismiss="offcanvas"
+            ></button>
+          </div>
+
+          <div className="offcanvas-body d-flex flex-column justify-content-between">
+            <div className="cart-items-wrapper">
+              {cartItems.length === 0 ? (
+                <div className="text-center text-muted mt-5">
+                  <i className="bi bi-bag-x fs-1 mb-3 d-block"></i>
+                  <p>Seu carrinho está vazio.</p>
+                </div>
+              ) : (
+                cartItems.map((item) => (
+                  <div key={item.id} className="cart-item-card d-flex gap-3">
+                    <div className="cart-item-img-container">
+                      <img src={item.img} alt={item.name} />
+                    </div>
+
+                    <div
+                      className="d-flex flex-column justify-content-center flex-grow-1"
+                      style={{ minWidth: 0 }}
+                    >
+                      <h6
+                        className="cart-item-name m-0 text-truncate"
+                        title={item.name}
+                      >
+                        {item.name}
+                      </h6>
+
+                      <span className="cart-item-qty text-muted small">
+                        Qtd: {item.qty}
+                      </span>
+
+                      <span className="cart-item-price mt-1">
+                        {(Number(item.price || 0) * Number(item.qty || 1)).toLocaleString(
+                          "pt-BR",
+                          {
+                            style: "currency",
+                            currency: "BRL",
+                          }
+                        )}
+                      </span>
+                    </div>
+
+                    <button
+                      className="btn cart-item-remove-btn p-0 align-self-center"
+                      type="button"
+                      onClick={() => handleRemoveItem(item.id)}
+                    >
+                      <i className="bi bi-x-lg"></i>
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="sidebar-premium-footer">
+              <div className="d-flex justify-content-between mb-4 align-items-center mt-3">
+                <span className="text-muted text-uppercase fw-bold small tracking-label">
+                  Subtotal
+                </span>
+
+                <span className="sidebar-total-price">
+                  {subtotalFormatado}
+                </span>
+              </div>
+
+              <button
+                className="btn btn-premium-checkout w-100 d-flex align-items-center justify-content-center gap-2"
+                type="button"
+                disabled={cartItems.length === 0}
+              >
+                <i className="bi bi-lightning-charge-fill" />
+                Finalizar Compra
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </>
   );
 }

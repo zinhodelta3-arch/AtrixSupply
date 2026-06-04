@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import "./page.css";
 
@@ -131,19 +132,21 @@ export default function Home() {
                 </p>
 
                 <div className="d-grid gap-2 d-md-flex justify-content-md-start">
-                  <button
+                  <Link
                     type="button"
-                    className="btn btn-primary btn-lg px-4 me-md-2 btn-custom"
+                    className="btn btn-outline-secondary btn-lg px-4 btn-custom"
+                    href="/encomendas"
                   >
-                    Orçamento
-                  </button>
+                    Confira agora!
+                  </Link>
 
-                  <button
+                  <Link
                     type="button"
                     className="btn btn-outline-secondary btn-lg px-4 btn-sec"
+                    href="/produtos"
                   >
                     Categorias
-                  </button>
+                  </Link>
                 </div>
               </div>
 

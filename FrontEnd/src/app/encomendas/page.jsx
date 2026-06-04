@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
@@ -85,14 +86,14 @@ function obterTipoUsuario(usuario) {
   return String(
     usuario?.tipo ||
       usuario?.tipo_user ||
-      usuario?.cargo ||
       usuario?.role ||
       usuario?.nivel ||
       usuario?.dados?.tipo ||
       usuario?.dados?.tipo_user ||
-      usuario?.dados?.cargo ||
       usuario?.dados?.role ||
       usuario?.dados?.nivel ||
+      usuario?.usuario?.tipo ||
+      usuario?.usuario?.tipo_user ||
       ""
   )
     .toLowerCase()
@@ -109,6 +110,10 @@ function obterIdUsuario(usuario) {
     usuario?.dados?.id_usuario ||
     usuario?.dados?.id ||
     usuario?.dados?.userId ||
+    usuario?.usuario?.id_user ||
+    usuario?.usuario?.id_usuario ||
+    usuario?.usuario?.id ||
+    usuario?.usuario?.userId ||
     null
   );
 }
@@ -231,25 +236,35 @@ export default function Encomendas() {
   }, []);
 
   useEffect(() => {
-    const usuario = obterUsuarioLogado();
-    const tipoUsuario = obterTipoUsuario(usuario);
+    try {
+      setValidandoAcesso(true);
 
-    if (!usuario) {
+      const token = obterToken();
+      const usuario = obterUsuarioLogado();
+      const tipoUsuario = obterTipoUsuario(usuario);
+      const idUsuario = obterIdUsuario(usuario);
+
+      if (!token || !usuario || !idUsuario) {
+        router.replace("/login");
+        return;
+      }
+
+      if (tipoUsuario !== "comum") {
+        router.replace("/");
+        return;
+      }
+
+      setUsuarioLogado(usuario);
+      setValidandoAcesso(false);
+    } catch (error) {
+      console.error("Erro ao validar acesso:", error);
+      localStorage.removeItem("usuario");
       router.replace("/login");
-      return;
     }
-
-    if (tipoUsuario === "fornecedor" || tipoUsuario === "supplier") {
-      router.replace("/encomendasrecebe");
-      return;
-    }
-
-    setUsuarioLogado(usuario);
-    setValidandoAcesso(false);
   }, [router]);
 
   useEffect(() => {
-    if (validandoAcesso) return;
+    if (validandoAcesso || !usuarioLogado) return;
 
     const controller = new AbortController();
 
@@ -350,7 +365,7 @@ export default function Encomendas() {
     };
   }, [encomendas]);
 
-  if (validandoAcesso) {
+  if (validandoAcesso || !usuarioLogado) {
     return (
       <main
         className="d-flex justify-content-center align-items-center text-white"
@@ -361,9 +376,13 @@ export default function Encomendas() {
       >
         <div className="text-center">
           <div className="spinner-border text-warning mb-3" />
-          <h4 className="fw-bold">Verificando acesso...</h4>
+
+          <h4 className="fw-bold">
+            Verificando acesso...
+          </h4>
+
           <p className="text-secondary mb-0">
-            Direcionando para a página correta.
+            Apenas usuários comuns podem acessar esta página.
           </p>
         </div>
       </main>
@@ -512,6 +531,7 @@ export default function Encomendas() {
                   }}
                 >
                   <div className="spinner-border text-warning mb-3" />
+
                   <h4 className="fw-bold">
                     Carregando encomendas...
                   </h4>

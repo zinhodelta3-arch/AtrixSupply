@@ -56,7 +56,7 @@ export default function Usuarios() {
               letterSpacing: "-1px",
             }}
           >
-            Fornecedores
+            Logística
           </h1>
 
           <p
@@ -66,7 +66,7 @@ export default function Usuarios() {
               fontSize: ".95rem",
             }}
           >
-            Gerenciamento de fornecedores da plataforma
+            Gerenciamento de logísticas da plataforma
           </p>
         </div>
       </div>
@@ -90,7 +90,7 @@ export default function Usuarios() {
                 letterSpacing: "-0.5px",
               }}
             >
-              Lista de fornecedores
+              Lista de logísticas
             </h4>
 
             <p
@@ -100,7 +100,7 @@ export default function Usuarios() {
                 fontSize: ".9rem",
               }}
             >
-              Controle e gerenciamento dos fornecedores
+              Controle e gerenciamento dos logísticas
             </p>
           </div>
 
