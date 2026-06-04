@@ -65,6 +65,57 @@ const innerCardStyle = {
   boxShadow: "none",
 };
 
+const metricCardStyle = (cor, ativo) => ({
+  background: ativo
+    ? `
+      linear-gradient(
+        145deg,
+        rgba(22,22,26,.98),
+        rgba(35,20,25,.98)
+      )
+    `
+    : surfaceGradient,
+  border: ativo ? `1px solid ${cor}66` : "1px solid rgba(255,255,255,.08)",
+  borderRadius: "24px",
+  boxShadow: ativo
+    ? `0 18px 42px rgba(0,0,0,.26), 0 0 0 1px ${cor}22`
+    : "none",
+  transform: ativo ? "translateY(-5px)" : "translateY(0)",
+  transition:
+    "transform .22s ease, border-color .22s ease, background .22s ease, box-shadow .22s ease",
+  cursor: "default",
+});
+
+const metricIconStyle = (cor, ativo) => ({
+  width: "58px",
+  height: "58px",
+  borderRadius: "18px",
+  background: ativo ? `${cor}24` : `${cor}18`,
+  border: ativo ? `1px solid ${cor}55` : `1px solid ${cor}33`,
+  color: cor,
+  flexShrink: 0,
+  transform: ativo ? "scale(1.07) rotate(-3deg)" : "scale(1)",
+  transition: "transform .22s ease, background .22s ease, border-color .22s ease",
+});
+
+const statusCardStyle = (cor, ativo) => ({
+  ...innerCardStyle,
+  padding: "15px",
+  border: ativo ? `1px solid ${cor}55` : innerCardStyle.border,
+  background: ativo
+    ? `
+      linear-gradient(
+        145deg,
+        rgba(255,255,255,.055),
+        rgba(255,255,255,.025)
+      )
+    `
+    : innerCardStyle.background,
+  transform: ativo ? "translateX(4px)" : "translateX(0)",
+  transition:
+    "transform .2s ease, border-color .2s ease, background .2s ease",
+});
+
 const buttonGradient = {
   background: "linear-gradient(90deg,#940533,#c0012a,#ff8800)",
   color: "white",
@@ -418,6 +469,9 @@ export default function Dashboard() {
   const [pedidos, setPedidos] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
   const [produtos, setProdutos] = useState([]);
+
+  const [cardHoverAtivo, setCardHoverAtivo] = useState(null);
+  const [statusHoverAtivo, setStatusHoverAtivo] = useState(null);
 
   useEffect(() => {
     carregarDashboard();
@@ -790,65 +844,73 @@ export default function Dashboard() {
       )}
 
       <div className="row g-4 mb-4">
-        {metricasCards.map((card) => (
-          <div className="col-12 col-md-6 col-xl-3" key={card.titulo}>
-            <div className="p-4 h-100" style={cardStyle}>
-              <div className="d-flex justify-content-between align-items-start gap-3">
-                <div style={{ minWidth: 0 }}>
-                  <p
-                    className="mb-2"
-                    style={{
-                      color: "rgba(255,255,255,.58)",
-                      fontSize: ".92rem",
-                    }}
-                  >
-                    {card.titulo}
-                  </p>
+        {metricasCards.map((card) => {
+          const ativo = cardHoverAtivo === card.titulo;
 
-                  <h2
-                    className="fw-bold mb-2"
-                    style={{
-                      color: "#ffffff",
-                      letterSpacing: "-1px",
-                      fontSize: "1.8rem",
-                    }}
-                  >
-                    {card.valor}
-                  </h2>
+          return (
+            <div className="col-12 col-md-6 col-xl-3" key={card.titulo}>
+              <div
+                className="p-4 h-100"
+                style={metricCardStyle(card.cor, ativo)}
+                onMouseEnter={() => setCardHoverAtivo(card.titulo)}
+                onMouseLeave={() => setCardHoverAtivo(null)}
+              >
+                <div className="d-flex justify-content-between align-items-start gap-3">
+                  <div style={{ minWidth: 0 }}>
+                    <p
+                      className="mb-2"
+                      style={{
+                        color: ativo
+                          ? "rgba(255,255,255,.74)"
+                          : "rgba(255,255,255,.58)",
+                        fontSize: ".92rem",
+                        transition: "color .22s ease",
+                      }}
+                    >
+                      {card.titulo}
+                    </p>
 
-                  <span
-                    style={{
-                      color: "rgba(255,255,255,.45)",
-                      fontSize: ".84rem",
-                    }}
-                  >
-                    {card.detalhe}
-                  </span>
-                </div>
+                    <h2
+                      className="fw-bold mb-2"
+                      style={{
+                        color: "#ffffff",
+                        letterSpacing: "-1px",
+                        fontSize: "1.8rem",
+                      }}
+                    >
+                      {card.valor}
+                    </h2>
 
-                <div
-                  className="d-flex align-items-center justify-content-center"
-                  style={{
-                    width: "58px",
-                    height: "58px",
-                    borderRadius: "18px",
-                    background: `${card.cor}18`,
-                    border: `1px solid ${card.cor}33`,
-                    flexShrink: 0,
-                  }}
-                >
-                  <i
-                    className={`bi ${card.icon}`}
-                    style={{
-                      color: card.cor,
-                      fontSize: "1.4rem",
-                    }}
-                  />
+                    <span
+                      style={{
+                        color: ativo
+                          ? "rgba(255,255,255,.62)"
+                          : "rgba(255,255,255,.45)",
+                        fontSize: ".84rem",
+                        transition: "color .22s ease",
+                      }}
+                    >
+                      {card.detalhe}
+                    </span>
+                  </div>
+
+                  <div
+                    className="d-flex align-items-center justify-content-center"
+                    style={metricIconStyle(card.cor, ativo)}
+                  >
+                    <i
+                      className={`bi ${card.icon}`}
+                      style={{
+                        color: card.cor,
+                        fontSize: "1.4rem",
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="row g-4 mb-4">
@@ -920,45 +982,53 @@ export default function Dashboard() {
             </p>
 
             <div className="d-flex flex-column gap-3">
-              {statusCards.map(([status, total]) => (
-                <div
-                  key={status}
-                  className="d-flex justify-content-between align-items-center"
-                  style={{
-                    ...innerCardStyle,
-                    padding: "15px",
-                  }}
-                >
-                  <div className="d-flex align-items-center gap-3">
-                    <span
-                      style={{
-                        width: "12px",
-                        height: "12px",
-                        borderRadius: "999px",
-                        background: getStatusColor(status),
-                        display: "inline-block",
-                      }}
-                    />
+              {statusCards.map(([status, total]) => {
+                const corStatus = getStatusColor(status);
+                const ativo = statusHoverAtivo === status;
 
-                    <span
+                return (
+                  <div
+                    key={status}
+                    className="d-flex justify-content-between align-items-center"
+                    style={statusCardStyle(corStatus, ativo)}
+                    onMouseEnter={() => setStatusHoverAtivo(status)}
+                    onMouseLeave={() => setStatusHoverAtivo(null)}
+                  >
+                    <div className="d-flex align-items-center gap-3">
+                      <span
+                        style={{
+                          width: ativo ? "14px" : "12px",
+                          height: ativo ? "14px" : "12px",
+                          borderRadius: "999px",
+                          background: corStatus,
+                          display: "inline-block",
+                          transition: "width .2s ease, height .2s ease",
+                        }}
+                      />
+
+                      <span
+                        style={{
+                          color: ativo
+                            ? "rgba(255,255,255,.94)"
+                            : "rgba(255,255,255,.84)",
+                          fontWeight: "700",
+                          transition: "color .2s ease",
+                        }}
+                      >
+                        {formatarStatus(status)}
+                      </span>
+                    </div>
+
+                    <strong
                       style={{
-                        color: "rgba(255,255,255,.84)",
-                        fontWeight: "700",
+                        color: "#fff",
                       }}
                     >
-                      {formatarStatus(status)}
-                    </span>
+                      {formatarNumero(total)}
+                    </strong>
                   </div>
-
-                  <strong
-                    style={{
-                      color: "#fff",
-                    }}
-                  >
-                    {formatarNumero(total)}
-                  </strong>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>

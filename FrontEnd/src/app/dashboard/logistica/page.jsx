@@ -1,18 +1,19 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
 const LOGISTICA_ENDPOINT = `${API_URL}/api/logistica`;
 const LIMITE = 10;
 
 const VEICULO_OPTIONS = [
-  { value: "caminhao", label: "Caminhão" },
+  { value: "caminhão", label: "Caminhão" },
   { value: "van", label: "Van" },
   { value: "moto", label: "Moto" },
   { value: "carro", label: "Carro" },
   { value: "bicicleta", label: "Bicicleta" },
-  { value: "nao_selecionado", label: "Não selecionado" },
+  { value: "não selecionado", label: "Não selecionado" },
 ];
 
 const DISPONIBILIDADE_OPTIONS = [
@@ -24,9 +25,149 @@ const DISPONIBILIDADE_OPTIONS = [
 const FORM_INICIAL = {
   id_dono: "",
   nome_logistica: "",
-  veiculo: "nao_selecionado",
+  veiculo: "não selecionado",
   disponibilidade: "disponivel",
   destino: "",
+};
+
+const pageBackground = `
+  radial-gradient(circle at top left, rgba(255,136,0,.10), transparent 25%),
+  radial-gradient(circle at bottom right, rgba(192,1,42,.16), transparent 30%),
+  linear-gradient(145deg,#08080a,#101014,#160d12)
+`;
+
+const surfaceGradient = `
+  linear-gradient(
+    145deg,
+    rgba(17,17,17,.96),
+    rgba(25,18,22,.96)
+  )
+`;
+
+const cardStyle = {
+  background: surfaceGradient,
+  border: "1px solid rgba(255,255,255,.08)",
+  borderRadius: "28px",
+  boxShadow: "none",
+};
+
+const buttonGradient = {
+  background: "linear-gradient(90deg,#940533,#c0012a,#ff8800)",
+  color: "white",
+  border: "none",
+  borderRadius: "16px",
+  fontWeight: "800",
+  boxShadow: "none",
+};
+
+const metricCardStyle = (cor, ativo) => ({
+  background: ativo
+    ? `
+      linear-gradient(
+        145deg,
+        rgba(22,22,26,.98),
+        rgba(35,20,25,.98)
+      )
+    `
+    : surfaceGradient,
+  border: ativo ? `1px solid ${cor}66` : "1px solid rgba(255,255,255,.08)",
+  borderRadius: "28px",
+  boxShadow: ativo
+    ? `0 18px 42px rgba(0,0,0,.26), 0 0 0 1px ${cor}22`
+    : "none",
+  transform: ativo ? "translateY(-5px)" : "translateY(0)",
+  transition:
+    "transform .22s ease, border-color .22s ease, background .22s ease, box-shadow .22s ease",
+  cursor: "default",
+});
+
+const metricIconStyle = (cor, ativo) => ({
+  width: "56px",
+  height: "56px",
+  borderRadius: "18px",
+  background: ativo ? `${cor}24` : `${cor}18`,
+  border: ativo ? `1px solid ${cor}55` : `1px solid ${cor}33`,
+  color: cor,
+  flexShrink: 0,
+  transform: ativo ? "scale(1.07) rotate(-3deg)" : "scale(1)",
+  transition: "transform .22s ease, background .22s ease, border-color .22s ease",
+});
+
+const inputStyle = {
+  background: "rgba(255,255,255,.04)",
+  border: "1px solid rgba(255,255,255,.08)",
+  color: "#ffffff",
+  minHeight: "54px",
+  borderRadius: "16px",
+  boxShadow: "none",
+};
+
+const modalInputStyle = {
+  backgroundColor: "rgba(255,255,255,.04)",
+  border: "1px solid rgba(255,255,255,.10)",
+  color: "#ffffff",
+  minHeight: "56px",
+  borderRadius: "16px",
+  boxShadow: "none",
+};
+
+const labelStyle = {
+  color: "rgba(255,255,255,.72)",
+  fontSize: ".9rem",
+  fontWeight: "700",
+};
+
+const dashboardTableWrapperStyle = {
+  borderRadius: "22px",
+  overflow: "hidden",
+  border: "1px solid rgba(255,255,255,.08)",
+  background: "linear-gradient(145deg, rgba(10,10,14,.98), rgba(22,13,18,.98))",
+};
+
+const dashboardTableStyle = {
+  "--bs-table-bg": "transparent",
+  "--bs-table-color": "#ffffff",
+  "--bs-table-hover-bg": "rgba(255,136,0,.06)",
+  "--bs-table-hover-color": "#ffffff",
+  "--bs-table-border-color": "rgba(255,255,255,.07)",
+  marginBottom: 0,
+};
+
+const dashboardTableHeadCellStyle = {
+  background: "rgba(255,179,0,.08)",
+  color: "#ffcf40",
+  borderColor: "rgba(255,255,255,.08)",
+  padding: "16px 18px",
+  fontWeight: "800",
+  whiteSpace: "nowrap",
+};
+
+const dashboardTableCellStyle = {
+  background: "transparent",
+  color: "#ffffff",
+  borderColor: "rgba(255,255,255,.07)",
+  padding: "16px 18px",
+  verticalAlign: "middle",
+};
+
+const paginationBtnStyle = {
+  background: "rgba(255,255,255,.04)",
+  border: "1px solid rgba(255,255,255,.08)",
+  color: "#ffcf40",
+  borderRadius: "14px",
+  fontWeight: "800",
+  boxShadow: "none",
+};
+
+const modalBackdropStyle = {
+  position: "fixed",
+  inset: 0,
+  zIndex: 100020,
+  background: "rgba(0,0,0,.72)",
+  backdropFilter: "blur(16px)",
+  WebkitBackdropFilter: "blur(16px)",
+  padding: "22px",
+  overflowY: "auto",
 };
 
 function obterToken() {
@@ -61,6 +202,7 @@ function decodificarToken(token) {
 
     const payload = token.split(".")[1];
     const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+
     const json = decodeURIComponent(
       atob(base64)
         .split("")
@@ -74,8 +216,12 @@ function decodificarToken(token) {
   }
 }
 
+function obterUsuarioBase() {
+  return lerUsuarioLocal() || decodificarToken(obterToken());
+}
+
 function obterIdUsuarioLogado() {
-  const usuario = lerUsuarioLocal() || decodificarToken(obterToken());
+  const usuario = obterUsuarioBase();
 
   return (
     usuario?.id_user ||
@@ -84,8 +230,29 @@ function obterIdUsuarioLogado() {
     usuario?.dados?.id_user ||
     usuario?.dados?.id_usuario ||
     usuario?.dados?.id ||
+    usuario?.usuario?.id_user ||
     ""
   );
+}
+
+function normalizarTipoUsuario(usuario) {
+  return String(
+    usuario?.tipo ||
+      usuario?.tipo_user ||
+      usuario?.role ||
+      usuario?.nivel ||
+      usuario?.dados?.tipo ||
+      usuario?.usuario?.tipo ||
+      ""
+  )
+    .trim()
+    .toLowerCase();
+}
+
+function usuarioPodeAcessar(usuario) {
+  const tipo = normalizarTipoUsuario(usuario);
+
+  return tipo === "fornecedor" || tipo === "administrador" || tipo === "admin";
 }
 
 function normalizarValor(valor) {
@@ -100,7 +267,7 @@ function normalizarValor(valor) {
 function getOpcao(options, valor) {
   const normalizado = normalizarValor(valor);
 
-  return options.find((option) => option.value === normalizado);
+  return options.find((option) => normalizarValor(option.value) === normalizado);
 }
 
 function formatarVeiculo(veiculo) {
@@ -159,9 +326,77 @@ async function apiRequest(endpoint, options = {}) {
   return data;
 }
 
+function getStatusStyle(disponibilidade) {
+  const normalizado = normalizarValor(disponibilidade);
+
+  if (normalizado === "disponivel") {
+    return {
+      backgroundColor: "rgba(92,255,149,.10)",
+      border: "1px solid rgba(92,255,149,.22)",
+      color: "#5cff95",
+    };
+  }
+
+  if (normalizado === "ocupado") {
+    return {
+      backgroundColor: "rgba(255,136,0,.10)",
+      border: "1px solid rgba(255,136,0,.22)",
+      color: "#ff8800",
+    };
+  }
+
+  return {
+    backgroundColor: "rgba(255,117,143,.10)",
+    border: "1px solid rgba(255,117,143,.22)",
+    color: "#ff758f",
+  };
+}
+
+function getVeiculoIcone(veiculo) {
+  const normalizado = normalizarValor(veiculo);
+
+  if (normalizado === "caminhao") return "bi-truck";
+  if (normalizado === "van") return "bi-bus-front";
+  if (normalizado === "moto") return "bi-bicycle";
+  if (normalizado === "bicicleta") return "bi-bicycle";
+  if (normalizado === "carro") return "bi-car-front";
+
+  return "bi-box-seam";
+}
+
+function getIdLogistica(logistica) {
+  return logistica?.id_logistica || logistica?.id || "";
+}
+
+function montarPayloadLogistica(logistica, disponibilidadeExtra = null) {
+  const veiculo =
+    getOpcao(VEICULO_OPTIONS, logistica?.veiculo)?.value ||
+    logistica?.veiculo ||
+    "não selecionado";
+
+  const disponibilidade =
+    disponibilidadeExtra ||
+    getOpcao(DISPONIBILIDADE_OPTIONS, logistica?.disponibilidade)?.value ||
+    logistica?.disponibilidade ||
+    "disponivel";
+
+  return {
+    id_dono: Number(logistica?.id_dono || obterIdUsuarioLogado()),
+    nome_logistica: String(logistica?.nome_logistica || "").trim(),
+    veiculo,
+    disponibilidade,
+    destino: String(logistica?.destino || "").trim() || null,
+  };
+}
+
 export default function LogisticaDashboard() {
+  const router = useRouter();
+
+  const [acessoValidado, setAcessoValidado] = useState(false);
+
   const [logisticas, setLogisticas] = useState([]);
   const [pagina, setPagina] = useState(1);
+
   const [paginacao, setPaginacao] = useState({
     pagina: 1,
     limite: LIMITE,
@@ -177,6 +412,7 @@ export default function LogisticaDashboard() {
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [statusAtualizandoId, setStatusAtualizandoId] = useState(null);
+
   const [erroLista, setErroLista] = useState(null);
   const [feedback, setFeedback] = useState(null);
 
@@ -186,7 +422,24 @@ export default function LogisticaDashboard() {
   const [formData, setFormData] = useState(FORM_INICIAL);
   const [formErro, setFormErro] = useState(null);
 
+  const [cardHoverAtivo, setCardHoverAtivo] = useState(null);
+
   const totalPaginas = Math.max(1, Number(paginacao.totalPaginas || 1));
+
+  const paginasVisiveis = useMemo(() => {
+    const total = totalPaginas;
+    const atual = Number(pagina || 1);
+    const tamanho = 5;
+
+    let inicio = Math.max(1, atual - Math.floor(tamanho / 2));
+    let fim = Math.min(total, inicio + tamanho - 1);
+
+    if (fim - inicio + 1 < tamanho) {
+      inicio = Math.max(1, fim - tamanho + 1);
+    }
+
+    return Array.from({ length: fim - inicio + 1 }, (_, index) => inicio + index);
+  }, [pagina, totalPaginas]);
 
   const endpointAtual = useMemo(() => {
     const params = new URLSearchParams({
@@ -210,6 +463,8 @@ export default function LogisticaDashboard() {
   }, [pagina, pesquisaAplicada, filtroVeiculo, filtroDisponibilidade]);
 
   const carregarLogisticas = useCallback(async () => {
+    if (!acessoValidado) return;
+
     try {
       setCarregando(true);
       setErroLista(null);
@@ -218,6 +473,7 @@ export default function LogisticaDashboard() {
       const lista = Array.isArray(data?.dados) ? data.dados : [];
 
       setLogisticas(lista);
+
       setPaginacao({
         pagina: Number(data?.paginacao?.pagina || pagina),
         limite: Number(data?.paginacao?.limite || LIMITE),
@@ -230,7 +486,19 @@ export default function LogisticaDashboard() {
     } finally {
       setCarregando(false);
     }
-  }, [endpointAtual, pagina]);
+  }, [endpointAtual, pagina, acessoValidado]);
+
+  useEffect(() => {
+    const token = obterToken();
+    const usuario = obterUsuarioBase();
+
+    if (!token || !usuarioPodeAcessar(usuario)) {
+      router.replace("/");
+      return;
+    }
+
+    setAcessoValidado(true);
+  }, [router]);
 
   useEffect(() => {
     carregarLogisticas();
@@ -242,40 +510,52 @@ export default function LogisticaDashboard() {
     setFormErro(null);
   }
 
-  function abrirCadastro() {
-    limparFeedbacks();
-    setModoEdicao(false);
-    setLogisticaEditando(null);
-    setFormData({
-      ...FORM_INICIAL,
-      id_dono: obterIdUsuarioLogado() ? String(obterIdUsuarioLogado()) : "",
-    });
-    setModalAberto(true);
-  }
-
-  function abrirEdicao(logistica) {
-    limparFeedbacks();
-    setModoEdicao(true);
-    setLogisticaEditando(logistica);
-    setFormData({
-      id_dono: logistica?.id_dono ? String(logistica.id_dono) : "",
-      nome_logistica: logistica?.nome_logistica || "",
-      veiculo: getOpcao(VEICULO_OPTIONS, logistica?.veiculo)?.value || "nao_selecionado",
-      disponibilidade:
-        getOpcao(DISPONIBILIDADE_OPTIONS, logistica?.disponibilidade)?.value || "disponivel",
-      destino: logistica?.destino || "",
-    });
-    setModalAberto(true);
-  }
-
-  function fecharModal() {
-    if (salvando) return;
-
+  function fecharModalForcado() {
     setModalAberto(false);
     setModoEdicao(false);
     setLogisticaEditando(null);
     setFormData(FORM_INICIAL);
     setFormErro(null);
+  }
+
+  function fecharModal() {
+    if (salvando) return;
+    fecharModalForcado();
+  }
+
+  function abrirCadastro() {
+    limparFeedbacks();
+
+    setModoEdicao(false);
+    setLogisticaEditando(null);
+
+    setFormData({
+      ...FORM_INICIAL,
+      id_dono: obterIdUsuarioLogado() ? String(obterIdUsuarioLogado()) : "",
+    });
+
+    setModalAberto(true);
+  }
+
+  function abrirEdicao(logistica) {
+    limparFeedbacks();
+
+    setModoEdicao(true);
+    setLogisticaEditando(logistica);
+
+    setFormData({
+      id_dono: logistica?.id_dono ? String(logistica.id_dono) : "",
+      nome_logistica: logistica?.nome_logistica || "",
+      veiculo:
+        getOpcao(VEICULO_OPTIONS, logistica?.veiculo)?.value ||
+        "não selecionado",
+      disponibilidade:
+        getOpcao(DISPONIBILIDADE_OPTIONS, logistica?.disponibilidade)?.value ||
+        "disponivel",
+      destino: logistica?.destino || "",
+    });
+
+    setModalAberto(true);
   }
 
   function handleCampo(event) {
@@ -288,12 +568,10 @@ export default function LogisticaDashboard() {
   }
 
   function validarFormulario() {
-    if (!modoEdicao) {
-      const idDono = Number(formData.id_dono);
+    const idDono = Number(formData.id_dono);
 
-      if (!idDono || Number.isNaN(idDono) || idDono <= 0) {
-        return "Informe um ID de dono válido.";
-      }
+    if (!idDono || Number.isNaN(idDono) || idDono <= 0) {
+      return "Informe um ID de dono válido.";
     }
 
     if (!formData.nome_logistica.trim()) {
@@ -306,6 +584,10 @@ export default function LogisticaDashboard() {
 
     if (!DISPONIBILIDADE_OPTIONS.some((option) => option.value === formData.disponibilidade)) {
       return "Selecione uma disponibilidade válida.";
+    }
+
+    if (!formData.destino.trim()) {
+      return "O destino é obrigatório.";
     }
 
     return null;
@@ -325,27 +607,21 @@ export default function LogisticaDashboard() {
     try {
       setSalvando(true);
 
-      const payloadBase = {
+      const payload = {
+        id_dono: Number(formData.id_dono),
         nome_logistica: formData.nome_logistica.trim(),
         veiculo: formData.veiculo,
         disponibilidade: formData.disponibilidade,
-        destino: formData.destino.trim() || null,
+        destino: formData.destino.trim(),
       };
 
       const endpoint = modoEdicao
-        ? `${LOGISTICA_ENDPOINT}/${logisticaEditando.id_logistica}`
+        ? `${LOGISTICA_ENDPOINT}/${getIdLogistica(logisticaEditando)}`
         : LOGISTICA_ENDPOINT;
 
       await apiRequest(endpoint, {
         method: modoEdicao ? "PUT" : "POST",
-        body: JSON.stringify(
-          modoEdicao
-            ? payloadBase
-            : {
-                id_dono: Number(formData.id_dono),
-                ...payloadBase,
-              }
-        ),
+        body: JSON.stringify(payload),
       });
 
       setFeedback(
@@ -354,7 +630,7 @@ export default function LogisticaDashboard() {
           : "Logística criada com sucesso."
       );
 
-      fecharModal();
+      fecharModalForcado();
 
       if (!modoEdicao && pagina !== 1) {
         setPagina(1);
@@ -371,7 +647,7 @@ export default function LogisticaDashboard() {
   async function excluirLogistica(logistica) {
     limparFeedbacks();
 
-    const idLogistica = logistica?.id_logistica;
+    const idLogistica = getIdLogistica(logistica);
 
     if (!idLogistica) {
       setErroLista("ID da logística não encontrado.");
@@ -406,22 +682,35 @@ export default function LogisticaDashboard() {
   }
 
   async function atualizarDisponibilidadeRapida(logistica, novaDisponibilidade) {
-    if (!logistica?.id_logistica || logistica.disponibilidade === novaDisponibilidade) return;
+    const idLogistica = getIdLogistica(logistica);
+    const disponibilidadeAtual =
+      getOpcao(DISPONIBILIDADE_OPTIONS, logistica.disponibilidade)?.value ||
+      logistica.disponibilidade;
+
+    if (!idLogistica || disponibilidadeAtual === novaDisponibilidade) return;
+
+    const logisticasAntes = logisticas;
 
     try {
       limparFeedbacks();
-      setStatusAtualizandoId(logistica.id_logistica);
+      setStatusAtualizandoId(idLogistica);
 
-      await apiRequest(`${LOGISTICA_ENDPOINT}/${logistica.id_logistica}`, {
+      setLogisticas((atuais) =>
+        atuais.map((item) =>
+          getIdLogistica(item) === idLogistica
+            ? { ...item, disponibilidade: novaDisponibilidade }
+            : item
+        )
+      );
+
+      await apiRequest(`${LOGISTICA_ENDPOINT}/${idLogistica}`, {
         method: "PUT",
-        body: JSON.stringify({
-          disponibilidade: novaDisponibilidade,
-        }),
+        body: JSON.stringify(montarPayloadLogistica(logistica, novaDisponibilidade)),
       });
 
       setFeedback("Disponibilidade atualizada com sucesso.");
-      await carregarLogisticas();
     } catch (error) {
+      setLogisticas(logisticasAntes);
       setErroLista(error.message || "Não foi possível atualizar a disponibilidade.");
     } finally {
       setStatusAtualizandoId(null);
@@ -464,16 +753,104 @@ export default function LogisticaDashboard() {
     setPagina(1);
   }
 
+  const metricas = useMemo(() => {
+    const totalPagina = logisticas.length;
+
+    const disponiveis = logisticas.filter(
+      (item) => normalizarValor(item.disponibilidade) === "disponivel"
+    ).length;
+
+    const ocupados = logisticas.filter(
+      (item) => normalizarValor(item.disponibilidade) === "ocupado"
+    ).length;
+
+    const manutencao = logisticas.filter(
+      (item) => normalizarValor(item.disponibilidade) === "manutencao"
+    ).length;
+
+    return {
+      totalSistema: paginacao.total || totalPagina,
+      totalPagina,
+      disponiveis,
+      ocupados,
+      manutencao,
+    };
+  }, [logisticas, paginacao.total]);
+
+  const metricasCards = [
+    {
+      titulo: "Total no sistema",
+      valor: Number(metricas.totalSistema || 0).toLocaleString("pt-BR"),
+      detalhe: "Logísticas cadastradas",
+      icon: "bi-truck",
+      cor: "#ffcf40",
+    },
+    {
+      titulo: "Disponíveis",
+      valor: Number(metricas.disponiveis || 0).toLocaleString("pt-BR"),
+      detalhe: "Veículos prontos para operação",
+      icon: "bi-check-circle-fill",
+      cor: "#5cff95",
+    },
+    {
+      titulo: "Ocupados",
+      valor: Number(metricas.ocupados || 0).toLocaleString("pt-BR"),
+      detalhe: "Veículos em rota ou indisponíveis",
+      icon: "bi-hourglass-split",
+      cor: "#ff8800",
+    },
+    {
+      titulo: "Manutenção",
+      valor: Number(metricas.manutencao || 0).toLocaleString("pt-BR"),
+      detalhe: "Veículos fora de operação",
+      icon: "bi-tools",
+      cor: "#ff758f",
+    },
+  ];
+
+  if (!acessoValidado) {
+    return (
+      <main
+        className="d-flex justify-content-center align-items-center"
+        style={{
+          minHeight: "100vh",
+          background: pageBackground,
+          color: "#ffb300",
+        }}
+      >
+        <div className="text-center">
+          <div className="spinner-border text-warning mb-3" />
+          <h4 className="fw-bold">Validando acesso...</h4>
+        </div>
+      </main>
+    );
+  }
+
   return (
-    <div
+    <main
       className="container-fluid py-4 px-3 px-lg-4"
       style={{
-        background: "#09090b",
+        background: pageBackground,
         minHeight: "100vh",
+        color: "white",
       }}
     >
-      <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+      <div className="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
         <div>
+          <span
+            className="badge mb-3"
+            style={{
+              background: "rgba(255,179,0,.14)",
+              color: "#ffcf40",
+              border: "1px solid rgba(255,179,0,.25)",
+              borderRadius: "999px",
+              padding: "9px 13px",
+              fontWeight: "800",
+            }}
+          >
+            Operação
+          </span>
+
           <h1
             className="fw-bold mb-1"
             style={{
@@ -488,11 +865,11 @@ export default function LogisticaDashboard() {
           <p
             className="mb-0"
             style={{
-              color: "#71717a",
+              color: "rgba(255,255,255,.58)",
               fontSize: ".95rem",
             }}
           >
-            Gerenciamento de veículos, destinos e disponibilidade
+            Gerenciamento de veículos, destinos e disponibilidade.
           </p>
         </div>
 
@@ -500,17 +877,71 @@ export default function LogisticaDashboard() {
           type="button"
           onClick={abrirCadastro}
           className="btn d-flex align-items-center gap-2 px-4 py-2"
-          style={{
-            background: "#c0012a",
-            border: "1px solid rgba(255,255,255,0.06)",
-            color: "#ffffff",
-            borderRadius: "14px",
-            fontWeight: "600",
-          }}
+          style={buttonGradient}
         >
           <i className="bi bi-plus-lg" />
           Nova Logística
         </button>
+      </div>
+
+      <div className="row g-4 mb-4">
+        {metricasCards.map((card) => {
+          const ativo = cardHoverAtivo === card.titulo;
+
+          return (
+            <div className="col-12 col-md-6 col-xl-3" key={card.titulo}>
+              <div
+                className="p-4 h-100"
+                style={metricCardStyle(card.cor, ativo)}
+                onMouseEnter={() => setCardHoverAtivo(card.titulo)}
+                onMouseLeave={() => setCardHoverAtivo(null)}
+              >
+                <div className="d-flex justify-content-between align-items-start gap-3">
+                  <div style={{ minWidth: 0 }}>
+                    <p
+                      className="mb-2"
+                      style={{
+                        color: ativo ? "rgba(255,255,255,.74)" : "rgba(255,255,255,.58)",
+                        fontSize: ".9rem",
+                        transition: "color .22s ease",
+                      }}
+                    >
+                      {card.titulo}
+                    </p>
+
+                    <h2
+                      className="fw-bold mb-2"
+                      style={{
+                        color: "#ffffff",
+                        letterSpacing: "-1px",
+                        fontSize: "1.8rem",
+                      }}
+                    >
+                      {card.valor}
+                    </h2>
+
+                    <span
+                      style={{
+                        color: ativo ? "rgba(255,255,255,.58)" : "rgba(255,255,255,.42)",
+                        fontSize: ".82rem",
+                        transition: "color .22s ease",
+                      }}
+                    >
+                      {card.detalhe}
+                    </span>
+                  </div>
+
+                  <div
+                    className="d-flex align-items-center justify-content-center"
+                    style={metricIconStyle(card.cor, ativo)}
+                  >
+                    <i className={`bi ${card.icon}`} style={{ fontSize: "1.35rem" }} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {(feedback || erroLista) && (
@@ -518,7 +949,7 @@ export default function LogisticaDashboard() {
           className="alert border-0 mb-4"
           style={{
             background: feedback ? "rgba(34,197,94,0.10)" : "rgba(245,6,29,0.10)",
-            color: feedback ? "#22c55e" : "#f5061d",
+            color: feedback ? "#5cff95" : "#ff758f",
             borderRadius: "18px",
           }}
         >
@@ -526,14 +957,7 @@ export default function LogisticaDashboard() {
         </div>
       )}
 
-      <div
-        className="p-3 p-lg-4"
-        style={{
-          background: "#111113",
-          border: "1px solid rgba(255,255,255,0.06)",
-          borderRadius: "28px",
-        }}
-      >
+      <section className="p-3 p-lg-4" style={cardStyle}>
         <div className="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
           <div>
             <h4
@@ -549,7 +973,7 @@ export default function LogisticaDashboard() {
             <p
               className="mb-0"
               style={{
-                color: "#71717a",
+                color: "rgba(255,255,255,.55)",
                 fontSize: ".9rem",
               }}
             >
@@ -557,24 +981,24 @@ export default function LogisticaDashboard() {
             </p>
           </div>
 
-          <div className="d-flex flex-column flex-xl-row gap-2 align-items-stretch align-items-xl-center w-100 w-xl-auto">
-            <form onSubmit={handlePesquisar} className="d-flex gap-2">
+          <div
+            className="d-flex flex-column flex-xl-row gap-2 align-items-stretch align-items-xl-center"
+            style={{
+              width: "min(100%, 980px)",
+            }}
+          >
+            <form onSubmit={handlePesquisar} className="d-flex gap-2 flex-grow-1">
               <div
                 className="d-flex align-items-center px-3 flex-grow-1"
                 style={{
-                  background: "#151518",
-                  border: "1px solid rgba(255,255,255,0.06)",
-                  borderRadius: "14px",
-                  minWidth: "260px",
-                  height: "46px",
+                  background: "rgba(255,255,255,.04)",
+                  border: "1px solid rgba(255,255,255,.08)",
+                  borderRadius: "16px",
+                  minWidth: "240px",
+                  height: "48px",
                 }}
               >
-                <i
-                  className="bi bi-search"
-                  style={{
-                    color: "#71717a",
-                  }}
-                />
+                <i className="bi bi-search" style={{ color: "#ffcf40" }} />
 
                 <input
                   type="text"
@@ -593,7 +1017,10 @@ export default function LogisticaDashboard() {
               <button
                 type="submit"
                 className="btn"
-                style={iconButtonStyle}
+                style={{
+                  ...paginationBtnStyle,
+                  minWidth: "48px",
+                }}
                 title="Pesquisar"
               >
                 <i className="bi bi-arrow-right" />
@@ -604,11 +1031,23 @@ export default function LogisticaDashboard() {
               value={filtroVeiculo}
               onChange={handleFiltroVeiculo}
               className="form-select shadow-none"
-              style={filterSelectStyle}
+              style={{
+                ...inputStyle,
+                minWidth: "190px",
+                height: "48px",
+                cursor: "pointer",
+              }}
             >
-              <option value="">Todos os veículos</option>
+              <option value="" style={{ background: "#151518", color: "#fff" }}>
+                Todos os veículos
+              </option>
+
               {VEICULO_OPTIONS.map((veiculo) => (
-                <option key={veiculo.value} value={veiculo.value}>
+                <option
+                  key={veiculo.value}
+                  value={veiculo.value}
+                  style={{ background: "#151518", color: "#fff" }}
+                >
                   {veiculo.label}
                 </option>
               ))}
@@ -618,11 +1057,23 @@ export default function LogisticaDashboard() {
               value={filtroDisponibilidade}
               onChange={handleFiltroDisponibilidade}
               className="form-select shadow-none"
-              style={filterSelectStyle}
+              style={{
+                ...inputStyle,
+                minWidth: "220px",
+                height: "48px",
+                cursor: "pointer",
+              }}
             >
-              <option value="">Todas as disponibilidades</option>
+              <option value="" style={{ background: "#151518", color: "#fff" }}>
+                Todas as disponibilidades
+              </option>
+
               {DISPONIBILIDADE_OPTIONS.map((disponibilidade) => (
-                <option key={disponibilidade.value} value={disponibilidade.value}>
+                <option
+                  key={disponibilidade.value}
+                  value={disponibilidade.value}
+                  style={{ background: "#151518", color: "#fff" }}
+                >
                   {disponibilidade.label}
                 </option>
               ))}
@@ -632,42 +1083,33 @@ export default function LogisticaDashboard() {
               type="button"
               onClick={limparFiltros}
               className="btn px-3"
-              style={clearButtonStyle}
+              style={{
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                color: "#d4d4d8",
+                borderRadius: "14px",
+                height: "48px",
+                fontWeight: "800",
+              }}
             >
               Limpar
             </button>
           </div>
         </div>
 
-        <div className="table-responsive">
+        <div className="table-responsive" style={dashboardTableWrapperStyle}>
           <table
-            className="table align-middle mb-0"
-            style={{
-              color: "#ffffff",
-            }}
+            className="table table-hover align-middle"
+            style={dashboardTableStyle}
           >
             <thead>
-              <tr
-                style={{
-                  borderBottom: "1px solid rgba(255,255,255,0.06)",
-                }}
-              >
-                <th className="py-3" style={thStyle}>
-                  Logística
-                </th>
-                <th className="py-3" style={thStyle}>
-                  Dono
-                </th>
-                <th className="py-3" style={thStyle}>
-                  Veículo
-                </th>
-                <th className="py-3" style={thStyle}>
-                  Destino
-                </th>
-                <th className="py-3" style={thStyle}>
-                  Disponibilidade
-                </th>
-                <th className="py-3 text-end" style={thStyle}>
+              <tr>
+                <th style={dashboardTableHeadCellStyle}>Logística</th>
+                <th style={dashboardTableHeadCellStyle}>Dono</th>
+                <th style={dashboardTableHeadCellStyle}>Veículo</th>
+                <th style={dashboardTableHeadCellStyle}>Destino</th>
+                <th style={dashboardTableHeadCellStyle}>Disponibilidade</th>
+                <th style={{ ...dashboardTableHeadCellStyle, textAlign: "right" }}>
                   Ações
                 </th>
               </tr>
@@ -676,85 +1118,139 @@ export default function LogisticaDashboard() {
             <tbody>
               {carregando ? (
                 <tr>
-                  <td colSpan="6" className="text-center py-5" style={emptyTdStyle}>
-                    <div className="spinner-border mb-3" role="status" style={{ color: "#ffb300" }} />
-                    <p className="mb-0">Carregando logísticas...</p>
+                  <td
+                    colSpan="6"
+                    className="text-center"
+                    style={{
+                      ...dashboardTableCellStyle,
+                      padding: "34px 18px",
+                      color: "rgba(255,255,255,.65)",
+                    }}
+                  >
+                    <span className="spinner-border spinner-border-sm text-warning me-2" />
+                    Carregando logísticas...
                   </td>
                 </tr>
               ) : logisticas.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="text-center py-5" style={emptyTdStyle}>
-                    <i className="bi bi-truck" style={{ fontSize: "2.5rem", color: "#ffb300" }} />
-                    <p className="mt-3 mb-0">Nenhuma logística encontrada.</p>
+                  <td
+                    colSpan="6"
+                    className="text-center"
+                    style={{
+                      ...dashboardTableCellStyle,
+                      padding: "42px 18px",
+                    }}
+                  >
+                    <i
+                      className="bi bi-truck d-block mb-3"
+                      style={{
+                        color: "#ffcf40",
+                        fontSize: "2.4rem",
+                      }}
+                    />
+
+                    <h5 className="fw-bold mb-1">Nenhuma logística encontrada</h5>
+
+                    <p
+                      className="mb-0"
+                      style={{
+                        color: "rgba(255,255,255,.52)",
+                      }}
+                    >
+                      Tente mudar os filtros ou cadastre uma nova logística.
+                    </p>
                   </td>
                 </tr>
               ) : (
                 logisticas.map((logistica) => {
+                  const idLogistica = getIdLogistica(logistica);
                   const disponibilidade =
                     getOpcao(DISPONIBILIDADE_OPTIONS, logistica.disponibilidade)?.value ||
                     "disponivel";
-                  const atualizando = statusAtualizandoId === logistica.id_logistica;
+
+                  const atualizando = statusAtualizandoId === idLogistica;
 
                   return (
-                    <tr
-                      key={logistica.id_logistica}
-                      style={{
-                        borderBottom: "1px solid rgba(255,255,255,0.04)",
-                      }}
-                    >
-                      <td className="py-3" style={tdStyle}>
+                    <tr key={idLogistica}>
+                      <td style={dashboardTableCellStyle}>
                         <div className="d-flex align-items-center">
                           <div
-                            className="d-flex justify-content-center align-items-center fw-bold"
+                            className="d-flex justify-content-center align-items-center fw-bold text-uppercase"
                             style={{
-                              width: "46px",
-                              height: "46px",
-                              borderRadius: "14px",
-                              background: "rgba(255,136,0,0.12)",
-                              border: "1px solid rgba(255,179,0,0.12)",
-                              color: "#ffb300",
+                              width: "48px",
+                              height: "48px",
+                              borderRadius: "16px",
+                              background: "rgba(255,179,0,.12)",
+                              border: "1px solid rgba(255,179,0,.20)",
+                              color: "#ffcf40",
                               fontSize: ".9rem",
+                              flexShrink: 0,
                             }}
                           >
                             {getIniciais(logistica.nome_logistica)}
                           </div>
 
-                          <div className="ms-3">
+                          <div className="ms-3" style={{ minWidth: 0 }}>
                             <div
-                              className="fw-semibold"
+                              className="fw-bold text-truncate"
                               style={{
                                 color: "#ffffff",
                                 fontSize: ".95rem",
+                                maxWidth: "250px",
                               }}
+                              title={logistica.nome_logistica}
                             >
-                              {logistica.nome_logistica}
+                              {logistica.nome_logistica || "Sem nome"}
                             </div>
 
                             <div
                               style={{
-                                color: "#71717a",
-                                fontSize: ".8rem",
+                                color: "rgba(255,255,255,.50)",
+                                fontSize: ".82rem",
                               }}
                             >
-                              ID: {logistica.id_logistica}
+                              ID: {idLogistica}
                             </div>
                           </div>
                         </div>
                       </td>
 
-                      <td style={tdStyle}>
-                        <span style={mutedTextStyle}>#{logistica.id_dono}</span>
+                      <td style={dashboardTableCellStyle}>
+                        <span style={{ color: "rgba(255,255,255,.72)" }}>
+                          #{logistica.id_dono ?? "—"}
+                        </span>
                       </td>
 
-                      <td style={tdStyle}>
-                        <span style={mutedTextStyle}>{formatarVeiculo(logistica.veiculo)}</span>
+                      <td style={dashboardTableCellStyle}>
+                        <span
+                          className="d-inline-flex align-items-center gap-2"
+                          style={{
+                            color: "rgba(255,255,255,.82)",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          <i
+                            className={`bi ${getVeiculoIcone(logistica.veiculo)}`}
+                            style={{ color: "#ffcf40" }}
+                          />
+                          {formatarVeiculo(logistica.veiculo)}
+                        </span>
                       </td>
 
-                      <td style={tdStyle}>
-                        <span style={mutedTextStyle}>{logistica.destino || "Sem destino"}</span>
+                      <td style={dashboardTableCellStyle}>
+                        <span
+                          className="d-inline-block text-truncate"
+                          style={{
+                            color: "rgba(255,255,255,.72)",
+                            maxWidth: "230px",
+                          }}
+                          title={logistica.destino}
+                        >
+                          {logistica.destino || "Sem destino"}
+                        </span>
                       </td>
 
-                      <td style={tdStyle}>
+                      <td style={dashboardTableCellStyle}>
                         <select
                           value={disponibilidade}
                           onChange={(event) =>
@@ -763,27 +1259,48 @@ export default function LogisticaDashboard() {
                           disabled={atualizando || salvando}
                           className="form-select form-select-sm shadow-none"
                           style={{
-                            ...statusSelectStyle,
                             ...getStatusStyle(disponibilidade),
+                            borderRadius: "999px",
+                            fontSize: ".78rem",
+                            fontWeight: "800",
+                            width: "165px",
+                            cursor: atualizando || salvando ? "not-allowed" : "pointer",
                             opacity: atualizando ? 0.65 : 1,
                           }}
                         >
                           {DISPONIBILIDADE_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>
+                            <option
+                              key={option.value}
+                              value={option.value}
+                              style={{ background: "#151518", color: "#fff" }}
+                            >
                               {option.label}
                             </option>
                           ))}
                         </select>
                       </td>
 
-                      <td className="text-end" style={tdStyle}>
+                      <td
+                        style={{
+                          ...dashboardTableCellStyle,
+                          textAlign: "right",
+                        }}
+                      >
                         <div className="d-flex justify-content-end gap-2">
                           <button
                             type="button"
                             onClick={() => abrirEdicao(logistica)}
                             disabled={salvando}
                             className="btn d-flex align-items-center justify-content-center"
-                            style={editButtonStyle}
+                            style={{
+                              width: "42px",
+                              height: "42px",
+                              borderRadius: "14px",
+                              background: "rgba(255,179,0,.08)",
+                              border: "1px solid rgba(255,179,0,.16)",
+                              color: "#ffcf40",
+                              boxShadow: "none",
+                            }}
                             title="Editar logística"
                           >
                             <i className="bi bi-pencil-square" />
@@ -794,7 +1311,15 @@ export default function LogisticaDashboard() {
                             onClick={() => excluirLogistica(logistica)}
                             disabled={salvando}
                             className="btn d-flex align-items-center justify-content-center"
-                            style={deleteButtonStyle}
+                            style={{
+                              width: "42px",
+                              height: "42px",
+                              borderRadius: "14px",
+                              background: "rgba(245,6,29,.10)",
+                              border: "1px solid rgba(245,6,29,.18)",
+                              color: "#ff758f",
+                              boxShadow: "none",
+                            }}
                             title="Excluir logística"
                           >
                             <i className="bi bi-trash3" />
@@ -809,13 +1334,18 @@ export default function LogisticaDashboard() {
           </table>
         </div>
 
-        {!carregando && (
+        {!carregando && !erroLista && (
           <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mt-4">
-            <span style={{ color: "#71717a", fontSize: ".9rem" }}>
+            <span
+              style={{
+                color: "rgba(255,255,255,.55)",
+                fontSize: ".9rem",
+              }}
+            >
               Página {paginacao.pagina || pagina} de {totalPaginas}
             </span>
 
-            <div className="d-flex gap-2">
+            <div className="d-flex gap-2 flex-wrap">
               <button
                 type="button"
                 className="btn px-3"
@@ -824,10 +1354,38 @@ export default function LogisticaDashboard() {
                 style={{
                   ...paginationBtnStyle,
                   opacity: pagina <= 1 ? 0.45 : 1,
+                  cursor: pagina <= 1 ? "not-allowed" : "pointer",
                 }}
               >
+                <i className="bi bi-chevron-left me-1" />
                 Anterior
               </button>
+
+              {paginasVisiveis.map((numeroPagina) => {
+                const ativo = numeroPagina === pagina;
+
+                return (
+                  <button
+                    key={numeroPagina}
+                    type="button"
+                    className="btn px-3"
+                    onClick={() => setPagina(numeroPagina)}
+                    disabled={ativo || carregando}
+                    style={{
+                      ...paginationBtnStyle,
+                      background: ativo
+                        ? "linear-gradient(90deg,#940533,#c0012a,#ff8800)"
+                        : paginationBtnStyle.background,
+                      color: "#ffffff",
+                      border: ativo
+                        ? "1px solid rgba(255,255,255,.10)"
+                        : paginationBtnStyle.border,
+                    }}
+                  >
+                    {numeroPagina}
+                  </button>
+                );
+              })}
 
               <button
                 type="button"
@@ -837,14 +1395,16 @@ export default function LogisticaDashboard() {
                 style={{
                   ...paginationBtnStyle,
                   opacity: pagina >= totalPaginas ? 0.45 : 1,
+                  cursor: pagina >= totalPaginas ? "not-allowed" : "pointer",
                 }}
               >
                 Próxima
+                <i className="bi bi-chevron-right ms-1" />
               </button>
             </div>
           </div>
         )}
-      </div>
+      </section>
 
       {modalAberto && (
         <div
@@ -856,50 +1416,87 @@ export default function LogisticaDashboard() {
           <form
             onSubmit={salvarLogistica}
             className="border-0 overflow-hidden"
-            style={modalContentStyle}
+            style={{
+              background: surfaceGradient,
+              border: "1px solid rgba(255,255,255,.10)",
+              borderRadius: "30px",
+              width: "100%",
+              maxWidth: "980px",
+              color: "white",
+              boxShadow: "0 28px 90px rgba(0,0,0,.38)",
+            }}
           >
-            <div className="border-0 pt-4 px-4 position-relative">
-              <div className="w-100 text-center">
+            <div
+              className="d-flex justify-content-between align-items-start gap-3"
+              style={{
+                padding: "30px 32px 22px",
+                borderBottom: "1px solid rgba(255,255,255,.07)",
+              }}
+            >
+              <div className="d-flex align-items-center gap-3">
                 <div
-                  className="d-inline-flex align-items-center justify-content-center mb-3"
+                  className="d-flex align-items-center justify-content-center"
                   style={{
-                    width: "78px",
-                    height: "78px",
-                    borderRadius: "22px",
-                    background: "rgba(255,179,0,0.08)",
-                    border: "1px solid rgba(255,179,0,0.12)",
+                    width: "58px",
+                    height: "58px",
+                    borderRadius: "18px",
+                    background: "rgba(255,179,0,.12)",
+                    border: "1px solid rgba(255,179,0,.22)",
+                    color: "#ffcf40",
+                    flexShrink: 0,
                   }}
                 >
                   <i
                     className={modoEdicao ? "bi bi-pencil-square" : "bi bi-truck"}
-                    style={{
-                      color: "#ffb300",
-                      fontSize: "2rem",
-                    }}
+                    style={{ fontSize: "1.45rem" }}
                   />
                 </div>
 
-                <h2
-                  className="fw-bold mb-0"
-                  style={{
-                    color: "#ffb300",
-                    letterSpacing: "-1px",
-                  }}
-                >
-                  {modoEdicao ? "Editar Logística" : "Nova Logística"}
-                </h2>
+                <div>
+                  <h2
+                    className="fw-bold mb-1"
+                    style={{
+                      color: "#ffe082",
+                      letterSpacing: "-1px",
+                    }}
+                  >
+                    {modoEdicao ? "Editar Logística" : "Nova Logística"}
+                  </h2>
+
+                  <p
+                    className="mb-0"
+                    style={{
+                      color: "rgba(255,255,255,.58)",
+                    }}
+                  >
+                    {modoEdicao
+                      ? "Atualize os dados da logística selecionada."
+                      : "Cadastre uma nova operação logística."}
+                  </p>
+                </div>
               </div>
 
               <button
                 type="button"
                 onClick={fecharModal}
                 disabled={salvando}
-                className="btn-close btn-close-white position-absolute top-0 end-0 m-4"
-                aria-label="Close"
-              />
+                className="btn"
+                aria-label="Fechar modal"
+                style={{
+                  width: "44px",
+                  height: "44px",
+                  borderRadius: "15px",
+                  background: "rgba(255,255,255,.04)",
+                  border: "1px solid rgba(255,255,255,.08)",
+                  color: "white",
+                  boxShadow: "none",
+                }}
+              >
+                <i className="bi bi-x-lg" />
+              </button>
             </div>
 
-            <div className="p-4 p-lg-5">
+            <div style={{ padding: "28px 32px 10px" }}>
               {formErro && (
                 <div
                   className="alert border-0 mb-4"
@@ -913,28 +1510,26 @@ export default function LogisticaDashboard() {
                 </div>
               )}
 
-              <div className="row g-4">
-                {!modoEdicao && (
-                  <div className="col-12 col-lg-6">
-                    <label className="form-label mb-2" style={labelStyle}>
-                      ID do dono
-                    </label>
+              <div className="row g-3">
+                <div className="col-12 col-lg-6">
+                  <label className="form-label mb-2" style={labelStyle}>
+                    ID do dono
+                  </label>
 
-                    <input
-                      type="number"
-                      min="1"
-                      name="id_dono"
-                      value={formData.id_dono}
-                      onChange={handleCampo}
-                      className="form-control shadow-none"
-                      placeholder="Ex: 1"
-                      required
-                      style={inputStyle}
-                    />
-                  </div>
-                )}
+                  <input
+                    type="number"
+                    min="1"
+                    name="id_dono"
+                    value={formData.id_dono}
+                    onChange={handleCampo}
+                    className="form-control shadow-none"
+                    placeholder="Ex: 1"
+                    required
+                    style={modalInputStyle}
+                  />
+                </div>
 
-                <div className={modoEdicao ? "col-12" : "col-12 col-lg-6"}>
+                <div className="col-12 col-lg-6">
                   <label className="form-label mb-2" style={labelStyle}>
                     Nome da logística
                   </label>
@@ -947,7 +1542,7 @@ export default function LogisticaDashboard() {
                     className="form-control shadow-none"
                     placeholder="Ex: Rota Express São Paulo"
                     required
-                    style={inputStyle}
+                    style={modalInputStyle}
                   />
                 </div>
 
@@ -962,10 +1557,17 @@ export default function LogisticaDashboard() {
                     onChange={handleCampo}
                     className="form-select shadow-none"
                     required
-                    style={inputStyle}
+                    style={{
+                      ...modalInputStyle,
+                      cursor: "pointer",
+                    }}
                   >
                     {VEICULO_OPTIONS.map((veiculo) => (
-                      <option key={veiculo.value} value={veiculo.value}>
+                      <option
+                        key={veiculo.value}
+                        value={veiculo.value}
+                        style={{ background: "#151518", color: "#fff" }}
+                      >
                         {veiculo.label}
                       </option>
                     ))}
@@ -983,10 +1585,17 @@ export default function LogisticaDashboard() {
                     onChange={handleCampo}
                     className="form-select shadow-none"
                     required
-                    style={inputStyle}
+                    style={{
+                      ...modalInputStyle,
+                      cursor: "pointer",
+                    }}
                   >
                     {DISPONIBILIDADE_OPTIONS.map((disponibilidade) => (
-                      <option key={disponibilidade.value} value={disponibilidade.value}>
+                      <option
+                        key={disponibilidade.value}
+                        value={disponibilidade.value}
+                        style={{ background: "#151518", color: "#fff" }}
+                      >
                         {disponibilidade.label}
                       </option>
                     ))}
@@ -1005,196 +1614,62 @@ export default function LogisticaDashboard() {
                     onChange={handleCampo}
                     className="form-control shadow-none"
                     placeholder="Ex: São Paulo, SP"
-                    style={inputStyle}
+                    required
+                    style={modalInputStyle}
                   />
                 </div>
               </div>
+            </div>
 
-              <div className="mt-5 d-flex gap-3 flex-wrap">
-                <button
-                  type="button"
-                  onClick={fecharModal}
-                  disabled={salvando}
-                  className="btn py-3 fw-semibold"
-                  style={cancelButtonStyle}
-                >
-                  Cancelar
-                </button>
+            <div
+              className="d-flex justify-content-end gap-2 flex-wrap"
+              style={{
+                padding: "22px 32px 32px",
+                borderTop: "1px solid rgba(255,255,255,.07)",
+              }}
+            >
+              <button
+                type="button"
+                onClick={fecharModal}
+                disabled={salvando}
+                className="btn btn-outline-light"
+                style={{
+                  borderRadius: "16px",
+                  padding: "12px 20px",
+                  fontWeight: "800",
+                  boxShadow: "none",
+                }}
+              >
+                Cancelar
+              </button>
 
-                <button
-                  type="submit"
-                  disabled={salvando}
-                  className="btn flex-fill py-3 fw-semibold"
-                  style={{
-                    background: salvando
-                      ? "rgba(255,179,0,0.45)"
-                      : "linear-gradient(90deg,#ff8800,#ffb300)",
-                    border: "none",
-                    color: "#3b0215",
-                    borderRadius: "16px",
-                    fontSize: "1rem",
-                  }}
-                >
-                  {salvando
-                    ? "Salvando..."
-                    : modoEdicao
-                      ? "Salvar alterações"
-                      : "Criar logística"}
-                </button>
-              </div>
+              <button
+                type="submit"
+                disabled={salvando}
+                className="btn"
+                style={{
+                  ...buttonGradient,
+                  padding: "12px 24px",
+                  minWidth: "190px",
+                  opacity: salvando ? 0.7 : 1,
+                  cursor: salvando ? "not-allowed" : "pointer",
+                }}
+              >
+                {salvando ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" />
+                    Salvando...
+                  </>
+                ) : modoEdicao ? (
+                  "Salvar alterações"
+                ) : (
+                  "Criar logística"
+                )}
+              </button>
             </div>
           </form>
         </div>
       )}
-    </div>
+    </main>
   );
 }
-
-function getStatusStyle(disponibilidade) {
-  if (disponibilidade === "disponivel") {
-    return {
-      backgroundColor: "rgba(34,197,94,0.10)",
-      border: "1px solid rgba(34,197,94,0.15)",
-      color: "#22c55e",
-    };
-  }
-
-  if (disponibilidade === "ocupado") {
-    return {
-      backgroundColor: "rgba(255,179,0,0.10)",
-      border: "1px solid rgba(255,179,0,0.18)",
-      color: "#ffb300",
-    };
-  }
-
-  return {
-    backgroundColor: "rgba(245,6,29,0.10)",
-    border: "1px solid rgba(245,6,29,0.15)",
-    color: "#f5061d",
-  };
-}
-
-const thStyle = {
-  color: "#71717a",
-  fontWeight: "500",
-  border: "none",
-  background: "transparent",
-  whiteSpace: "nowrap",
-};
-
-const tdStyle = {
-  background: "transparent",
-  border: "none",
-  color: "#d4d4d8",
-  verticalAlign: "middle",
-};
-
-const emptyTdStyle = {
-  background: "transparent",
-  border: "none",
-  color: "#71717a",
-};
-
-const mutedTextStyle = {
-  color: "#d4d4d8",
-  fontSize: ".9rem",
-};
-
-const filterSelectStyle = {
-  backgroundColor: "#151518",
-  border: "1px solid rgba(255,255,255,0.06)",
-  color: "#ffffff",
-  borderRadius: "14px",
-  height: "46px",
-  minWidth: "190px",
-};
-
-const iconButtonStyle = {
-  background: "#151518",
-  border: "1px solid rgba(255,179,0,0.16)",
-  color: "#ffb300",
-  borderRadius: "14px",
-  minWidth: "46px",
-};
-
-const clearButtonStyle = {
-  background: "rgba(255,255,255,0.04)",
-  border: "1px solid rgba(255,255,255,0.06)",
-  color: "#d4d4d8",
-  borderRadius: "14px",
-  height: "46px",
-};
-
-const editButtonStyle = {
-  width: "42px",
-  height: "42px",
-  borderRadius: "12px",
-  background: "#151518",
-  border: "1px solid rgba(255,255,255,0.06)",
-  color: "#ffb300",
-};
-
-const deleteButtonStyle = {
-  width: "42px",
-  height: "42px",
-  borderRadius: "12px",
-  background: "rgba(245,6,29,0.10)",
-  border: "1px solid rgba(245,6,29,0.15)",
-  color: "#f5061d",
-};
-
-const statusSelectStyle = {
-  width: "170px",
-  borderRadius: "12px",
-  fontSize: ".8rem",
-  fontWeight: "600",
-};
-
-const paginationBtnStyle = {
-  background: "#151518",
-  border: "1px solid rgba(255,255,255,0.06)",
-  color: "#ffb300",
-  borderRadius: "12px",
-};
-
-const modalBackdropStyle = {
-  position: "fixed",
-  inset: 0,
-  zIndex: 9999,
-  background: "rgba(0,0,0,.78)",
-  backdropFilter: "blur(12px)",
-  WebkitBackdropFilter: "blur(12px)",
-  padding: "24px",
-  overflowY: "auto",
-};
-
-const modalContentStyle = {
-  background:
-    "linear-gradient(135deg, #940533 0%, #7d042b 35%, #5f0321 70%, #3b0215 100%)",
-  borderRadius: "28px",
-  width: "100%",
-  maxWidth: "960px",
-};
-
-const labelStyle = {
-  color: "#f3f4f6",
-  fontSize: ".92rem",
-};
-
-const inputStyle = {
-  backgroundColor: "rgba(0,0,0,0.18)",
-  border: "1px solid rgba(245,6,29,0.35)",
-  color: "#ffffff",
-  minHeight: "56px",
-  borderRadius: "16px",
-};
-
-const cancelButtonStyle = {
-  width: "35%",
-  minWidth: "160px",
-  background: "rgba(255,255,255,.08)",
-  border: "1px solid rgba(255,255,255,.12)",
-  color: "#ffffff",
-  borderRadius: "16px",
-  fontSize: "1rem",
-};
