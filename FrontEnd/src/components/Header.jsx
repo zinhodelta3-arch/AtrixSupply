@@ -140,21 +140,28 @@ export default function Header() {
             </div>
 
             <div className="d-flex align-items-center gap-3 order-lg-3">
-              <div className="cart-wrapper">
-                <button
-                  className="cart-btn"
-                  type="button"
-                  data-bs-toggle="offcanvas"
-                  data-bs-target="#offcanvasCarrinho"
-                  aria-controls="offcanvasCarrinho"
-                >
-                  <i className="bi bi-cart3"></i>
+              {usuario ? (
+                <>
+                  <div className="cart-wrapper">
+                    <button
+                      className="cart-btn"
+                      type="button"
+                      data-bs-toggle="offcanvas"
+                      data-bs-target="#offcanvasCarrinho"
+                      aria-controls="offcanvasCarrinho"
+                    >
+                      <i className="bi bi-cart3"></i>
 
-                  {cartItems.length > 0 && (
-                    <span className="cart-badge">{cartItems.length}</span>
-                  )}
-                </button>
-              </div>
+                      {cartItems.length > 0 && (
+                        <span className="cart-badge">{cartItems.length}</span>
+                      )}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                </>
+              )}
 
               <div className="profile-wrapper">
                 <div className="profile-btn">
@@ -224,12 +231,18 @@ export default function Header() {
                     Encomendas
                   </Link>
                 </li>
-
-                <li className="nav-item">
-                  <Link className="nav-link" href="/logistica">
-                    Logística
-                  </Link>
-                </li>
+                {usuario ? (
+                  <>
+                    <li className="nav-item">
+                      <Link className="nav-link" href="/logistica">
+                        Logística
+                      </Link>
+                    </li>
+                  </>
+                ) : (
+                  <>
+                  </>
+                )}
               </ul>
             </div>
           </nav>
