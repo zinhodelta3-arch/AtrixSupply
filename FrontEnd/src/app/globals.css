@@ -16,6 +16,8 @@ html {
   height: 100%;
 }
 
+
+
 body {
   min-height: 100vh;
   display: flex;
@@ -68,6 +70,7 @@ a {
   -webkit-text-fill-color: transparent;
   filter: drop-shadow(0 0 12px rgba(255, 179, 0, 0.22));
   text-decoration: none;
+  margin-top: 0px;
 }
 
 .glass-navbar {

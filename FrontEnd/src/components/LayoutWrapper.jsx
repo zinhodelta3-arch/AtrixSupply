@@ -16,7 +16,6 @@ export default function LayoutWrapper({ children }) {
   return (
     <>
       {!hideLayout && <Header/>}
-      {!hideLayout && <div className="mb-5"></div>}
     {hideLayout &&
         <div className="app-layout d-flex">
         <Sidebar />
