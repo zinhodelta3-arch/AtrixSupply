@@ -3,9 +3,13 @@
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import {
+  FALLBACK_PROFILE_IMAGE,
+  resolveImageUrl,
+  useImageFallback,
+} from "@/utils/imageUrl";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -172,11 +176,11 @@ function normalizarUsuarioComIdSeguro(usuarioApi, usuarioBase) {
   };
 }
 
-function montarHeaders() {
+function montarHeaders({ multipart = false } = {}) {
   const token = obterToken();
 
   return {
-    "Content-Type": "application/json",
+    ...(multipart ? {} : { "Content-Type": "application/json" }),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 }
@@ -248,10 +252,12 @@ async function atualizarUsuarioPorId(idUsuario, body, rotaPreferida) {
 
   for (const baseUrl of rotas) {
     try {
+      const isMultipart = body instanceof FormData;
+
       const response = await fetch(`${baseUrl}/${idUsuario}`, {
         method: "PUT",
-        headers: montarHeaders(),
-        body: JSON.stringify(body),
+        headers: montarHeaders({ multipart: isMultipart }),
+        body: isMultipart ? body : JSON.stringify(body),
       });
 
       if (response.status === 404) {
@@ -367,6 +373,7 @@ export default function Perfil() {
     cnpj: "",
     cep: "",
     senha: "",
+    foto: null,
   });
 
   useEffect(() => {
@@ -426,6 +433,7 @@ export default function Perfil() {
       cnpj: perfil.cnpj || "",
       cep: perfil.cep || "",
       senha: "",
+      foto: null,
     });
 
     setFormErro(null);
@@ -500,18 +508,22 @@ export default function Perfil() {
         return;
       }
 
-      const body = {
-        nome_user: formData.nome_user.trim(),
-        email: formData.email.trim(),
-        empresa: formData.empresa.trim(),
-        cargo: formData.cargo.trim(),
-        endereco: formData.endereco.trim(),
-        cnpj: formData.cnpj.trim(),
-        cep: formData.cep.trim(),
-      };
+      const body = new FormData();
+
+      body.append("nome_user", formData.nome_user.trim());
+      body.append("email", formData.email.trim());
+      body.append("empresa", formData.empresa.trim());
+      body.append("cargo", formData.cargo.trim());
+      body.append("endereco", formData.endereco.trim());
+      body.append("cnpj", formData.cnpj.trim());
+      body.append("cep", formData.cep.trim());
 
       if (formData.senha.trim()) {
-        body.senha = formData.senha.trim();
+        body.append("senha", formData.senha.trim());
+      }
+
+      if (formData.foto) {
+        body.append("foto", formData.foto);
       }
 
       const { data, baseUrl } = await atualizarUsuarioPorId(
@@ -530,6 +542,7 @@ export default function Perfil() {
       setFormData((prev) => ({
         ...prev,
         senha: "",
+        foto: null,
       }));
     } catch (error) {
       console.error("Erro ao salvar perfil:", error);
@@ -546,6 +559,7 @@ export default function Perfil() {
 
   const tipoCor = getCorTipo(perfil?.tipo);
   const iniciais = pegarIniciais(perfil?.nome_user);
+  const fotoPerfil = resolveImageUrl(perfil?.foto, FALLBACK_PROFILE_IMAGE);
 
   const resumoConta = useMemo(() => {
     if (!perfil) return [];
@@ -799,13 +813,13 @@ export default function Perfil() {
                     boxShadow: "none",
                   }}
                 >
-                  <Image
-                    src="/core.png"
+                  <img
+                    src={fotoPerfil}
                     alt="Perfil"
-                    fill
-                    priority
-                    sizes="170px"
+                    onError={(event) => useImageFallback(event, FALLBACK_PROFILE_IMAGE)}
                     style={{
+                      width: "100%",
+                      height: "100%",
                       objectFit: "cover",
                     }}
                   />
@@ -1333,6 +1347,22 @@ export default function Perfil() {
                       value={formData.endereco}
                       onChange={(event) =>
                         atualizarCampo("endereco", event.target.value)
+                      }
+                      style={inputStyle}
+                    />
+                  </div>
+
+                  <div className="col-12">
+                    <label className="form-label small text-white-50">
+                      Foto do perfil
+                    </label>
+
+                    <input
+                      type="file"
+                      className="form-control"
+                      accept="image/*"
+                      onChange={(event) =>
+                        atualizarCampo("foto", event.target.files?.[0] || null)
                       }
                       style={inputStyle}
                     />

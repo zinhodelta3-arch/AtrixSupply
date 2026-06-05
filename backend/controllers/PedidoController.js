@@ -1,6 +1,7 @@
 import PedidosModel from '../models/PedidosModel.js';
 import UsuarioModel from '../models/UsuarioModel.js';
 import ProdutoModel from '../models/ProdutoModel.js';
+import { atualizarEntregasVencidas } from '../utils/entregaAutomatica.js';
 import { fileURLToPath } from 'url';
 import path from 'path';
 
@@ -13,6 +14,7 @@ class PedidoController {
     // GET /pedidos - Listar todos os pedidos (com paginação)
     static async listarTodos(req, res) {
         try {
+            await atualizarEntregasVencidas();
            
             let pagina = parseInt(req.query.pagina) || 1;
             let limite = parseInt(req.query.limite) || 10;
@@ -107,6 +109,8 @@ class PedidoController {
         // GET /pedidos/id_user/:id_user - Buscar pedido por ID do usuário
     static async buscarPorIdUser(req, res) {
         try {
+            await atualizarEntregasVencidas();
+
             const { id_user } = req.params;
 
             // Validação básica do ID

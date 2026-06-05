@@ -366,14 +366,16 @@ INSERT INTO pedidos (
 
 INSERT INTO orcamentos (
     id_encomenda, 
+    id_fornecedor,
     nome_orcamento, 
     tipo_orcamento, 
     estimacao, 
     estado) 
 VALUES (
     3,
+    1,
     "básico",
     "versão barata, mas menos eficiente",
     8000.00,
-    "invisivel"
+    "visivel"
 );

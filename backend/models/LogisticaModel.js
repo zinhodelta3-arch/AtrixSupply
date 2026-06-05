@@ -2,20 +2,48 @@ import { create, read, update, deleteRecord, getConnection } from '../config/dat
 
 // Model para operações de logística
 class LogisticaModel {
+    static filtroPorUsuario(usuario) {
+        const tipo = String(usuario?.tipo || '').toLowerCase();
+        const idUsuario = Number(usuario?.id_user || 0);
+
+        if (['administrador', 'admin'].includes(tipo)) {
+            return { where: '1 = 1', params: [] };
+        }
+
+        if (tipo === 'fornecedor') {
+            return { where: 'id_dono = ?', params: [idUsuario] };
+        }
+
+        return { where: '1 = 0', params: [] };
+    }
     
     // Listar logistica (com paginação)
-    static async listarTodos(pagina = 1, limite = 10) {
+    static async listarTodos(pagina = 1, limite = 10, usuario = null) {
         try {
             const offset = (pagina - 1) * limite;
+            const filtro = this.filtroPorUsuario(usuario);
             const connection = await getConnection();
             
             try {
 
-                const sql = 'SELECT * FROM logistica ORDER BY id_logistica DESC LIMIT ? OFFSET ?';
-                const [logistica] = await connection.query(sql, [limite, offset]);
+                const sql = `
+                    SELECT *
+                    FROM logistica
+                    WHERE ${filtro.where}
+                    ORDER BY disponibilidade = 'disponivel' DESC, id_logistica DESC
+                    LIMIT ? OFFSET ?
+                `;
+                const [logistica] = await connection.query(sql, [
+                    ...filtro.params,
+                    limite,
+                    offset
+                ]);
                 
                 // Contar total de registros
-                const [totalResult] = await connection.execute('SELECT COUNT(*) as total FROM logistica');
+                const [totalResult] = await connection.execute(
+                    `SELECT COUNT(*) as total FROM logistica WHERE ${filtro.where}`,
+                    filtro.params
+                );
                 const total = totalResult[0].total;
                 
                 return {
@@ -188,6 +216,26 @@ class LogisticaModel {
         } catch (error) {
             console.error('Erro ao excluir logistica:', error);
             throw error;
+        }
+    }
+
+    static async contarEncomendasVinculadas(id_logistica) {
+        const connection = await getConnection();
+
+        try {
+            const [rows] = await connection.query(
+                `
+                    SELECT COUNT(*) AS total
+                    FROM encomendas
+                    WHERE id_logistica = ?
+                      AND status NOT IN ('entregue', 'finalizado', 'cancelado')
+                `,
+                [id_logistica]
+            );
+
+            return rows[0]?.total || 0;
+        } finally {
+            connection.release();
         }
     }
 }

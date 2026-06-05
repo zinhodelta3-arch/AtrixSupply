@@ -1,48 +1,86 @@
 import OrcamentosModel from '../models/OrcamentoModel.js';
+import EncomendaModel from '../models/EncomendasModel.js';
+import UsuarioModel from '../models/UsuarioModel.js';
 
-// Controller para operações de orçamentos
+const ESTADOS_ORCAMENTO_VALIDOS = ['visivel', 'invisivel', 'escolhida', 'recusado', 'cancelado'];
+
+function tipoUsuario(req) {
+    return String(req.usuario?.tipo || '').toLowerCase();
+}
+
+function isAdmin(req) {
+    return ['administrador', 'admin'].includes(tipoUsuario(req));
+}
+
+function isFornecedor(req) {
+    return tipoUsuario(req) === 'fornecedor';
+}
+
+function isCliente(req) {
+    return tipoUsuario(req) === 'comum';
+}
+
+function parsePaginacao(req) {
+    const pagina = parseInt(req.query.pagina) || 1;
+    const limite = parseInt(req.query.limite) || 10;
+    const limiteMaximo = parseInt(process.env.PAGINACAO_LIMITE_MAXIMO) || 100;
+
+    if (pagina <= 0 || limite <= 0 || limite > limiteMaximo) {
+        return {
+            erro: {
+                status: 400,
+                resposta: {
+                    sucesso: false,
+                    erro: 'Paginação inválida',
+                    mensagem: `Página deve ser maior que zero e limite entre 1 e ${limiteMaximo}`
+                }
+            }
+        };
+    }
+
+    return { pagina, limite, offset: (pagina - 1) * limite };
+}
+
+function podeVerOrcamento(req, orcamento) {
+    if (isAdmin(req)) return true;
+
+    if (isCliente(req)) {
+        return (
+            Number(orcamento.id_cliente) === Number(req.usuario.id_user) &&
+            ['visivel', 'escolhida', 'recusado'].includes(orcamento.estado)
+        );
+    }
+
+    if (isFornecedor(req)) {
+        return Number(orcamento.id_fornecedor) === Number(req.usuario.id_user);
+    }
+
+    return false;
+}
+
+function podeAlterarOrcamento(req, orcamento) {
+    return isAdmin(req) || Number(orcamento.id_fornecedor) === Number(req.usuario.id_user);
+}
+
 class OrcamentosController {
-
-    // GET /orcamentos - Listar todos os orçamentos (com paginação)
     static async listarTodos(req, res) {
         try {
-            let pagina = parseInt(req.query.pagina) || 1;
-            let limite = parseInt(req.query.limite) || 10;
-
-            if (pagina <= 0) {
-                return res.status(400).json({
-                    sucesso: false,
-                    erro: 'Página inválida',
-                    mensagem: 'A página deve ser um número maior que zero'
-                });
-            }
-            if (limite <= 0) {
-                return res.status(400).json({
-                    sucesso: false,
-                    erro: 'Limite inválido',
-                    mensagem: 'O limite deve ser um número maior que zero'
-                });
+            const paginacaoEntrada = parsePaginacao(req);
+            if (paginacaoEntrada.erro) {
+                return res.status(paginacaoEntrada.erro.status).json(paginacaoEntrada.erro.resposta);
             }
 
-            const limiteMaximo = parseInt(process.env.PAGINACAO_LIMITE_MAXIMO) || 100;
-            if (limite > limiteMaximo) {
-                return res.status(400).json({
-                    sucesso: false,
-                    erro: 'Limite inválido',
-                    mensagem: `O limite deve ser um número entre 1 e ${limiteMaximo}`
-                });
-            }
-
-            const resultado = await OrcamentosModel.listarTodos(pagina, limite); 
+            const { pagina, limite } = paginacaoEntrada;
+            const resultado = await OrcamentosModel.listarTodos(pagina, limite, req.usuario);
 
             res.status(200).json({
                 sucesso: true,
                 dados: resultado.orcamentos,
                 paginacao: {
-                    pagina: resultado.pagina, 
-                    limite: resultado.limite, 
-                    total: resultado.total,   
-                    totalPaginas: resultado.totalPaginas 
+                    pagina: resultado.pagina,
+                    limite: resultado.limite,
+                    total: resultado.total,
+                    totalPaginas: resultado.totalPaginas
                 }
             });
         } catch (error) {
@@ -55,24 +93,29 @@ class OrcamentosController {
         }
     }
 
-    // GET /orcamentos/nome/:nome_orcamento - Listar por nome (com paginação)
     static async buscarPorNome(req, res) {
         try {
-            let nome_orcamento = req.params.nome_orcamento || '';
-            let pagina = parseInt(req.query.pagina) || 1;
-            let limite = parseInt(req.query.limite) || 10;
-            const offset = (pagina - 1) * limite;
+            const paginacaoEntrada = parsePaginacao(req);
+            if (paginacaoEntrada.erro) {
+                return res.status(paginacaoEntrada.erro.status).json(paginacaoEntrada.erro.resposta);
+            }
 
-            const resultado = await OrcamentosModel.buscarPorNome(nome_orcamento, limite, offset); 
+            const { limite, offset } = paginacaoEntrada;
+            const resultado = await OrcamentosModel.buscarPorNome(
+                req.params.nome_orcamento || '',
+                limite,
+                offset,
+                req.usuario
+            );
 
             res.status(200).json({
                 sucesso: true,
                 dados: resultado.orcamentos,
                 paginacao: {
-                    pagina: resultado.pagina, 
-                    limite: resultado.limite, 
-                    total: resultado.total,   
-                    totalPaginas: resultado.totalPaginas 
+                    pagina: resultado.pagina,
+                    limite: resultado.limite,
+                    total: resultado.total,
+                    totalPaginas: resultado.totalPaginas
                 }
             });
         } catch (error) {
@@ -85,13 +128,13 @@ class OrcamentosController {
         }
     }
 
-    // GET /orcamentos/encomenda/:id_encomenda - Listar por ID da encomenda (com paginação)
     static async buscarPorEncomenda(req, res) {
         try {
             const { id_encomenda } = req.params;
-            let pagina = parseInt(req.query.pagina) || 1;
-            let limite = parseInt(req.query.limite) || 10;
-            const offset = (pagina - 1) * limite;
+            const paginacaoEntrada = parsePaginacao(req);
+            if (paginacaoEntrada.erro) {
+                return res.status(paginacaoEntrada.erro.status).json(paginacaoEntrada.erro.resposta);
+            }
 
             if (!id_encomenda || isNaN(id_encomenda)) {
                 return res.status(400).json({
@@ -101,16 +144,22 @@ class OrcamentosController {
                 });
             }
 
-            const resultado = await OrcamentosModel.buscarPorEncomenda(parseInt(id_encomenda), limite, offset); 
+            const { limite, offset } = paginacaoEntrada;
+            const resultado = await OrcamentosModel.buscarPorEncomenda(
+                Number(id_encomenda),
+                limite,
+                offset,
+                req.usuario
+            );
 
             res.status(200).json({
                 sucesso: true,
                 dados: resultado.orcamentos,
                 paginacao: {
-                    pagina: resultado.pagina, 
-                    limite: resultado.limite, 
-                    total: resultado.total,   
-                    totalPaginas: resultado.totalPaginas 
+                    pagina: resultado.pagina,
+                    limite: resultado.limite,
+                    total: resultado.total,
+                    totalPaginas: resultado.totalPaginas
                 }
             });
         } catch (error) {
@@ -123,33 +172,33 @@ class OrcamentosController {
         }
     }
 
-    // GET /orcamentos/estado/:estado - Listar por estado (com paginação)
     static async buscarPorEstado(req, res) {
         try {
-            let estado = req.params.estado || 'invisivel';
-            let pagina = parseInt(req.query.pagina) || 1;
-            let limite = parseInt(req.query.limite) || 10;
-            const offset = (pagina - 1) * limite;
+            const estado = String(req.params.estado || 'visivel').toLowerCase();
+            const paginacaoEntrada = parsePaginacao(req);
+            if (paginacaoEntrada.erro) {
+                return res.status(paginacaoEntrada.erro.status).json(paginacaoEntrada.erro.resposta);
+            }
 
-            const estadosValidos = ['visivel', 'invisivel', 'escolhida'];
-            if (!estadosValidos.includes(estado.toLowerCase())) {
+            if (!ESTADOS_ORCAMENTO_VALIDOS.includes(estado)) {
                 return res.status(400).json({
                     sucesso: false,
                     erro: 'Estado inválido',
-                    mensagem: 'O estado deve ser um dos seguintes: visivel, invisivel ou escolhida'
+                    mensagem: `O estado deve ser: ${ESTADOS_ORCAMENTO_VALIDOS.join(', ')}`
                 });
             }
 
-            const resultado = await OrcamentosModel.buscarPorEstado(estado.toLowerCase(), limite, offset); 
+            const { limite, offset } = paginacaoEntrada;
+            const resultado = await OrcamentosModel.buscarPorEstado(estado, limite, offset, req.usuario);
 
             res.status(200).json({
                 sucesso: true,
                 dados: resultado.orcamentos,
                 paginacao: {
-                    pagina: resultado.pagina, 
-                    limite: resultado.limite, 
-                    total: resultado.total,   
-                    totalPaginas: resultado.totalPaginas 
+                    pagina: resultado.pagina,
+                    limite: resultado.limite,
+                    total: resultado.total,
+                    totalPaginas: resultado.totalPaginas
                 }
             });
         } catch (error) {
@@ -162,7 +211,6 @@ class OrcamentosController {
         }
     }
 
-    // GET /orcamentos/:id - Buscar orçamento por ID
     static async buscarPorId(req, res) {
         try {
             const { id_orcamento } = req.params;
@@ -177,7 +225,7 @@ class OrcamentosController {
 
             const orcamento = await OrcamentosModel.buscarPorId(id_orcamento);
 
-            if (!orcamento) {
+            if (!orcamento || !podeVerOrcamento(req, orcamento)) {
                 return res.status(404).json({
                     sucesso: false,
                     erro: 'Orçamento não encontrado',
@@ -199,55 +247,106 @@ class OrcamentosController {
         }
     }
 
-    // POST /orcamentos - Criar novo orçamento
     static async criar(req, res) {
         try {
-            const { id_encomenda, nome_orcamento, tipo_orcamento, estimacao, estado } = req.body;
+            if (!isFornecedor(req) && !isAdmin(req)) {
+                return res.status(403).json({
+                    sucesso: false,
+                    erro: 'Acesso negado',
+                    mensagem: 'Apenas fornecedores podem criar orçamentos'
+                });
+            }
+
+            const {
+                id_encomenda,
+                id_fornecedor,
+                nome_orcamento,
+                tipo_orcamento,
+                estimacao,
+                estado
+            } = req.body;
             const erros = [];
 
-            // Validar id_encomenda
             if (!id_encomenda || isNaN(id_encomenda)) {
                 erros.push({ campo: 'id_encomenda', mensagem: 'ID da encomenda é obrigatório e deve ser numérico' });
             }
 
-            // Validar nome_orcamento
             if (!nome_orcamento || nome_orcamento.trim() === '') {
                 erros.push({ campo: 'nome_orcamento', mensagem: 'Nome do orçamento é obrigatório' });
-            } else if (nome_orcamento.trim().length > 255) {
-                erros.push({ campo: 'nome_orcamento', mensagem: 'O nome deve ter no máximo 255 caracteres' });
             }
 
-            // Validar tipo_orcamento
             if (!tipo_orcamento || tipo_orcamento.trim() === '') {
                 erros.push({ campo: 'tipo_orcamento', mensagem: 'Tipo do orçamento é obrigatório' });
-            } else if (tipo_orcamento.trim().length > 255) {
-                erros.push({ campo: 'tipo_orcamento', mensagem: 'O tipo deve ter no máximo 255 caracteres' });
             }
 
-            // Validar estimacao (DECIMAL)
-            if (estimacao === undefined || estimacao === null || isNaN(estimacao) || parseFloat(estimacao) < 0) {
+            if (estimacao === undefined || estimacao === null || isNaN(estimacao) || Number(estimacao) < 0) {
                 erros.push({ campo: 'estimacao', mensagem: 'Estimação é obrigatória e deve ser um número positivo' });
             }
 
-            // Validar estado (ENUM)
-            const estadosValidos = ['visivel', 'invisivel', 'escolhida'];
-            if (estado && !estadosValidos.includes(estado.toLowerCase())) {
-                erros.push({ campo: 'estado', mensagem: 'Estado inválido' });
+            const estadoFinal = String(estado || 'visivel').toLowerCase();
+            if (!ESTADOS_ORCAMENTO_VALIDOS.includes(estadoFinal) || estadoFinal === 'escolhida') {
+                erros.push({ campo: 'estado', mensagem: 'Estado inválido para criação' });
             }
 
             if (erros.length > 0) {
                 return res.status(400).json({ sucesso: false, erro: 'Dados inválidos', detalhes: erros });
             }
 
+            const encomenda = await EncomendaModel.buscarPorId(id_encomenda);
+            if (!encomenda) {
+                return res.status(404).json({
+                    sucesso: false,
+                    erro: 'Encomenda não encontrada',
+                    mensagem: `Encomenda com ID ${id_encomenda} não foi encontrada`
+                });
+            }
+
+            if (['entregue', 'finalizado', 'cancelado'].includes(encomenda.status)) {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'Encomenda encerrada',
+                    mensagem: 'Não é possível criar orçamento para encomenda encerrada'
+                });
+            }
+
+            if (
+                !isAdmin(req) &&
+                !['pendente', 'aguardando_orcamento', 'orcamento_recebido'].includes(encomenda.status)
+            ) {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'Etapa encerrada',
+                    mensagem: 'Esta encomenda já passou da etapa de orçamento'
+                });
+            }
+
+            const idFornecedorFinal = isAdmin(req) && id_fornecedor
+                ? Number(id_fornecedor)
+                : Number(req.usuario.id_user);
+
+            const fornecedor = await UsuarioModel.buscarPorId(idFornecedorFinal);
+            if (!fornecedor) {
+                return res.status(404).json({
+                    sucesso: false,
+                    erro: 'Fornecedor não encontrado',
+                    mensagem: `Fornecedor com ID ${idFornecedorFinal} não foi encontrado`
+                });
+            }
+
             const dadosOrcamento = {
-                id_encomenda: parseInt(id_encomenda),
+                id_encomenda: Number(id_encomenda),
+                id_fornecedor: idFornecedorFinal,
                 nome_orcamento: nome_orcamento.trim(),
                 tipo_orcamento: tipo_orcamento.trim(),
-                estimacao: parseFloat(estimacao),
-                estado: estado ? estado.toLowerCase() : 'invisivel'
+                estimacao: Number(estimacao),
+                estado: estadoFinal
             };
 
             const orcamentoId = await OrcamentosModel.criar(dadosOrcamento);
+
+            if (['pendente', 'aguardando_orcamento'].includes(encomenda.status) && estadoFinal === 'visivel') {
+                await EncomendaModel.atualizar(id_encomenda, { status: 'orcamento_recebido' });
+            }
 
             res.status(201).json({
                 sucesso: true,
@@ -264,59 +363,113 @@ class OrcamentosController {
         }
     }
 
-    // PUT /orcamentos/:id - Atualizar orçamento
     static async atualizar(req, res) {
         try {
             const { id_orcamento } = req.params;
             const { id_encomenda, nome_orcamento, tipo_orcamento, estimacao, estado } = req.body;
 
             if (!id_orcamento || isNaN(id_orcamento)) {
-                return res.status(400).json({ sucesso: false, erro: 'ID inválido', mensagem: 'O ID deve ser um número válido' });
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'ID inválido',
+                    mensagem: 'O ID deve ser um número válido'
+                });
             }
 
             const orcamentoExistente = await OrcamentosModel.buscarPorId(id_orcamento);
             if (!orcamentoExistente) {
-                return res.status(404).json({ sucesso: false, erro: 'Não encontrado', mensagem: `Registro com ID ${id_orcamento} não encontrado` });
+                return res.status(404).json({
+                    sucesso: false,
+                    erro: 'Não encontrado',
+                    mensagem: `Registro com ID ${id_orcamento} não encontrado`
+                });
+            }
+
+            if (!podeAlterarOrcamento(req, orcamentoExistente)) {
+                return res.status(403).json({
+                    sucesso: false,
+                    erro: 'Acesso negado',
+                    mensagem: 'Fornecedor só pode alterar orçamentos que pertencem a ele'
+                });
+            }
+
+            if (!isAdmin(req) && orcamentoExistente.estado === 'escolhida') {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'Orçamento escolhido',
+                    mensagem: 'Orçamento escolhido não pode ser alterado pelo fornecedor'
+                });
             }
 
             const dadosAtualizacao = {};
 
-            if (id_encomenda !== undefined) {
-                if (isNaN(id_encomenda)) return res.status(400).json({ sucesso: false, erro: 'ID da encomenda deve ser numérico' });
-                dadosAtualizacao.id_encomenda = parseInt(id_encomenda);
+            if (id_encomenda !== undefined && Number(id_encomenda) !== Number(orcamentoExistente.id_encomenda)) {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'Encomenda inválida',
+                    mensagem: 'Não é permitido mover orçamento para outra encomenda'
+                });
             }
 
             if (nome_orcamento !== undefined) {
-                if (nome_orcamento.trim() === '') return res.status(400).json({ sucesso: false, erro: 'Nome inválido' });
+                if (!nome_orcamento || nome_orcamento.trim() === '') {
+                    return res.status(400).json({ sucesso: false, erro: 'Nome inválido' });
+                }
                 dadosAtualizacao.nome_orcamento = nome_orcamento.trim();
             }
 
             if (tipo_orcamento !== undefined) {
-                if (tipo_orcamento.trim() === '') return res.status(400).json({ sucesso: false, erro: 'Tipo inválido' });
+                if (!tipo_orcamento || tipo_orcamento.trim() === '') {
+                    return res.status(400).json({ sucesso: false, erro: 'Tipo inválido' });
+                }
                 dadosAtualizacao.tipo_orcamento = tipo_orcamento.trim();
             }
 
             if (estimacao !== undefined) {
-                if (isNaN(estimacao) || parseFloat(estimacao) < 0) return res.status(400).json({ sucesso: false, erro: 'Estimação inválida' });
-                dadosAtualizacao.estimacao = parseFloat(estimacao);
+                if (isNaN(estimacao) || Number(estimacao) < 0) {
+                    return res.status(400).json({ sucesso: false, erro: 'Estimação inválida' });
+                }
+                dadosAtualizacao.estimacao = Number(estimacao);
             }
 
             if (estado !== undefined) {
-                const estadosValidos = ['visivel', 'invisivel', 'escolhida'];
-                if (!estadosValidos.includes(estado.toLowerCase())) return res.status(400).json({ sucesso: false, erro: 'Estado inválido' });
-                dadosAtualizacao.estado = estado.toLowerCase();
+                const estadoNormalizado = String(estado).toLowerCase();
+                if (!ESTADOS_ORCAMENTO_VALIDOS.includes(estadoNormalizado)) {
+                    return res.status(400).json({ sucesso: false, erro: 'Estado inválido' });
+                }
+
+                if (!isAdmin(req) && estadoNormalizado === 'escolhida') {
+                    return res.status(403).json({
+                        sucesso: false,
+                        erro: 'Acesso negado',
+                        mensagem: 'A escolha de orçamento deve ser feita pelo cliente'
+                    });
+                }
+
+                dadosAtualizacao.estado = estadoNormalizado;
             }
 
             if (Object.keys(dadosAtualizacao).length === 0) {
-                return res.status(400).json({ sucesso: false, erro: 'Nenhum dado', mensagem: 'Forneça pelo menos um campo para atualizar' });
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'Nenhum dado',
+                    mensagem: 'Forneça pelo menos um campo para atualizar'
+                });
             }
 
             const resultado = await OrcamentosModel.atualizar(id_orcamento, dadosAtualizacao);
 
+            if (
+                dadosAtualizacao.estado === 'visivel' &&
+                ['pendente', 'aguardando_orcamento'].includes(orcamentoExistente.status_encomenda)
+            ) {
+                await EncomendaModel.atualizar(orcamentoExistente.id_encomenda, { status: 'orcamento_recebido' });
+            }
+
             res.status(200).json({
                 sucesso: true,
                 mensagem: 'Orçamento atualizado com sucesso',
-                dados: { linhasAfetadas: resultado.affectedRows || 1 }
+                dados: { linhasAfetadas: resultado || 1 }
             });
         } catch (error) {
             console.error('Erro ao atualizar orçamento:', error);
@@ -328,7 +481,46 @@ class OrcamentosController {
         }
     }
 
-    // DELETE /orcamentos/:id - Excluir orçamento
+    static async escolher(req, res) {
+        try {
+            if (!isCliente(req) && !isAdmin(req)) {
+                return res.status(403).json({
+                    sucesso: false,
+                    erro: 'Acesso negado',
+                    mensagem: 'Apenas o cliente da encomenda pode escolher orçamento'
+                });
+            }
+
+            const { id_orcamento } = req.params;
+
+            if (!id_orcamento || isNaN(id_orcamento)) {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'ID inválido',
+                    mensagem: 'O ID deve ser um número válido'
+                });
+            }
+
+            const orcamento = await OrcamentosModel.escolherOrcamento(
+                Number(id_orcamento),
+                Number(req.usuario.id_user)
+            );
+
+            res.status(200).json({
+                sucesso: true,
+                mensagem: 'Orçamento escolhido com sucesso',
+                dados: orcamento
+            });
+        } catch (error) {
+            console.error('Erro ao escolher orçamento:', error);
+            res.status(error.status || 500).json({
+                sucesso: false,
+                erro: error.status ? 'Regra de negócio' : 'Erro interno do servidor',
+                mensagem: error.message || 'Não foi possível escolher o orçamento'
+            });
+        }
+    }
+
     static async excluir(req, res) {
         try {
             const { id_orcamento } = req.params;
@@ -347,6 +539,22 @@ class OrcamentosController {
                     sucesso: false,
                     erro: 'Não encontrado',
                     mensagem: `Registro com ID ${id_orcamento} não encontrado`
+                });
+            }
+
+            if (!podeAlterarOrcamento(req, orcamentoExistente)) {
+                return res.status(403).json({
+                    sucesso: false,
+                    erro: 'Acesso negado',
+                    mensagem: 'Fornecedor só pode excluir orçamentos que pertencem a ele'
+                });
+            }
+
+            if (orcamentoExistente.estado === 'escolhida') {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'Orçamento escolhido',
+                    mensagem: 'Não é possível excluir um orçamento já escolhido'
                 });
             }
 

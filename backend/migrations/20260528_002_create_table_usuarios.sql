@@ -13,7 +13,7 @@ CREATE TABLE usuarios (
     empresa VARCHAR(150),
     cargo VARCHAR(100),
     descricao TEXT,
-    tipo ENUM('fornecedor','administrador', 'comum') NOT NULL DEFAULT 'comum',
+    tipo ENUM('fornecedor','administrador', 'admin', 'comum') NOT NULL DEFAULT 'comum',
     email VARCHAR(150) NOT NULL UNIQUE,
     senha VARCHAR(255) NOT NULL,
     cep VARCHAR(9) 

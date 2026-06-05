@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import UsuarioModel from '../models/UsuarioModel.js';
 import bcrypt from 'bcryptjs';
 import { JWT_CONFIG } from '../config/jwt.js';
+import { removerArquivoAntigo } from '../middlewares/uploadMiddleware.js';
 
 // Controller para operações de autenticação e gerenciamento de usuários
 class AuthController {
@@ -533,17 +534,19 @@ class AuthController {
                 });
             }
 
-            const duplicata = await AuthController.validarDuplicatasUsuario({
-                email,
-                cnpjLimpo,
-                cepLimpo
-            });
-
-            if (duplicata) {
-                return res.status(duplicata.status).json(duplicata.resposta);
+            const usuarioExistente = await UsuarioModel.buscarPorId(id_user);
+            if (!usuarioExistente) {
+                return res.status(404).json({
+                    sucesso: false,
+                    erro: 'Usuário não encontrado',
+                    mensagem: `Usuário com ID ${id_user} não foi encontrado`
+                });
             }
 
             const dadosAtualizacao = {};
+            let emailParaDuplicata = usuarioExistente.email;
+            let cnpjParaDuplicata = String(usuarioExistente.cnpj || '').replace(/\D/g, '');
+            let cepParaDuplicata = String(usuarioExistente.cep || '').replace(/\D/g, '');
             
             if (nome_user !== undefined) {
                 if (nome_user.trim() === '' || nome_user.length < 2) {
@@ -566,6 +569,7 @@ class AuthController {
                     });
                 }
                 dadosAtualizacao.cnpj = cnpjLimpo;
+                cnpjParaDuplicata = cnpjLimpo;
             }
 
             if (endereco !== undefined) {
@@ -613,15 +617,8 @@ class AuthController {
                     });
                 }
                 
-                const usuarioComEmail = await UsuarioModel.buscarPorEmail(email);
-                if (usuarioComEmail && usuarioComEmail.id_user !== parseInt(id_user)) {
-                    return res.status(409).json({
-                        sucesso: false,
-                        erro: 'Email já cadastrado',
-                        mensagem: 'Este email já está sendo usado por outro usuário'
-                    });
-                }
                 dadosAtualizacao.email = email.trim().toLowerCase();
+                emailParaDuplicata = dadosAtualizacao.email;
             }
 
             if (senha !== undefined) {
@@ -632,7 +629,6 @@ class AuthController {
                         mensagem: 'A senha deve ter pelo menos 6 caracteres'
                     });
                 }
-                const saltRounds = 10;
                 dadosAtualizacao.senha = senha;
             }
 
@@ -646,22 +642,27 @@ class AuthController {
                     });
                 }
                 dadosAtualizacao.cep = cepLimpo;
+                cepParaDuplicata = cepLimpo;
             }
 
             // REFACHADO: Permite que o admin altere o nível de privilégio (cargo/role) do usuário gerenciado
             if (tipo !== undefined) {
-                const tiposValidos = ['comum', 'fornecedor', 'admin'];
-                if (!tiposValidos.includes(tipo)) {
+                const tipoNormalizado = String(tipo).trim().toLowerCase();
+                const tiposValidos = ['comum', 'fornecedor', 'administrador', 'admin'];
+                if (!tiposValidos.includes(tipoNormalizado)) {
                     return res.status(400).json({
                         sucesso: false,
                         erro: 'Tipo inválido',
-                        mensagem: 'O tipo deve ser alterado para comum, fornecedor ou admin'
+                        mensagem: 'O tipo deve ser alterado para comum, fornecedor, administrador ou admin'
                     });
                 }
-                dadosAtualizacao.tipo = tipo;
+                dadosAtualizacao.tipo = tipoNormalizado;
             }
 
             if (req.file) {
+                if (usuarioExistente.foto) {
+                    await removerArquivoAntigo(usuarioExistente.foto, 'imagem');
+                }
                 dadosAtualizacao.foto = req.file.filename;
             }
 
@@ -673,11 +674,22 @@ class AuthController {
                 });
             }
 
+            const duplicata = await AuthController.validarDuplicatasUsuario({
+                email: emailParaDuplicata,
+                cnpjLimpo: cnpjParaDuplicata,
+                cepLimpo: cepParaDuplicata,
+                ignorarIdUser: id_user
+            });
+
+            if (duplicata) {
+                return res.status(duplicata.status).json(duplicata.resposta);
+            }
+
             const resultado = await UsuarioModel.atualizar(id_user, dadosAtualizacao);
             
             res.status(200).json({
                 sucesso: true,
-                mensagem: 'Usuário atualizado com sucesso pelo Admin',
+                mensagem: 'Usuário atualizado com sucesso',
                 dados: {
                     linhasAfetadas: resultado || 1
                 }

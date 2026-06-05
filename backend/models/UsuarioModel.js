@@ -47,7 +47,7 @@ class UsuarioModel {
     // Buscar usuário por email
     static async buscarPorEmail(email) {
         try {
-            const rows = await read('usuarios', `email = '${email}'`);
+            const rows = await read('usuarios', 'email = ?', [email]);
             return rows[0] || null;
         } catch (error) {
             console.error('Erro ao buscar usuário por email:', error);
@@ -80,7 +80,7 @@ class UsuarioModel {
                 dadosUsuario.senha = await hashPassword(dadosUsuario.senha);
             }
             
-            return await update('usuarios', dadosUsuario, `id_user = ${id_user}`);
+            return await update('usuarios', dadosUsuario, 'id_user = ?', [id_user]);
         } catch (error) {
             console.error('Erro ao atualizar usuário:', error);
             throw error;
@@ -90,7 +90,7 @@ class UsuarioModel {
     // Excluir usuário
     static async excluir(id_user) {
         try {
-            return await deleteRecord('usuarios', `id_user = ${id_user}`);
+            return await deleteRecord('usuarios', 'id_user = ?', [id_user]);
         } catch (error) {
             console.error('Erro ao excluir usuário:', error);
             throw error;

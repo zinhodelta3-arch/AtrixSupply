@@ -1,52 +1,134 @@
-import { create, read, update, deleteRecord, getConnection } from '../config/database.js';
+import { create, update, deleteRecord, getConnection } from '../config/database.js';
 
-// Model para operações com encomendas
 class EncomendaModel {
-    
-    // Listar todas as encomendas (com paginação)
-    static async listarTodos(limite, offset) {
+    static selectDetalhado() {
+        return `
+            SELECT
+                e.*,
+                cliente.nome_user AS cliente_nome,
+                cliente.empresa AS cliente_empresa,
+                fornecedor.nome_user AS fornecedor_nome,
+                fornecedor.empresa AS fornecedor_empresa,
+                l.nome_logistica,
+                l.veiculo AS logistica_veiculo,
+                l.destino AS logistica_destino,
+                l.disponibilidade AS logistica_disponibilidade,
+                (
+                    SELECT COUNT(*)
+                    FROM orcamentos o
+                    WHERE o.id_encomenda = e.id_encomenda
+                      AND o.estado IN ('visivel', 'escolhida')
+                ) AS total_orcamentos,
+                (
+                    SELECT GROUP_CONCAT(DISTINCT COALESCE(u.empresa, u.nome_user) SEPARATOR ', ')
+                    FROM orcamentos o
+                    LEFT JOIN usuarios u ON u.id_user = o.id_fornecedor
+                    WHERE o.id_encomenda = e.id_encomenda
+                      AND o.estado IN ('visivel', 'escolhida')
+                ) AS empresas_orcamentos
+            FROM encomendas e
+            LEFT JOIN usuarios cliente ON cliente.id_user = e.id_user
+            LEFT JOIN usuarios fornecedor ON fornecedor.id_user = e.id_fornecedor
+            LEFT JOIN logistica l ON l.id_logistica = e.id_logistica
+        `;
+    }
+
+    static filtroPorUsuario(usuario) {
+        const tipo = String(usuario?.tipo || '').toLowerCase();
+        const idUsuario = Number(usuario?.id_user || 0);
+
+        if (['administrador', 'admin'].includes(tipo)) {
+            return { where: '1 = 1', params: [] };
+        }
+
+        if (tipo === 'comum') {
+            return { where: 'e.id_user = ?', params: [idUsuario] };
+        }
+
+        if (tipo === 'fornecedor') {
+            return {
+                where: `(
+                    (e.id_fornecedor IS NULL AND e.status NOT IN ('entregue', 'finalizado', 'cancelado'))
+                    OR e.id_fornecedor = ?
+                    OR EXISTS (
+                        SELECT 1
+                        FROM orcamentos o
+                        WHERE o.id_encomenda = e.id_encomenda
+                          AND o.id_fornecedor = ?
+                    )
+                )`,
+                params: [idUsuario, idUsuario]
+            };
+        }
+
+        return { where: '1 = 0', params: [] };
+    }
+
+    static async listarTodos(limite, offset, usuario = null) {
+        const filtro = this.filtroPorUsuario(usuario);
+        const connection = await getConnection();
+
         try {
-            const connection = await getConnection();
-            try {
-                const sql = 'SELECT * FROM encomendas ORDER BY id_encomenda DESC LIMIT ? OFFSET ?';
-                const [encomendas] = await connection.query(sql, [parseInt(limite), parseInt(offset)]);
+            const sql = `
+                ${this.selectDetalhado()}
+                WHERE ${filtro.where}
+                ORDER BY e.id_encomenda DESC
+                LIMIT ? OFFSET ?
+            `;
 
-                const [totalResult] = await connection.execute('SELECT COUNT(*) as total FROM encomendas');
-                const total = totalResult[0].total;
+            const [encomendas] = await connection.query(sql, [
+                ...filtro.params,
+                parseInt(limite),
+                parseInt(offset)
+            ]);
 
-                const paginaAtual = (offset / limite) + 1;
-                const totalPaginas = Math.ceil(total / limite);
+            const [totalResult] = await connection.query(
+                `SELECT COUNT(*) AS total FROM encomendas e WHERE ${filtro.where}`,
+                filtro.params
+            );
 
-                return {
-                    encomendas,
-                    total,
-                    pagina: paginaAtual,
-                    limite,
-                    totalPaginas
-                };
-            } finally {
-                connection.release();
-            }
+            const total = totalResult[0].total;
+            const paginaAtual = (offset / limite) + 1;
+
+            return {
+                encomendas,
+                total,
+                pagina: paginaAtual,
+                limite,
+                totalPaginas: Math.ceil(total / limite)
+            };
         } catch (error) {
             console.error('Erro ao listar encomendas:', error);
             throw error;
+        } finally {
+            connection.release();
         }
     }
 
-    // Buscar encomenda por ID (Seguro usando placeholders)
-    static async buscarPorId(id_encomenda) {
+    static async buscarPorId(id_encomenda, usuario = null) {
+        const filtro = usuario ? this.filtroPorUsuario(usuario) : { where: '1 = 1', params: [] };
+        const connection = await getConnection();
+
         try {
-            // Usando placeholders de interrogação se o seu read() suportar, 
-            // ou tratando explicitamente para evitar SQL Injection
-            const rows = await read('encomendas', 'id_encomenda = ?', [id_encomenda]);
+            const [rows] = await connection.query(
+                `
+                    ${this.selectDetalhado()}
+                    WHERE e.id_encomenda = ?
+                      AND ${filtro.where}
+                    LIMIT 1
+                `,
+                [id_encomenda, ...filtro.params]
+            );
+
             return rows[0] || null;
         } catch (error) {
             console.error('Erro ao buscar encomenda por ID:', error);
             throw error;
+        } finally {
+            connection.release();
         }
     }
 
-    // Criar nova encomenda
     static async criar(dadosEncomenda) {
         try {
             return await create('encomendas', dadosEncomenda);
@@ -56,7 +138,6 @@ class EncomendaModel {
         }
     }
 
-    // Atualizar encomenda
     static async atualizar(id_encomenda, dadosEncomenda) {
         try {
             return await update('encomendas', dadosEncomenda, 'id_encomenda = ?', [id_encomenda]);
@@ -66,7 +147,6 @@ class EncomendaModel {
         }
     }
 
-    // Excluir encomenda
     static async excluir(id_encomenda) {
         try {
             return await deleteRecord('encomendas', 'id_encomenda = ?', [id_encomenda]);
@@ -76,37 +156,43 @@ class EncomendaModel {
         }
     }
 
-    // Buscar pelo nome das peças (Corrigido LIMIT e OFFSET)
-    static async buscarPorNome(pecas, limite, offset) {
-         try {
-            const connection = await getConnection();
-            try {
-                // CORREÇÃO: Faltava o 'LIMIT ? OFFSET ?' na query sql original
-                const sql = 'SELECT * FROM encomendas WHERE pecas LIKE ? ORDER BY id_encomenda DESC LIMIT ? OFFSET ?';
-                const nome = `%${pecas}%`;
+    static async buscarPorNome(pecas, limite, offset, usuario = null) {
+        const filtro = this.filtroPorUsuario(usuario);
+        const connection = await getConnection();
 
-                // Passando limite e offset mapeados corretamente
-                const [encomendas] = await connection.query(sql, [nome, parseInt(limite), parseInt(offset)]);
+        try {
+            const nome = `%${pecas}%`;
+            const where = `(${filtro.where}) AND e.pecas LIKE ?`;
 
-                const [totalResult] = await connection.query('SELECT COUNT(*) as total FROM encomendas WHERE pecas LIKE ?', [nome]);
-                const total = totalResult[0].total;
+            const [encomendas] = await connection.query(
+                `
+                    ${this.selectDetalhado()}
+                    WHERE ${where}
+                    ORDER BY e.id_encomenda DESC
+                    LIMIT ? OFFSET ?
+                `,
+                [...filtro.params, nome, parseInt(limite), parseInt(offset)]
+            );
 
-                const paginaAtual = (offset / limite) + 1;
-                const totalPaginas = Math.ceil(total / limite);
+            const [totalResult] = await connection.query(
+                `SELECT COUNT(*) AS total FROM encomendas e WHERE ${where}`,
+                [...filtro.params, nome]
+            );
 
-                return {
-                    encomendas,
-                    total,
-                    pagina: paginaAtual,
-                    limite,
-                    totalPaginas
-                };
-            } finally {
-                connection.release();
-            }
+            const total = totalResult[0].total;
+
+            return {
+                encomendas,
+                total,
+                pagina: (offset / limite) + 1,
+                limite,
+                totalPaginas: Math.ceil(total / limite)
+            };
         } catch (error) {
             console.error('Erro ao buscar encomendas por nome:', error);
             throw error;
+        } finally {
+            connection.release();
         }
     }
 }

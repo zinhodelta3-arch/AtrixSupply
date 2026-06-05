@@ -8,6 +8,7 @@ import "./pedidos.css";
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { FALLBACK_IMAGE, resolveImageUrl, useImageFallback } from "@/utils/imageUrl";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
 const PEDIDOS_URL = `${API_URL}/api/pedidos`;
@@ -153,18 +154,6 @@ function getMensagemErro(data) {
   }
 
   return data?.mensagem || data?.erro || "Ocorreu um erro inesperado.";
-}
-
-function getImagemUrl(imagem) {
-  if (!imagem) return "/logo.png";
-
-  if (String(imagem).startsWith("http")) return imagem;
-
-  if (String(imagem).startsWith("/uploads")) {
-    return `${API_URL}${imagem}`;
-  }
-
-  return `${API_URL}/uploads/imagens/${imagem}`;
 }
 
 function formatarPreco(valor) {
@@ -375,7 +364,7 @@ function normalizarPedido(pedido, produto) {
       pedido?.nome_produto ||
       produto?.nome_produto ||
       `Produto #${pedido?.id_produto || produto?.id_produto || produto?.id || "N/A"}`,
-    imagem: getImagemUrl(produto?.imagem || pedido?.imagem),
+    imagem: resolveImageUrl(produto?.imagem || pedido?.imagem, FALLBACK_IMAGE),
     preco: produto?.preco ?? pedido?.preco ?? 0,
     status,
     statusLabel: formatarStatus(status),
@@ -911,7 +900,7 @@ export default function Pedidos() {
                               alt={pedido.produto}
                               className="w-100"
                               onError={(event) => {
-                                event.currentTarget.src = "/logo.png";
+                                useImageFallback(event, FALLBACK_IMAGE);
                               }}
                               style={{
                                 objectFit: "cover",
@@ -1270,7 +1259,7 @@ export default function Pedidos() {
                         src={pedidoDetalhe.imagem}
                         alt={pedidoDetalhe.produto}
                         onError={(event) => {
-                          event.currentTarget.src = "/logo.png";
+                          useImageFallback(event, FALLBACK_IMAGE);
                         }}
                         style={{
                           width: "100%",

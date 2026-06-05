@@ -65,7 +65,7 @@ const isImage = (mimetype) => {
 const fileFilterImagens = (req, file, cb) => {
     const tiposPermitidos = process.env.ALLOWED_FILE_TYPES ? 
         process.env.ALLOWED_FILE_TYPES.split(',').map(t => t.trim()) : 
-        ['image/jpeg', 'image/png', 'image/gif'];
+        ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     
     if (tiposPermitidos.includes(file.mimetype)) {
         cb(null, true);
@@ -142,10 +142,19 @@ const handleUploadError = (error, req, res, next) => {
 export const removerArquivoAntigo = async (nomeArquivo, tipo = 'imagem') => {
     try {
         if (!nomeArquivo) return;
+
+        const nomeNormalizado = String(nomeArquivo)
+            .replaceAll('\\', '/')
+            .split('?')[0]
+            .split('#')[0]
+            .split('/')
+            .pop();
+
+        if (!nomeNormalizado) return false;
         
         const caminhoArquivo = tipo === 'imagem' 
-            ? path.join(uploadPathImagens, nomeArquivo)
-            : path.join(uploadPathArquivos, nomeArquivo);
+            ? path.join(uploadPathImagens, nomeNormalizado)
+            : path.join(uploadPathArquivos, nomeNormalizado);
         
         if (fs.existsSync(caminhoArquivo)) {
             fs.unlinkSync(caminhoArquivo);

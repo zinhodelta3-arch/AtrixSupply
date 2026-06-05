@@ -74,7 +74,7 @@ const adminMiddleware = (req, res, next) => {
 
 // Middleware para verificar se o usuário não é fornecedor
 const clientMiddleware = (req, res, next) => {
-    if (req.usuario.tipo === 'fornecedores') {
+    if (String(req.usuario.tipo || '').toLowerCase() === 'fornecedor') {
         return res.status(403).json({ 
             erro: 'Acesso negado',
             mensagem: 'Apenas clientes comuns ou administradores podem acessar este recurso'
@@ -85,7 +85,7 @@ const clientMiddleware = (req, res, next) => {
 
 // Middleware para verificar se o usuário não é fornecedor
 const supplierMiddleware = (req, res, next) => {
-    if (req.usuario.tipo === 'comum') {
+    if (String(req.usuario.tipo || '').toLowerCase() === 'comum') {
         return res.status(403).json({ 
             erro: 'Acesso negado',
             mensagem: 'Apenas fornecedores ou administradores podem acessar este recurso'
@@ -95,7 +95,10 @@ const supplierMiddleware = (req, res, next) => {
 };
 
 const selfMiddleware = (req, res, next) => {
-    if (req.usuario.id_user !== req.params.id_user) {
+    const tipoUsuario = String(req.usuario.tipo || '').toLowerCase();
+    const isAdmin = ['administrador', 'admin'].includes(tipoUsuario);
+
+    if (!isAdmin && Number(req.usuario.id_user) !== Number(req.params.id_user)) {
         return res.status(403).json({ 
             erro: 'Acesso negado',
             mensagem: 'Somente funcional em próprio usuário'

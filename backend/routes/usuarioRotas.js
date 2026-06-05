@@ -1,6 +1,7 @@
 import express from 'express';
 import AuthController from '../controllers/AuthController.js';
 import { authMiddleware, adminMiddleware, selfMiddleware } from '../middlewares/authMiddleware.js';
+import { uploadImagens, handleUploadError } from '../middlewares/uploadMiddleware.js';
 
 const router = express.Router();
 
@@ -10,13 +11,27 @@ router.get('/:id_user', authMiddleware, AuthController.buscarUsuarioPorId);
 
 // Rotas de usuários (selfCheck)
 
-router.put('/:id_user', authMiddleware, selfMiddleware, AuthController.atualizarUsuario);
+router.put(
+    '/:id_user',
+    authMiddleware,
+    selfMiddleware,
+    uploadImagens.single('foto'),
+    handleUploadError,
+    AuthController.atualizarUsuario
+);
 router.delete('/:id_user', authMiddleware, selfMiddleware, AuthController.excluirUsuario);
 
 // Rotas de usuários (apenas admin)
 router.get('/', authMiddleware, adminMiddleware, AuthController.listarUsuarios);
 router.post('/', authMiddleware, adminMiddleware, AuthController.criarUsuario);
-router.put('/admin/:id_user', authMiddleware, adminMiddleware, AuthController.atualizarUsuario);
+router.put(
+    '/admin/:id_user',
+    authMiddleware,
+    adminMiddleware,
+    uploadImagens.single('foto'),
+    handleUploadError,
+    AuthController.atualizarUsuario
+);
 router.delete('/admin/:id_user', authMiddleware, adminMiddleware, AuthController.excluirUsuario);
 
 // Rotas OPTIONS para CORS (preflight requests)

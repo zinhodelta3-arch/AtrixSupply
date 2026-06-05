@@ -11,7 +11,17 @@ CREATE TABLE encomendas (
     pecas VARCHAR(255) NOT NULL,
     descricao TEXT,
     status ENUM(
-        'pendente', 'em_andamento', 'finalizado', 'cancelado') NOT NULL DEFAULT 'pendente',
+        'pendente',
+        'aguardando_orcamento',
+        'orcamento_recebido',
+        'orcamento_escolhido',
+        'em_producao',
+        'aguardando_logistica',
+        'em_transporte',
+        'entregue',
+        'finalizado',
+        'cancelado'
+    ) NOT NULL DEFAULT 'pendente',
     orcamento DECIMAL(10,2) NULL,
     data_com DATE NOT NULL,
     data_entrega DATE NULL,

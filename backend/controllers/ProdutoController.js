@@ -249,7 +249,7 @@ class ProdutoController {
     static async criar(req, res) {
         try {
             const { nome_produto, descricao, preco, categoria, estoque, fornecedor  } = req.body;
-            let categoriaValidada = categoria.toLowerCase().trim().split(' ').join('_'); 
+            let categoriaValidada = String(categoria || 'geral').toLowerCase().trim().split(' ').join('_');
             const defaultCategorias = [
                 'geral', 
                 'automacao_industrial', 
@@ -352,7 +352,7 @@ class ProdutoController {
                 nome_produto: nome_produto.trim(),
                 descricao: descricao ? descricao.trim() : null,
                 preco: parseFloat(preco),
-                categoria: categoria ? categoria.trim() : 'Geral',
+                categoria: categoriaValidada,
                 estoque: parseInt(estoque),
    //             imagem: imagem.trim(),
                 fornecedor: fornecedor.trim()
@@ -388,7 +388,9 @@ class ProdutoController {
         try {
             const { id_produto } = req.params;
             const { nome_produto, descricao, preco, categoria, estoque, fornecedor } = req.body;
-            let categoriaValidada = categoria.toLowerCase().trim().split(' ').join('_'); 
+            let categoriaValidada = categoria !== undefined
+                ? String(categoria).toLowerCase().trim().split(' ').join('_')
+                : undefined;
             const defaultCategorias = [
                 'geral', 
                 'automacao_industrial', 
@@ -470,7 +472,7 @@ class ProdutoController {
                             mensagem: "Categoria não encontrada"
                         })
                     }
-                    dadosAtualizacao.categoria = categoriaValidada ? categoria.trim() : 'Geral';
+                    dadosAtualizacao.categoria = categoriaValidada || 'geral';
 
                 }
             }

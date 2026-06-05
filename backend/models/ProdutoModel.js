@@ -38,7 +38,7 @@ class ProdutoModel {
     // Buscar produto por ID
     static async buscarPorId(id_produto) {
         try {
-            const rows = await read('produtos', `id_produto = ${id_produto}`);
+            const rows = await read('produtos', 'id_produto = ?', [id_produto]);
             return rows[0] || null;
         } catch (error) {
             console.error('Erro ao buscar produto por ID:', error);
@@ -59,7 +59,7 @@ class ProdutoModel {
     // Atualizar produto
     static async atualizar(id_produto, dadosProduto) {
         try {
-            return await update('produtos', dadosProduto, `id_produto = ${id_produto}`);
+            return await update('produtos', dadosProduto, 'id_produto = ?', [id_produto]);
         } catch (error) {
             console.error('Erro ao atualizar produto:', error);
             throw error;
@@ -69,7 +69,7 @@ class ProdutoModel {
     // Excluir produto
     static async excluir(id_produto) {
         try {
-            return await deleteRecord('produtos', `id_produto = ${id_produto}`);
+            return await deleteRecord('produtos', 'id_produto = ?', [id_produto]);
         } catch (error) {
             console.error('Erro ao excluir produto:', error);
             throw error;

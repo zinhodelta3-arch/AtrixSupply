@@ -69,7 +69,7 @@ class LogisticaController {
                 });
             }
 
-            const resultado = await LogisticaModel.listarTodos(pagina, limite);
+            const resultado = await LogisticaModel.listarTodos(pagina, limite, req.usuario);
 
             res.status(200).json({
                 sucesso: true,
@@ -460,6 +460,15 @@ class LogisticaController {
                     sucesso: false,
                     erro: 'Não encontrado',
                     mensagem: `Registro com ID ${id_logistica} não encontrado`
+                });
+            }
+
+            const encomendasVinculadas = await LogisticaModel.contarEncomendasVinculadas(id_logistica);
+            if (encomendasVinculadas > 0) {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'Logística vinculada',
+                    mensagem: 'Não é possível excluir logística vinculada a encomenda ativa'
                 });
             }
 

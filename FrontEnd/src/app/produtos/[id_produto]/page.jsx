@@ -5,10 +5,11 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { FALLBACK_IMAGE, resolveImageUrl, useImageFallback } from "@/utils/imageUrl";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
 const PRODUTOS_URL = `${API_URL}/api/produtos`;
-const IMAGEM_PADRAO_PRODUTO = "/logo.png";
+const IMAGEM_PADRAO_PRODUTO = FALLBACK_IMAGE;
 
 const pageBackground = `
   radial-gradient(circle at top left, rgba(255,136,0,.10), transparent 25%),
@@ -79,20 +80,6 @@ function obterUsuarioLocal() {
 
 function usuarioEstaLogado() {
   return Boolean(obterToken() && obterUsuarioLocal());
-}
-
-function getImagemUrl(imagem) {
-  if (!imagem || String(imagem).trim() === "") {
-    return IMAGEM_PADRAO_PRODUTO;
-  }
-
-  if (String(imagem).startsWith("http")) return imagem;
-
-  if (String(imagem).startsWith("/uploads")) {
-    return `${API_URL}${imagem}`;
-  }
-
-  return `${API_URL}/uploads/imagens/${imagem}`;
 }
 
 function formatarPreco(valor) {
@@ -237,7 +224,7 @@ export default function Compra() {
 
   const precoProduto = Number(produto?.preco_produto ?? produto?.preco ?? 0);
   const estoqueProduto = Number(produto?.estoque_produto ?? produto?.estoque ?? 0);
-  const imagemProduto = getImagemUrl(produto?.imagem);
+  const imagemProduto = resolveImageUrl(produto?.imagem, IMAGEM_PADRAO_PRODUTO);
   const estoqueInfo = getEstoqueInfo(estoqueProduto);
 
   const subtotal = useMemo(() => {
@@ -573,14 +560,7 @@ export default function Compra() {
                 <img
                   src={imagemProduto}
                   alt={produto?.nome_produto || "Produto Atrix Supply"}
-                  onError={(event) => {
-                    const img = event.currentTarget;
-
-                    if (img.dataset.fallbackApplied === "true") return;
-
-                    img.dataset.fallbackApplied = "true";
-                    img.src = IMAGEM_PADRAO_PRODUTO;
-                  }}
+                  onError={(event) => useImageFallback(event, IMAGEM_PADRAO_PRODUTO)}
                   style={{
                     width: "100%",
                     height: "520px",

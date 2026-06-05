@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
-import "bootstrap/dist/js/bootstrap.bundle.min.js";
-import "./suporte.css";
+import "./suporteadmin.css";
 import { FileX, TextAlignCenter } from "lucide-react";
 
 export default function SuporteAdmin() {

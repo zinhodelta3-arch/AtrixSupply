@@ -5,11 +5,12 @@ import { authMiddleware, supplierMiddleware } from '../middlewares/authMiddlewar
 const router = express.Router();
 
 // Rotas protegidas GET
-router.get('/', authMiddleware, supplierMiddleware, OrcamentoController.listarTodos);
-router.get('/nome/:nome_orcamento', authMiddleware, supplierMiddleware, OrcamentoController.buscarPorNome);
-router.get('/encomenda/:id_encomenda', authMiddleware, supplierMiddleware, OrcamentoController.buscarPorEncomenda);
-router.get('/estado/:estado', authMiddleware, supplierMiddleware, OrcamentoController.buscarPorEstado);
-router.get('/:id_orcamento', authMiddleware, supplierMiddleware, OrcamentoController.buscarPorId); 
+router.get('/', authMiddleware, OrcamentoController.listarTodos);
+router.get('/nome/:nome_orcamento', authMiddleware, OrcamentoController.buscarPorNome);
+router.get('/encomenda/:id_encomenda', authMiddleware, OrcamentoController.buscarPorEncomenda);
+router.get('/estado/:estado', authMiddleware, OrcamentoController.buscarPorEstado);
+router.post('/:id_orcamento/escolher', authMiddleware, OrcamentoController.escolher);
+router.get('/:id_orcamento', authMiddleware, OrcamentoController.buscarPorId);
 
 // Rotas protegidas POST, PUT & DELETE
 router.post('/', authMiddleware, supplierMiddleware, OrcamentoController.criar);
@@ -41,6 +42,13 @@ router.options('/encomenda/:id_encomenda', (req, res) => {
 router.options('/estado/:estado', (req, res) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.status(200).send();
+});
+
+router.options('/:id_orcamento/escolher', (req, res) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     res.status(200).send();
 });

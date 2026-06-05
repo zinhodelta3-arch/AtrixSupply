@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { resolveImageUrl } from "@/utils/imageUrl";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
 const PRODUTOS_URL = `${API_URL}/api/produtos`;
@@ -204,18 +205,6 @@ function formatarCategoria(categoria) {
 
 function getProdutoId(produto) {
   return produto?.id_produto || produto?.id;
-}
-
-function getImagemUrl(imagem) {
-  if (!imagem) return null;
-
-  if (String(imagem).startsWith("http")) return imagem;
-
-  if (String(imagem).startsWith("/uploads")) {
-    return `${API_URL}${imagem}`;
-  }
-
-  return `${API_URL}/uploads/imagens/${imagem}`;
 }
 
 function getMensagemErro(data) {
@@ -824,7 +813,7 @@ export default function Produtos() {
               ) : (
                 produtos.map((produto) => {
                   const status = getStatusProduto(produto);
-                  const imagemUrl = getImagemUrl(produto.imagem);
+                  const imagemUrl = produto.imagem ? resolveImageUrl(produto.imagem, "") : "";
 
                   return (
                     <tr key={getProdutoId(produto)}>

@@ -13,6 +13,7 @@ import logisticaRotas from './routes/logisticaRotas.js';
 import pedidoRotas from './routes/pedidoRotas.js';
 import encomendaRotas from './routes/encomendaRotas.js';
 import orcamentoRotas from './routes/orcamentoRotas.js';
+import { garantirFluxoEncomendas } from './utils/garantirFluxoEncomendas.js';
 
 // Importar middlewares
 import { logMiddleware } from './middlewares/logMiddleware.js';
@@ -29,7 +30,9 @@ const __dirname = path.dirname(__filename);
 const PORT = process.env.PORT || 3000;
 
 // Middlewares globais
-app.use(helmet()); // Segurança HTTP
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' }
+})); // Segurança HTTP sem bloquear imagens servidas para o frontend
 
 // Configuração CORS global (segurança)
 app.use(cors({
@@ -112,10 +115,16 @@ app.use('*', (req, res) => {
 app.use(errorMiddleware);
 
 // Iniciar servidor
-app.listen(PORT, () => {
-    console.log(`Acesse: http://localhost:${PORT}`);
-    console.log(`AtrixSupply API - Sistema de Gestão Ativo`);
-    console.log(`Ambiente: ${process.env.NODE_ENV || 'development'}`);
-});
+async function iniciarServidor() {
+    await garantirFluxoEncomendas();
+
+    app.listen(PORT, () => {
+        console.log(`Acesse: http://localhost:${PORT}`);
+        console.log(`AtrixSupply API - Sistema de Gestão Ativo`);
+        console.log(`Ambiente: ${process.env.NODE_ENV || 'development'}`);
+    });
+}
+
+iniciarServidor();
 
 export default app;

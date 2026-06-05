@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
@@ -8,6 +9,7 @@ const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").rep
 
 const ENCOMENDAS_URL = `${API_URL}/api/encomendas`;
 const ORCAMENTOS_URL = `${API_URL}/api/orcamentos`;
+const LOGISTICA_URL = `${API_URL}/api/logistica`;
 
 const encomendasPorPagina = 8;
 
@@ -38,6 +40,81 @@ function obterToken() {
   );
 }
 
+function decodificarToken(token) {
+  try {
+    if (!token || !token.includes(".")) return null;
+
+    const payload = token.split(".")[1];
+    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+
+    const json = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((char) => {
+          return "%" + ("00" + char.charCodeAt(0).toString(16)).slice(-2);
+        })
+        .join("")
+    );
+
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+
+function obterUsuarioLogado() {
+  if (typeof window === "undefined") return null;
+
+  const chavesUsuario = ["usuario", "user", "dadosUsuario", "authUser"];
+
+  for (const chave of chavesUsuario) {
+    const valor = localStorage.getItem(chave);
+
+    if (!valor) continue;
+
+    try {
+      return JSON.parse(valor);
+    } catch {
+      continue;
+    }
+  }
+
+  return decodificarToken(obterToken());
+}
+
+function obterTipoUsuario(usuario) {
+  return String(
+    usuario?.tipo ||
+      usuario?.tipo_user ||
+      usuario?.role ||
+      usuario?.dados?.tipo ||
+      usuario?.dados?.tipo_user ||
+      usuario?.usuario?.tipo ||
+      usuario?.usuario?.tipo_user ||
+      ""
+  )
+    .toLowerCase()
+    .trim();
+}
+
+function obterIdUsuario(usuario) {
+  return (
+    usuario?.id_user ||
+    usuario?.id_usuario ||
+    usuario?.id ||
+    usuario?.userId ||
+    usuario?.dados?.id_user ||
+    usuario?.dados?.id_usuario ||
+    usuario?.dados?.id ||
+    usuario?.dados?.userId ||
+    usuario?.usuario?.id_user ||
+    usuario?.usuario?.id_usuario ||
+    usuario?.usuario?.id ||
+    usuario?.usuario?.userId ||
+    null
+  );
+}
+
 function montarHeaders() {
   const token = obterToken();
 
@@ -51,19 +128,28 @@ async function tratarResposta(response) {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const detalhes = Array.isArray(data?.detalhes)
-      ? data.detalhes.map((item) => item.mensagem).join(" | ")
-      : null;
-
-    throw new Error(
-      detalhes ||
-        data?.mensagem ||
-        data?.erro ||
-        "Não foi possível concluir a operação."
-    );
+    const erro = new Error(data?.mensagem || data?.erro || "Não foi possível concluir a operação.");
+    erro.status = response.status;
+    erro.detalhes = data?.detalhes || null;
+    throw erro;
   }
 
   return data;
+}
+
+function mensagemUsuario(error, fallback) {
+  const mensagem = String(error?.message || "").trim();
+
+  if (
+    !mensagem ||
+    /erro interno|regra de negócio|id_|id |status permitido|não encontrado|não encontrada/i.test(
+      mensagem
+    )
+  ) {
+    return fallback;
+  }
+
+  return mensagem;
 }
 
 function normalizarListaEncomendas(data) {
@@ -78,8 +164,20 @@ function formatarStatus(status) {
   switch (status) {
     case "pendente":
       return "Pendente";
-    case "em_andamento":
-      return "Em andamento";
+    case "aguardando_orcamento":
+      return "Aguardando orçamento";
+    case "orcamento_recebido":
+      return "Orçamento recebido";
+    case "orcamento_escolhido":
+      return "Orçamento escolhido";
+    case "em_producao":
+      return "Em produção";
+    case "aguardando_logistica":
+      return "Aguardando logística";
+    case "em_transporte":
+      return "Em transporte";
+    case "entregue":
+      return "Entregue";
     case "finalizado":
       return "Finalizado";
     case "cancelado":
@@ -92,9 +190,16 @@ function formatarStatus(status) {
 function corStatus(status) {
   switch (status) {
     case "pendente":
+    case "aguardando_orcamento":
       return "bg-warning text-dark";
-    case "em_andamento":
+    case "orcamento_recebido":
+    case "orcamento_escolhido":
+    case "em_producao":
+    case "aguardando_logistica":
       return "bg-primary";
+    case "em_transporte":
+      return "bg-info text-dark";
+    case "entregue":
     case "finalizado":
       return "bg-success";
     case "cancelado":
@@ -112,6 +217,10 @@ function formatarEstadoOrcamento(estado) {
       return "Invisível";
     case "escolhida":
       return "Escolhida";
+    case "recusado":
+      return "Recusado";
+    case "cancelado":
+      return "Cancelado";
     default:
       return "Não informado";
   }
@@ -123,6 +232,10 @@ function corEstadoOrcamento(estado) {
       return "bg-success";
     case "escolhida":
       return "bg-warning text-dark";
+    case "recusado":
+      return "bg-secondary";
+    case "cancelado":
+      return "bg-danger";
     case "invisivel":
       return "bg-secondary";
     default:
@@ -151,7 +264,23 @@ function formatarDinheiro(valor) {
   });
 }
 
+function etapaAbertaParaOrcamento(status) {
+  return ["pendente", "aguardando_orcamento", "orcamento_recebido"].includes(status);
+}
+
+function etapaAbertaParaLogistica(status) {
+  return ["orcamento_escolhido", "em_producao", "aguardando_logistica"].includes(status);
+}
+
+function orcamentoBloqueado(orcamento) {
+  return ["escolhida", "recusado", "cancelado"].includes(orcamento?.estado);
+}
+
 export default function PainelFornecedor() {
+  const router = useRouter();
+  const [validandoAcesso, setValidandoAcesso] = useState(true);
+  const [usuarioLogado, setUsuarioLogado] = useState(null);
+
   const [listaEncomendas, setListaEncomendas] = useState([]);
   const [paginaAtual, setPaginaAtual] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(1);
@@ -161,6 +290,7 @@ export default function PainelFornecedor() {
   const [error, setError] = useState(null);
 
   const [pedidoSelecionado, setPedidoSelecionado] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const [orcamentos, setOrcamentos] = useState([]);
   const [carregandoOrcamentos, setCarregandoOrcamentos] = useState(false);
@@ -173,19 +303,58 @@ export default function PainelFornecedor() {
     nome_orcamento: "",
     tipo_orcamento: "",
     estimacao: "",
-    estado: "invisivel",
+    estado: "visivel",
   });
+
+  const [logisticas, setLogisticas] = useState([]);
+  const [carregandoLogisticas, setCarregandoLogisticas] = useState(false);
+  const [logisticaSelecionadaId, setLogisticaSelecionadaId] = useState("");
+  const [salvandoLogistica, setSalvandoLogistica] = useState(false);
+  const [erroLogistica, setErroLogistica] = useState(null);
+  const [feedbackLogistica, setFeedbackLogistica] = useState(null);
 
   useEffect(() => {
     import("bootstrap/dist/js/bootstrap.bundle.min.js");
   }, []);
 
   useEffect(() => {
+    try {
+      setValidandoAcesso(true);
+
+      const token = obterToken();
+      const usuario = obterUsuarioLogado();
+      const tipoUsuario = obterTipoUsuario(usuario);
+      const idUsuario = obterIdUsuario(usuario);
+
+      if (!token || !usuario || !idUsuario) {
+        router.replace("/login");
+        return;
+      }
+
+      if (!["fornecedor", "administrador", "admin"].includes(tipoUsuario)) {
+        router.replace("/");
+        return;
+      }
+
+      setUsuarioLogado(usuario);
+      setValidandoAcesso(false);
+    } catch (error) {
+      console.error("Erro ao validar acesso:", error);
+      localStorage.removeItem("usuario");
+      router.replace("/login");
+    }
+  }, [router]);
+
+  useEffect(() => {
+    if (validandoAcesso || !usuarioLogado) return;
+
     const controller = new AbortController();
 
-    async function buscarDadosDoBackend() {
+    async function buscarDadosDoBackend(silencioso = false) {
       try {
-        setLoading(true);
+        if (!silencioso) {
+          setLoading(true);
+        }
         setError(null);
 
         const query = `?pagina=${paginaAtual}&limite=${encomendasPorPagina}`;
@@ -224,13 +393,24 @@ export default function PainelFornecedor() {
           );
         }
 
-        setListaEncomendas(Array.isArray(encomendas) ? encomendas : []);
+        const listaSegura = Array.isArray(encomendas) ? encomendas : [];
+        setListaEncomendas(listaSegura);
         setTotalPaginas(normalizarTotalPaginas(data));
+
+        setPedidoSelecionado((selecionado) => {
+          if (!selecionado?.id_encomenda) return selecionado;
+
+          return (
+            listaSegura.find(
+              (item) => Number(item.id_encomenda) === Number(selecionado.id_encomenda)
+            ) || selecionado
+          );
+        });
       } catch (err) {
         if (err.name === "AbortError") return;
 
-        console.error("Erro na integração:", err);
-        setError(err.message || "Não foi possível carregar as encomendas do servidor.");
+        console.error("Erro ao carregar encomendas:", err);
+        setError("Não conseguimos carregar as encomendas agora.");
         setListaEncomendas([]);
         setTotalPaginas(1);
       } finally {
@@ -241,12 +421,16 @@ export default function PainelFornecedor() {
     const delayDebounce = setTimeout(() => {
       buscarDadosDoBackend();
     }, 400);
+    const intervalo = setInterval(() => {
+      buscarDadosDoBackend(true);
+    }, 30000);
 
     return () => {
       clearTimeout(delayDebounce);
+      clearInterval(intervalo);
       controller.abort();
     };
-  }, [paginaAtual, busca]);
+  }, [paginaAtual, busca, refreshKey, usuarioLogado, validandoAcesso]);
 
   function handleBuscaChange(event) {
     setBusca(event.target.value);
@@ -259,7 +443,7 @@ export default function PainelFornecedor() {
       nome_orcamento: "",
       tipo_orcamento: "",
       estimacao: "",
-      estado: "invisivel",
+      estado: "visivel",
     });
 
     setErroOrcamento(null);
@@ -294,15 +478,66 @@ export default function PainelFornecedor() {
       setOrcamentos(Array.isArray(data?.dados) ? data.dados : []);
     } catch (error) {
       console.error("Erro ao carregar orçamentos:", error);
-      setErroOrcamento(error.message || "Não foi possível carregar os orçamentos.");
+      setErroOrcamento("Não conseguimos carregar os orçamentos desta encomenda.");
       setOrcamentos([]);
     } finally {
       setCarregandoOrcamentos(false);
     }
   }
 
+  async function carregarLogisticas(pedidoReferencia = pedidoSelecionado) {
+    try {
+      setCarregandoLogisticas(true);
+      setErroLogistica(null);
+
+      const response = await fetch(`${LOGISTICA_URL}?pagina=1&limite=100`, {
+        method: "GET",
+        headers: montarHeaders(),
+        cache: "no-store",
+      });
+
+      const data = await tratarResposta(response);
+
+      const idUsuario = Number(obterIdUsuario(usuarioLogado));
+      const idLogisticaAtual = Number(pedidoReferencia?.id_logistica || 0);
+      const lista = Array.isArray(data?.dados) ? data.dados : [];
+
+      setLogisticas(
+        lista.filter((logistica) => {
+          const pertenceAoFornecedor =
+            !idUsuario || Number(logistica.id_dono) === idUsuario;
+          const estaDisponivel = logistica.disponibilidade === "disponivel";
+          const jaSelecionada = Number(logistica.id_logistica) === idLogisticaAtual;
+
+          return pertenceAoFornecedor && (estaDisponivel || jaSelecionada);
+        })
+      );
+    } catch (error) {
+      console.error("Erro ao carregar logísticas:", error);
+      setErroLogistica("Não conseguimos carregar suas logísticas disponíveis.");
+      setLogisticas([]);
+    } finally {
+      setCarregandoLogisticas(false);
+    }
+  }
+
   function abrirDetalhes(pedido) {
     setPedidoSelecionado(pedido);
+    setLogisticaSelecionadaId(pedido?.id_logistica ? String(pedido.id_logistica) : "");
+    setErroLogistica(null);
+    setFeedbackLogistica(null);
+
+    const idUsuario = Number(obterIdUsuario(usuarioLogado));
+    const tipoUsuario = obterTipoUsuario(usuarioLogado);
+    const fornecedorEscolhido =
+      ["administrador", "admin"].includes(tipoUsuario) ||
+      Number(pedido?.id_fornecedor) === idUsuario;
+
+    if (fornecedorEscolhido && etapaAbertaParaLogistica(pedido?.status)) {
+      carregarLogisticas(pedido);
+    } else {
+      setLogisticas([]);
+    }
   }
 
   function abrirOrcamentos(pedido) {
@@ -311,13 +546,60 @@ export default function PainelFornecedor() {
     carregarOrcamentosDaEncomenda(pedido.id_encomenda);
   }
 
+  async function definirLogistica(event) {
+    event.preventDefault();
+
+    if (!pedidoSelecionado?.id_encomenda) return;
+
+    try {
+      setSalvandoLogistica(true);
+      setErroLogistica(null);
+      setFeedbackLogistica(null);
+
+      if (!logisticaSelecionadaId) {
+        setErroLogistica("Selecione uma logística para esta encomenda.");
+        return;
+      }
+
+      const response = await fetch(
+        `${ENCOMENDAS_URL}/processo/apos/${pedidoSelecionado.id_encomenda}`,
+        {
+          method: "PUT",
+          headers: montarHeaders(),
+          body: JSON.stringify({
+            id_logistica: Number(logisticaSelecionadaId),
+          }),
+        }
+      );
+
+      const data = await tratarResposta(response);
+
+      setFeedbackLogistica(data?.mensagem || "Logística definida com sucesso.");
+      setRefreshKey((valor) => valor + 1);
+    } catch (error) {
+      console.error("Erro ao definir logística:", error);
+      setErroLogistica(
+        mensagemUsuario(error, "Não conseguimos definir a logística agora.")
+      );
+    } finally {
+      setSalvandoLogistica(false);
+    }
+  }
+
   function editarOrcamento(orcamento) {
+    if (orcamentoBloqueado(orcamento)) {
+      setErroOrcamento("Este orçamento já foi decidido e não pode mais ser editado.");
+      return;
+    }
+
     setFormOrcamento({
       id_orcamento: orcamento.id_orcamento,
       nome_orcamento: orcamento.nome_orcamento || "",
       tipo_orcamento: orcamento.tipo_orcamento || "",
       estimacao: orcamento.estimacao ?? "",
-      estado: orcamento.estado || "invisivel",
+      estado: ["visivel", "invisivel"].includes(orcamento.estado)
+        ? orcamento.estado
+        : "visivel",
     });
 
     setErroOrcamento(null);
@@ -334,6 +616,11 @@ export default function PainelFornecedor() {
 
       if (!pedidoSelecionado?.id_encomenda) {
         setErroOrcamento("Selecione uma encomenda antes de criar o orçamento.");
+        return;
+      }
+
+      if (!formOrcamento.id_orcamento && !etapaAbertaParaOrcamento(pedidoSelecionado.status)) {
+        setErroOrcamento("Esta encomenda já passou da etapa de orçamento.");
         return;
       }
 
@@ -361,7 +648,9 @@ export default function PainelFornecedor() {
         nome_orcamento: formOrcamento.nome_orcamento.trim(),
         tipo_orcamento: formOrcamento.tipo_orcamento.trim(),
         estimacao: Number(formOrcamento.estimacao),
-        estado: formOrcamento.estado,
+        estado: ["visivel", "invisivel"].includes(formOrcamento.estado)
+          ? formOrcamento.estado
+          : "visivel",
       };
 
       const editando = Boolean(formOrcamento.id_orcamento);
@@ -386,15 +675,27 @@ export default function PainelFornecedor() {
 
       limparFormOrcamento();
       await carregarOrcamentosDaEncomenda(pedidoSelecionado.id_encomenda);
+      setRefreshKey((valor) => valor + 1);
     } catch (error) {
       console.error("Erro ao salvar orçamento:", error);
-      setErroOrcamento(error.message || "Não foi possível salvar o orçamento.");
+      setErroOrcamento(
+        mensagemUsuario(error, "Não conseguimos salvar este orçamento agora.")
+      );
     } finally {
       setSalvandoOrcamento(false);
     }
   }
 
   async function excluirOrcamento(id_orcamento) {
+    const orcamento = orcamentos.find(
+      (item) => Number(item.id_orcamento) === Number(id_orcamento)
+    );
+
+    if (orcamentoBloqueado(orcamento)) {
+      setErroOrcamento("Este orçamento já foi decidido e não pode mais ser excluído.");
+      return;
+    }
+
     const confirmar = window.confirm("Tem certeza que deseja excluir este orçamento?");
 
     if (!confirmar) return;
@@ -413,20 +714,61 @@ export default function PainelFornecedor() {
       setFeedbackOrcamento(data?.mensagem || "Orçamento excluído com sucesso.");
 
       await carregarOrcamentosDaEncomenda(pedidoSelecionado.id_encomenda);
+      setRefreshKey((valor) => valor + 1);
     } catch (error) {
       console.error("Erro ao excluir orçamento:", error);
-      setErroOrcamento(error.message || "Não foi possível excluir o orçamento.");
+      setErroOrcamento(
+        mensagemUsuario(error, "Não conseguimos excluir este orçamento agora.")
+      );
     }
   }
 
   const metricas = useMemo(() => {
     return {
       total: listaEncomendas.length,
-      pendentes: listaEncomendas.filter((pedido) => pedido.status === "pendente").length,
-      andamento: listaEncomendas.filter((pedido) => pedido.status === "em_andamento").length,
-      finalizadas: listaEncomendas.filter((pedido) => pedido.status === "finalizado").length,
+      pendentes: listaEncomendas.filter((pedido) =>
+        ["pendente", "aguardando_orcamento"].includes(pedido.status)
+      ).length,
+      andamento: listaEncomendas.filter((pedido) =>
+        [
+          "orcamento_recebido",
+          "orcamento_escolhido",
+          "em_producao",
+          "aguardando_logistica",
+          "em_transporte",
+        ].includes(pedido.status)
+      ).length,
+      finalizadas: listaEncomendas.filter((pedido) =>
+        ["entregue", "finalizado"].includes(pedido.status)
+      ).length,
     };
   }, [listaEncomendas]);
+
+  if (validandoAcesso || !usuarioLogado) {
+    return (
+      <main
+        className="d-flex justify-content-center align-items-center text-white"
+        style={{
+          minHeight: "100vh",
+          background: "linear-gradient(145deg,#08080a,#101014,#160d12)",
+        }}
+      >
+        <div className="text-center">
+          <div className="spinner-border text-warning mb-3" />
+          <h4 className="fw-bold">Verificando acesso...</h4>
+        </div>
+      </main>
+    );
+  }
+
+  const tipoUsuarioAtual = obterTipoUsuario(usuarioLogado);
+  const idUsuarioAtual = Number(obterIdUsuario(usuarioLogado));
+  const fornecedorDaEncomendaSelecionada =
+    ["administrador", "admin"].includes(tipoUsuarioAtual) ||
+    Number(pedidoSelecionado?.id_fornecedor) === idUsuarioAtual;
+  const podeDefinirLogisticaSelecionada =
+    fornecedorDaEncomendaSelecionada && etapaAbertaParaLogistica(pedidoSelecionado?.status);
+  const podeEnviarOrcamentoSelecionado = etapaAbertaParaOrcamento(pedidoSelecionado?.status);
 
   return (
     <main
@@ -601,14 +943,22 @@ export default function PainelFornecedor() {
                   </h3>
 
                   <p className="mb-0">
-                    Tente alterar a pesquisa ou confira se a API retornou dados.
+                    Nenhuma encomenda disponível para sua busca no momento.
                   </p>
                 </div>
               )}
 
               <div className="row g-4">
                 {!loading &&
-                  listaEncomendas.map((pedido) => (
+                  listaEncomendas.map((pedido) => {
+                    const idUsuario = Number(obterIdUsuario(usuarioLogado));
+                    const tipoUsuario = obterTipoUsuario(usuarioLogado);
+                    const fornecedorEscolhido =
+                      ["administrador", "admin"].includes(tipoUsuario) ||
+                      Number(pedido.id_fornecedor) === idUsuario;
+                    const podeEnviarOrcamento = etapaAbertaParaOrcamento(pedido.status);
+
+                    return (
                     <div className="col-12" key={pedido.id_encomenda}>
                       <div
                         className="card shadow-lg overflow-hidden encomenda-card"
@@ -652,16 +1002,20 @@ export default function PainelFornecedor() {
                               <div className="row g-3">
                                 <div className="col-md-6">
                                   <p className="text-secondary mb-2">
-                                    Usuário:
+                                    Cliente:
                                     <span className="text-white fw-semibold ms-2">
-                                      {pedido.id_user || "Não informado"}
+                                      {pedido.cliente_empresa ||
+                                        pedido.cliente_nome ||
+                                        "Cliente não identificado"}
                                     </span>
                                   </p>
 
                                   <p className="text-secondary mb-2">
                                     Fornecedor:
                                     <span className="text-white fw-semibold ms-2">
-                                      {pedido.id_fornecedor || "Não informado"}
+                                      {pedido.fornecedor_empresa ||
+                                        pedido.fornecedor_nome ||
+                                        "Ainda não escolhido"}
                                     </span>
                                   </p>
                                 </div>
@@ -691,6 +1045,15 @@ export default function PainelFornecedor() {
                                     : "Não informado"}
                                 </span>
                               </p>
+
+                              <p className="text-secondary mt-2 mb-0">
+                                Logística:
+                                <span className="text-white fw-semibold ms-2">
+                                  {pedido.nome_logistica ||
+                                    pedido.logistica_destino ||
+                                    "Não informada"}
+                                </span>
+                              </p>
                             </div>
 
                             <div className="col-lg-4">
@@ -716,9 +1079,12 @@ export default function PainelFornecedor() {
                                   style={{
                                     ...gradientButtonStyle,
                                     padding: "12px 16px",
+                                    opacity: podeEnviarOrcamento || fornecedorEscolhido ? 1 : 0.62,
                                   }}
                                 >
-                                  Gerenciar orçamento
+                                  {podeEnviarOrcamento || fornecedorEscolhido
+                                    ? "Gerenciar orçamento"
+                                    : "Orçamento encerrado"}
                                 </button>
                               </div>
                             </div>
@@ -726,7 +1092,8 @@ export default function PainelFornecedor() {
                         </div>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
               </div>
 
               {totalPaginas > 1 && (
@@ -862,7 +1229,9 @@ export default function PainelFornecedor() {
                     </span>
 
                     <strong>
-                      {pedidoSelecionado?.id_logistica || "Não informada"}
+                      {pedidoSelecionado?.nome_logistica ||
+                        pedidoSelecionado?.logistica_destino ||
+                        "Não informada"}
                     </strong>
                   </div>
                 </div>
@@ -891,6 +1260,103 @@ export default function PainelFornecedor() {
                   </div>
                 </div>
               </div>
+
+              {!podeDefinirLogisticaSelecionada ? (
+                <div
+                  className="p-4 rounded-4 mt-4"
+                  style={{
+                    background: "#181818",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                  }}
+                >
+                  <h4 className="fw-bold mb-2">Logística da encomenda</h4>
+                  <p className="text-secondary mb-0">
+                    A logística ficará disponível quando o cliente escolher um orçamento seu.
+                  </p>
+                </div>
+              ) : (
+                <form
+                  onSubmit={definirLogistica}
+                  className="p-4 rounded-4 mt-4"
+                  style={{
+                    background: "#181818",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                  }}
+                >
+                  <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+                    <div>
+                      <h4 className="fw-bold mb-1">Logística da encomenda</h4>
+                      <p className="text-secondary mb-0">
+                        Selecione uma logística disponível para iniciar o transporte.
+                      </p>
+                    </div>
+
+                    {carregandoLogisticas && (
+                      <span className="spinner-border spinner-border-sm text-warning" />
+                    )}
+                  </div>
+
+                  {erroLogistica && (
+                    <div className="alert alert-danger">{erroLogistica}</div>
+                  )}
+
+                  {feedbackLogistica && (
+                    <div className="alert alert-success">{feedbackLogistica}</div>
+                  )}
+
+                  <div className="row g-3 align-items-end">
+                    <div className="col-md-8">
+                      <label className="form-label text-secondary">
+                        Logística disponível
+                      </label>
+
+                      <select
+                        className="form-select"
+                        value={logisticaSelecionadaId}
+                        onChange={(event) => setLogisticaSelecionadaId(event.target.value)}
+                        style={inputStyle}
+                      >
+                        <option value="" style={{ color: "#111" }}>
+                          Selecione uma logística
+                        </option>
+
+                        {logisticas.map((logistica) => (
+                          <option
+                            key={logistica.id_logistica}
+                            value={logistica.id_logistica}
+                            style={{ color: "#111" }}
+                          >
+                            {logistica.nome_logistica} - {logistica.veiculo} -{" "}
+                            {logistica.destino || "sem destino"}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="col-md-4 d-grid">
+                      <button
+                        type="submit"
+                        className="btn text-white fw-semibold"
+                        disabled={salvandoLogistica || !logisticaSelecionadaId}
+                        style={{
+                          ...gradientButtonStyle,
+                          padding: "12px 16px",
+                          opacity: salvandoLogistica || !logisticaSelecionadaId ? 0.6 : 1,
+                        }}
+                      >
+                        {salvandoLogistica ? (
+                          <>
+                            <span className="spinner-border spinner-border-sm me-2" />
+                            Definindo...
+                          </>
+                        ) : (
+                          "Definir logística"
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              )}
             </div>
           </div>
         </div>
@@ -944,6 +1410,7 @@ export default function PainelFornecedor() {
                 </div>
               )}
 
+              {podeEnviarOrcamentoSelecionado || formOrcamento.id_orcamento ? (
               <form
                 onSubmit={salvarOrcamento}
                 className="p-4 rounded-4 mb-4"
@@ -961,7 +1428,7 @@ export default function PainelFornecedor() {
                     </h3>
 
                     <p className="text-secondary mb-0">
-                      Encomenda #{pedidoSelecionado?.id_encomenda || "---"}
+                      {pedidoSelecionado?.pecas || "Encomenda selecionada"}
                     </p>
                   </div>
 
@@ -1035,7 +1502,7 @@ export default function PainelFornecedor() {
 
                   <div className="col-md-2">
                     <label className="form-label text-secondary">
-                      Estado
+                      Visibilidade
                     </label>
 
                     <select
@@ -1051,9 +1518,6 @@ export default function PainelFornecedor() {
                       </option>
                       <option value="visivel" style={{ color: "#111" }}>
                         Visível
-                      </option>
-                      <option value="escolhida" style={{ color: "#111" }}>
-                        Escolhida
                       </option>
                     </select>
                   </div>
@@ -1083,6 +1547,20 @@ export default function PainelFornecedor() {
                   </button>
                 </div>
               </form>
+              ) : (
+                <div
+                  className="p-4 rounded-4 mb-4"
+                  style={{
+                    background: "#181818",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                  }}
+                >
+                  <h3 className="fw-bold mb-2">Orçamento encerrado</h3>
+                  <p className="text-secondary mb-0">
+                    Esta encomenda já passou da etapa de orçamento.
+                  </p>
+                </div>
+              )}
 
               <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
                 <h3 className="fw-bold mb-0">
@@ -1133,7 +1611,10 @@ export default function PainelFornecedor() {
 
               {!carregandoOrcamentos && orcamentos.length > 0 && (
                 <div className="row g-4">
-                  {orcamentos.map((orcamento) => (
+                  {orcamentos.map((orcamento) => {
+                    const bloqueado = orcamentoBloqueado(orcamento);
+
+                    return (
                     <div className="col-lg-4" key={orcamento.id_orcamento}>
                       <div
                         className="p-4 rounded-4 h-100"
@@ -1171,8 +1652,10 @@ export default function PainelFornecedor() {
                             type="button"
                             className="btn btn-outline-warning fw-semibold w-100"
                             onClick={() => editarOrcamento(orcamento)}
+                            disabled={bloqueado}
                             style={{
                               borderRadius: "14px",
+                              opacity: bloqueado ? 0.55 : 1,
                             }}
                           >
                             Editar
@@ -1182,8 +1665,10 @@ export default function PainelFornecedor() {
                             type="button"
                             className="btn btn-outline-danger"
                             onClick={() => excluirOrcamento(orcamento.id_orcamento)}
+                            disabled={bloqueado}
                             style={{
                               borderRadius: "14px",
+                              opacity: bloqueado ? 0.55 : 1,
                             }}
                           >
                             <i className="bi bi-trash3-fill" />
@@ -1191,7 +1676,8 @@ export default function PainelFornecedor() {
                         </div>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
