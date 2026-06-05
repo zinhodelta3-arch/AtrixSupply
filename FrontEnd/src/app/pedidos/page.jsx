@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -371,8 +370,11 @@ function normalizarPedido(pedido, produto) {
   return {
     ...pedido,
     id_pedido: pedido?.id_pedido || pedido?.id,
-    id_produto: pedido?.id_produto,
-    produto: pedido?.nome_produto || produto?.nome_produto || `Produto #${pedido?.id_produto || "N/A"}`,
+    id_produto: pedido?.id_produto || produto?.id_produto || produto?.id,
+    produto:
+      pedido?.nome_produto ||
+      produto?.nome_produto ||
+      `Produto #${pedido?.id_produto || produto?.id_produto || produto?.id || "N/A"}`,
     imagem: getImagemUrl(produto?.imagem || pedido?.imagem),
     preco: produto?.preco ?? pedido?.preco ?? 0,
     status,
@@ -542,6 +544,48 @@ export default function Pedidos() {
 
   function irParaProdutos() {
     router.push("/produtos");
+  }
+
+  async function fecharModalBootstrap(idModal) {
+    if (typeof window === "undefined") return;
+
+    const modalElement = document.getElementById(idModal);
+
+    if (!modalElement) return;
+
+    try {
+      const bootstrap = await import("bootstrap/dist/js/bootstrap.bundle.min.js");
+      const Modal = bootstrap.Modal || window.bootstrap?.Modal;
+
+      if (Modal) {
+        const instance =
+          Modal.getInstance(modalElement) ||
+          Modal.getOrCreateInstance(modalElement);
+
+        instance.hide();
+      }
+    } catch (error) {
+      console.error("Erro ao fechar modal Bootstrap:", error);
+    }
+
+    document.body.classList.remove("modal-open");
+    document.body.style.removeProperty("overflow");
+    document.body.style.removeProperty("padding-right");
+
+    document.querySelectorAll(".modal-backdrop").forEach((backdrop) => {
+      backdrop.remove();
+    });
+  }
+
+  async function irParaDetalheProduto(id_produto) {
+    if (!id_produto) {
+      alert("Produto não encontrado para este pedido.");
+      return;
+    }
+
+    await fecharModalBootstrap("modalDetalhesPedido");
+
+    router.push(`/produtos/${id_produto}`);
   }
 
   const pedidosFiltrados = useMemo(() => {
@@ -1368,21 +1412,21 @@ export default function Pedidos() {
                     </div>
 
                     <div className="d-flex gap-3 flex-wrap mt-4">
-                      {pedidoDetalhe.id_produto && (
-                        <Link
-                          href={`/produtos/${pedidoDetalhe.id_produto}`}
-                          className="btn text-white fw-semibold"
-                          data-bs-dismiss="modal"
-                          style={{
-                            ...buttonGradient,
-                            padding: "12px 18px",
-                            textDecoration: "none",
-                          }}
-                        >
-                          <i className="bi bi-box-arrow-up-right me-2" />
-                          Ver produto
-                        </Link>
-                      )}
+                      <button
+                        type="button"
+                        className="btn text-white fw-semibold"
+                        onClick={() => irParaDetalheProduto(pedidoDetalhe.id_produto)}
+                        disabled={!pedidoDetalhe?.id_produto}
+                        style={{
+                          ...buttonGradient,
+                          padding: "12px 18px",
+                          opacity: pedidoDetalhe?.id_produto ? 1 : 0.55,
+                          cursor: pedidoDetalhe?.id_produto ? "pointer" : "not-allowed",
+                        }}
+                      >
+                        <i className="bi bi-box-arrow-up-right me-2" />
+                        Ver produto
+                      </button>
 
                       <button
                         type="button"
