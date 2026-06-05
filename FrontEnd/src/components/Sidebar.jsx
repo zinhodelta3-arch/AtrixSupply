@@ -115,7 +115,7 @@ export default function Sidebar() {
         style={sidebarBaseStyle}
       >
         <Link
-          href="/ATRIXsupply"
+          href="/dashboard"
           className="d-flex align-items-center text-decoration-none mb-4 px-2"
         >
           <div className="d-flex justify-content-center align-items-center me-3">
