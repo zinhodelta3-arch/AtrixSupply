@@ -51,6 +51,10 @@ export default function Header() {
 
   const tipoUsuario = normalizarTipoUsuario(usuario);
   const nomeUsuario = obterNomeUsuario(usuario);
+  const nomeUsuarioConcat  = nomeUsuario.toLowerCase().split(' ').map(palavra => {
+      return palavra.charAt(0).toUpperCase() + palavra.slice(1);
+    }).join(' '); 
+
 
   const usuarioLogado = Boolean(usuario);
   const usuarioFornecedor = tipoUsuario === "fornecedor" || tipoUsuario === "supplier";
@@ -251,7 +255,7 @@ export default function Header() {
                             borderBottom: "1px solid rgba(255,255,255,0.1)",
                           }}
                         >
-                          Olá, {nomeUsuario}
+                          Olá, {nomeUsuarioConcat}
                         </span>
                       )}
 

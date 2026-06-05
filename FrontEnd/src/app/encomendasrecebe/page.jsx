@@ -799,7 +799,7 @@ export default function PainelFornecedor() {
           </h1>
 
           <p className="lead mt-3 mb-0">
-            Visualize pedidos recebidos e administre os orçamentos enviados.
+            Visualize encomendas e administre os orçamentos enviados.
           </p>
         </div>
       </section>

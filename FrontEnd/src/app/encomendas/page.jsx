@@ -606,7 +606,7 @@ export default function Encomendas() {
           </span>
 
           <h1 className="display-4 fw-bold">
-            Acompanhe seus pedidos
+            Acompanhe suas encomendas
           </h1>
 
           <p className="lead mt-3 mb-0">
