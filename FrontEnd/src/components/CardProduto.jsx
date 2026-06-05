@@ -1,18 +1,66 @@
+"use client";
+
 import Link from "next/link";
 import "./card.css";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
+const FALLBACK_IMAGE = "/logo.png";
 
-function getImagemUrl(imagem) {
-  if (!imagem) return "/placeholder.png";
+function obterImagemProduto(produto) {
+  return (
+    produto?.imagem ||
+    produto?.imagem_produto ||
+    produto?.url_imagem ||
+    produto?.imagem_url ||
+    produto?.foto ||
+    produto?.img ||
+    produto?.image ||
+    ""
+  );
+}
 
-  if (String(imagem).startsWith("http")) return imagem;
+function limparCaminhoImagem(imagem) {
+  return String(imagem || "")
+    .trim()
+    .replaceAll("\\", "/")
+    .replace(/^\/+/, "");
+}
 
-  if (String(imagem).startsWith("/uploads")) {
-    return `${API_URL}${imagem}`;
+function montarImagemPrincipal(imagem) {
+  const valorOriginal = String(imagem || "").trim().replaceAll("\\", "/");
+
+  if (!valorOriginal) {
+    return FALLBACK_IMAGE;
   }
 
-  return `${API_URL}/uploads/imagens/${imagem}`;
+  if (
+    valorOriginal.startsWith("http://") ||
+    valorOriginal.startsWith("https://") ||
+    valorOriginal.startsWith("data:image")
+  ) {
+    return valorOriginal;
+  }
+
+  if (valorOriginal.startsWith("/uploads/")) {
+    return `${API_URL}${valorOriginal}`;
+  }
+
+  if (valorOriginal.startsWith("uploads/")) {
+    return `${API_URL}/${valorOriginal}`;
+  }
+
+  if (valorOriginal.startsWith("/")) {
+    return `${API_URL}${valorOriginal}`;
+  }
+
+  const valorLimpo = limparCaminhoImagem(valorOriginal);
+  const nomeArquivo = valorLimpo.split("/").pop();
+
+  if (!nomeArquivo) {
+    return FALLBACK_IMAGE;
+  }
+
+  return `${API_URL}/uploads/imagens/${encodeURIComponent(nomeArquivo)}`;
 }
 
 function formatarPreco(valor) {
@@ -35,13 +83,21 @@ function formatarCategoria(categoria) {
 }
 
 export default function CardProduto({ produto }) {
-  const imagemUrl = getImagemUrl(produto?.imagem);
-  const nomeProduto = produto?.nome_produto || "Produto sem nome";
+  const idProduto = produto?.id_produto || produto?.id;
+  const nomeProduto = produto?.nome_produto || produto?.nome || "Produto sem nome";
+
+  const imagemOriginal = obterImagemProduto(produto);
+  const imagemUrl = montarImagemPrincipal(imagemOriginal);
+
+  function usarFallback(event) {
+    event.currentTarget.onerror = null;
+    event.currentTarget.src = FALLBACK_IMAGE;
+  }
 
   return (
     <div className="col-md-6 col-lg-3">
       <Link
-        href={`/produtos/${produto.id_produto}`}
+        href={idProduto ? `/produtos/${idProduto}` : "/produtos"}
         style={{ textDecoration: "none" }}
       >
         <div
@@ -56,10 +112,10 @@ export default function CardProduto({ produto }) {
             src={imagemUrl}
             className="card-img-top"
             alt={nomeProduto}
-            onError={(event) => {
-              event.currentTarget.src = "/logo.png";
-            }}
+            loading="lazy"
+            onError={usarFallback}
             style={{
+              width: "100%",
               height: "220px",
               objectFit: "cover",
               background: "#09090b",
@@ -86,7 +142,7 @@ export default function CardProduto({ produto }) {
                 lineHeight: "1.55",
               }}
             >
-              {produto.descricao || "Produto sem descrição."}
+              {produto?.descricao || "Produto sem descrição."}
             </p>
 
             <p
@@ -98,7 +154,7 @@ export default function CardProduto({ produto }) {
                 textTransform: "capitalize",
               }}
             >
-              {formatarCategoria(produto.categoria)}
+              {formatarCategoria(produto?.categoria)}
             </p>
 
             <p
@@ -108,7 +164,7 @@ export default function CardProduto({ produto }) {
                 fontSize: "1rem",
               }}
             >
-              {formatarPreco(produto.preco)}
+              {formatarPreco(produto?.preco)}
             </p>
           </div>
         </div>

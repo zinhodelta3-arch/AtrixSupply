@@ -183,7 +183,12 @@ export default function Produtos() {
 
   const produtosFiltrados = useMemo(() => {
     return produtos.filter((produto) => {
-      const nomeProduto = String(produto?.nome_produto || "").toLowerCase();
+      const nomeProduto = String(
+        produto?.nome_produto ||
+          produto?.nome ||
+          ""
+      ).toLowerCase();
+
       const termoBusca = busca.trim().toLowerCase();
 
       const categoriaProduto = normalizarCategoria(produto?.categoria);
@@ -513,7 +518,7 @@ export default function Produtos() {
                   !erro &&
                   produtosAtuais.map((produto) => (
                     <CardProduto
-                      key={produto.id_produto}
+                      key={produto.id_produto || produto.id}
                       produto={produto}
                     />
                   ))}
