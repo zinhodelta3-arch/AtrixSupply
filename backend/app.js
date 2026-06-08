@@ -13,6 +13,8 @@ import logisticaRotas from './routes/logisticaRotas.js';
 import pedidoRotas from './routes/pedidoRotas.js';
 import encomendaRotas from './routes/encomendaRotas.js';
 import orcamentoRotas from './routes/orcamentoRotas.js';
+import suporteRotas from './routes/suporteRotas.js';
+import notificacaoRotas from './routes/notificacaoRotas.js';
 
 // Importar middlewares
 import { logMiddleware } from './middlewares/logMiddleware.js';
@@ -26,10 +28,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Configurações do servidor
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 // Middlewares globais
-app.use(helmet()); // Segurança HTTP
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' }
+})); // Segurança HTTP
 
 // Configuração CORS global (segurança)
 app.use(cors({
@@ -57,6 +61,8 @@ app.use('/api/logistica', logisticaRotas);
 app.use('/api/pedidos', pedidoRotas);
 app.use('/api/encomendas', encomendaRotas);
 app.use('/api/orcamentos', orcamentoRotas);
+app.use('/api/suporte', suporteRotas);
+app.use('/api/notificacoes', notificacaoRotas);
 
 // Rota raiz com documentação atualizada do ecossistema AtrixSupply
 app.get('/', (req, res) => {
@@ -70,7 +76,9 @@ app.get('/', (req, res) => {
             encomendas: '/api/encomendas',
             pedidos: '/api/pedidos',
             logistica: '/api/logistica',
-            orcamentos: '/api/orcamentos'
+            orcamentos: '/api/orcamentos',
+            suporte: '/api/suporte',
+            notificacoes: '/api/notificacoes'
         },
         documentacao: {
             produtos: {

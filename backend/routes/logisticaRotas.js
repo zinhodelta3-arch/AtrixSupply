@@ -1,18 +1,18 @@
 import express from 'express';
 import LogisticaController from '../controllers/LogisticaController.js';
-import { authMiddleware } from '../middlewares/authMiddleware.js';
+import { authMiddleware, supplierMiddleware } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
 // Rotas protegidas (precisam de autenticação)
-router.get('/', authMiddleware, LogisticaController.listarTodos);
-router.get('/veiculo/:veiculo', authMiddleware, LogisticaController.buscarPorVeiculo);
-router.get('/disponibilidade/:disponibilidade', authMiddleware, LogisticaController.buscarPorDisponibilidade);
-router.get('/nome/:nome_logistica', authMiddleware, LogisticaController.buscarPorNome);
-router.get('/:id_logistica', authMiddleware, LogisticaController.buscarPorId);
-router.post('/', authMiddleware, LogisticaController.criar);
-router.put('/:id_logistica', authMiddleware, LogisticaController.atualizar);
-router.delete('/:id_logistica', authMiddleware, LogisticaController.excluir);
+router.get('/', authMiddleware, supplierMiddleware, LogisticaController.listarTodos);
+router.get('/veiculo/:veiculo', authMiddleware, supplierMiddleware, LogisticaController.buscarPorVeiculo);
+router.get('/disponibilidade/:disponibilidade', authMiddleware, supplierMiddleware, LogisticaController.buscarPorDisponibilidade);
+router.get('/nome/:nome_logistica', authMiddleware, supplierMiddleware, LogisticaController.buscarPorNome);
+router.get('/:id_logistica', authMiddleware, supplierMiddleware, LogisticaController.buscarPorId);
+router.post('/', authMiddleware, supplierMiddleware, LogisticaController.criar);
+router.put('/:id_logistica', authMiddleware, supplierMiddleware, LogisticaController.atualizar);
+router.delete('/:id_logistica', authMiddleware, supplierMiddleware, LogisticaController.excluir);
 
 // Rotas OPTIONS para CORS (preflight requests)
 router.options('/', (req, res) => {

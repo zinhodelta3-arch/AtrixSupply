@@ -1,7 +1,4 @@
 export default function Footer() {
-  const termosPdf = "/docs/Termos_de_Uso.pdf";
-  const privacidadePdf = "/docs/Politica_de_Privacidade";
-
   return (
     <footer className="footer-custom text-white">
       <div className="container py-5">
@@ -27,23 +24,13 @@ export default function Footer() {
               </li>
 
               <li>
-                <a
-                  href={termosPdf}
-                  className="footer-link"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
+                <a href="/termos" className="footer-link">
                   Termos
                 </a>
               </li>
 
               <li>
-                <a
-                  href={privacidadePdf}
-                  className="footer-link"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
+                <a href="/privacidade" className="footer-link">
                   Privacidade
                 </a>
               </li>
@@ -55,15 +42,15 @@ export default function Footer() {
             <h5 className="fw-bold mb-3">Redes Sociais</h5>
 
             <div className="d-flex align-items-center gap-3 flex-wrap">
-              <a href="#" className="social-icon" aria-label="Instagram">
+              <a href="/" className="social-icon" aria-label="Instagram">
                 <i className="bi bi-instagram" />
               </a>
 
-              <a href="#" className="social-icon" aria-label="Facebook">
+              <a href="/" className="social-icon" aria-label="Facebook">
                 <i className="bi bi-facebook" />
               </a>
 
-              <a href="#" className="social-icon" aria-label="Twitter/X">
+              <a href="/" className="social-icon" aria-label="Twitter/X">
                 <i className="bi bi-twitter-x" />
               </a>
             </div>

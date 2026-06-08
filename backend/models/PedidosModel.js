@@ -48,7 +48,7 @@ class PedidosModel {
     // Buscar pedido por ID
     static async buscarPorId(id_pedido) {
         try {
-            const rows = await read('pedidos', `id_pedido = ${id_pedido}`);
+            const rows = await read('pedidos', 'id_pedido = ?', [id_pedido]);
             return rows[0] || null;
         } catch (error) {
             console.error('Erro ao buscar pedido por ID:', error);
@@ -69,7 +69,7 @@ class PedidosModel {
     // Atualizar produto
     static async atualizar(id_pedido, dadosPedido) {
         try {
-            return await update('pedidos', dadosPedido, `id_pedido = ${id_pedido}`);
+            return await update('pedidos', dadosPedido, 'id_pedido = ?', [id_pedido]);
         } catch (error) {
             console.error('Erro ao atualizar produto:', error);
             throw error;
@@ -79,7 +79,7 @@ class PedidosModel {
     // Excluir produto
     static async excluir(id_pedido) {
         try {
-            return await deleteRecord('pedidos', `id_pedido = ${id_pedido}`);
+            return await deleteRecord('pedidos', 'id_pedido = ?', [id_pedido]);
         } catch (error) {
             console.error('Erro ao excluir produto:', error);
             throw error;

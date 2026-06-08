@@ -58,6 +58,8 @@ function obterToken() {
   return (
     localStorage.getItem("token") ||
     localStorage.getItem("authToken") ||
+    localStorage.getItem("accessToken") ||
+    localStorage.getItem("usuarioToken") ||
     localStorage.getItem("jwt") ||
     ""
   );
@@ -77,22 +79,57 @@ function obterUsuarioLocal() {
   }
 }
 
-function usuarioEstaLogado() {
-  return Boolean(obterToken() && obterUsuarioLocal());
+function obterTipoUsuario(usuario) {
+  return String(
+    usuario?.tipo ||
+      usuario?.tipo_user ||
+      usuario?.role ||
+      usuario?.dados?.tipo ||
+      usuario?.dados?.tipo_user ||
+      usuario?.usuario?.tipo ||
+      ""
+  )
+    .trim()
+    .toLowerCase();
+}
+
+function usuarioPodeComprar(usuario) {
+  return ["comum", "cliente"].includes(obterTipoUsuario(usuario));
 }
 
 function getImagemUrl(imagem) {
-  if (!imagem || String(imagem).trim() === "") {
+  const imagemTratada = String(imagem || "").trim().replaceAll("\\", "/");
+
+  if (!imagemTratada) {
     return IMAGEM_PADRAO_PRODUTO;
   }
 
-  if (String(imagem).startsWith("http")) return imagem;
-
-  if (String(imagem).startsWith("/uploads")) {
-    return `${API_URL}${imagem}`;
+  if (imagemTratada.startsWith("http") || imagemTratada.startsWith("data:image")) {
+    return imagemTratada;
   }
 
-  return `${API_URL}/uploads/imagens/${imagem}`;
+  if (imagemTratada.startsWith("/uploads")) {
+    return `${API_URL}${imagemTratada}`;
+  }
+
+  if (imagemTratada.startsWith("uploads/")) {
+    return `${API_URL}/${imagemTratada}`;
+  }
+
+  return `${API_URL}/uploads/imagens/${imagemTratada}`;
+}
+
+function obterImagemProduto(produto) {
+  return (
+    produto?.imagem ||
+    produto?.imagem_produto ||
+    produto?.url_imagem ||
+    produto?.imagem_url ||
+    produto?.foto ||
+    produto?.img ||
+    produto?.image ||
+    ""
+  );
 }
 
 function formatarPreco(valor) {
@@ -237,7 +274,7 @@ export default function Compra() {
 
   const precoProduto = Number(produto?.preco_produto ?? produto?.preco ?? 0);
   const estoqueProduto = Number(produto?.estoque_produto ?? produto?.estoque ?? 0);
-  const imagemProduto = getImagemUrl(produto?.imagem);
+  const imagemProduto = getImagemUrl(obterImagemProduto(produto));
   const estoqueInfo = getEstoqueInfo(estoqueProduto);
 
   const subtotal = useMemo(() => {
@@ -276,7 +313,10 @@ export default function Compra() {
   function adicionarAoCarrinho() {
     if (!produto) return;
 
-    if (!usuarioEstaLogado()) {
+    const token = obterToken();
+    const usuarioLocal = obterUsuarioLocal();
+
+    if (!token || !usuarioLocal) {
       mostrarToast(
         "warning",
         "Login necessário",
@@ -286,6 +326,16 @@ export default function Compra() {
       setTimeout(() => {
         router.push("/login");
       }, 850);
+
+      return;
+    }
+
+    if (!usuarioPodeComprar(usuarioLocal)) {
+      mostrarToast(
+        "warning",
+        "Acesso de cliente necessário",
+        "Use uma conta de cliente para adicionar produtos ao carrinho."
+      );
 
       return;
     }

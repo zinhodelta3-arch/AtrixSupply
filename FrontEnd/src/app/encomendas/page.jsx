@@ -55,6 +55,8 @@ function obterToken() {
   return (
     localStorage.getItem("token") ||
     localStorage.getItem("authToken") ||
+    localStorage.getItem("accessToken") ||
+    localStorage.getItem("usuarioToken") ||
     localStorage.getItem("jwt") ||
     ""
   );
@@ -159,34 +161,64 @@ function normalizarPaginacao(data) {
   };
 }
 
+const STATUS_LABELS = {
+  pendente: "Solicitação enviada",
+  solicitada: "Solicitação enviada",
+  aguardando_orcamento: "Aguardando orçamento",
+  orcamento_recebido: "Orçamento recebido",
+  orcamento_escolhido: "Orçamento escolhido",
+  aguardando_logistica: "Aguardando logística",
+  logistica_definida: "Logística definida",
+  preparando_envio: "Preparando envio",
+  em_andamento: "Em transporte",
+  em_transporte: "Em transporte",
+  finalizado: "Entregue",
+  entregue: "Entregue",
+  cancelado: "Cancelada",
+  cancelada: "Cancelada",
+  recusada: "Recusada",
+};
+
+function normalizarStatus(status) {
+  const valor = String(status || "").trim().toLowerCase();
+
+  if (valor === "pendente") return "solicitada";
+  if (valor === "em_andamento") return "em_transporte";
+  if (valor === "finalizado") return "entregue";
+  if (valor === "cancelado") return "cancelada";
+
+  return valor;
+}
+
 function formatarStatus(status) {
-  switch (status) {
-    case "pendente":
-      return "Pendente";
-    case "em_andamento":
-      return "Em andamento";
-    case "finalizado":
-      return "Finalizado";
-    case "cancelado":
-      return "Cancelado";
-    default:
-      return "Não informado";
-  }
+  return STATUS_LABELS[normalizarStatus(status)] || "Não informado";
 }
 
 function corStatus(status) {
-  switch (status) {
-    case "pendente":
-      return "bg-warning text-dark";
-    case "em_andamento":
-      return "bg-primary";
-    case "finalizado":
-      return "bg-success";
-    case "cancelado":
-      return "bg-danger";
-    default:
-      return "bg-secondary";
+  const statusNormalizado = normalizarStatus(status);
+
+  if (statusNormalizado === "cancelada" || statusNormalizado === "recusada") {
+    return "bg-danger";
   }
+
+  if (statusNormalizado === "entregue") {
+    return "bg-success";
+  }
+
+  if (statusNormalizado === "em_transporte" || statusNormalizado === "preparando_envio") {
+    return "bg-primary";
+  }
+
+  if (
+    statusNormalizado === "orcamento_recebido" ||
+    statusNormalizado === "orcamento_escolhido" ||
+    statusNormalizado === "aguardando_logistica" ||
+    statusNormalizado === "logistica_definida"
+  ) {
+    return "bg-info text-dark";
+  }
+
+  return "bg-warning text-dark";
 }
 
 function formatarData(data) {
@@ -249,7 +281,7 @@ export default function Encomendas() {
         return;
       }
 
-      if (tipoUsuario !== "comum") {
+      if (!["comum", "cliente"].includes(tipoUsuario)) {
         router.replace("/");
         return;
       }
@@ -301,7 +333,7 @@ export default function Encomendas() {
 
         if (idUsuario) {
           lista = lista.filter((item) => {
-            if (!item.id_user && !item.id_usuario) return true;
+            if (!item.id_user && !item.id_usuario) return false;
 
             return Number(item.id_user || item.id_usuario) === Number(idUsuario);
           });
@@ -358,10 +390,23 @@ export default function Encomendas() {
   const metricas = useMemo(() => {
     return {
       total: encomendas.length,
-      pendentes: encomendas.filter((item) => item.status === "pendente").length,
-      andamento: encomendas.filter((item) => item.status === "em_andamento").length,
-      finalizadas: encomendas.filter((item) => item.status === "finalizado").length,
-      canceladas: encomendas.filter((item) => item.status === "cancelado").length,
+      pendentes: encomendas.filter((item) =>
+        ["solicitada", "aguardando_orcamento"].includes(normalizarStatus(item.status))
+      ).length,
+      andamento: encomendas.filter((item) =>
+        [
+          "orcamento_recebido",
+          "orcamento_escolhido",
+          "aguardando_logistica",
+          "logistica_definida",
+          "preparando_envio",
+          "em_transporte",
+        ].includes(normalizarStatus(item.status))
+      ).length,
+      finalizadas: encomendas.filter((item) => normalizarStatus(item.status) === "entregue").length,
+      canceladas: encomendas.filter((item) =>
+        ["cancelada", "recusada"].includes(normalizarStatus(item.status))
+      ).length,
     };
   }, [encomendas]);
 

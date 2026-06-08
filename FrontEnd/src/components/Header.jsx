@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-const ALERT_PRODUTO_ADICIONADO = "Produto adicionado com sucesso!";
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
+const NOTIFICACOES_URL = `${API_URL}/api/notificacoes`;
 
 function normalizarTipoUsuario(usuario) {
   if (!usuario) return "";
@@ -41,6 +42,19 @@ function obterNomeUsuario(usuario) {
   );
 }
 
+function obterTokenLocal() {
+  if (typeof window === "undefined") return "";
+
+  return (
+    localStorage.getItem("token") ||
+    localStorage.getItem("authToken") ||
+    localStorage.getItem("accessToken") ||
+    localStorage.getItem("usuarioToken") ||
+    localStorage.getItem("jwt") ||
+    ""
+  );
+}
+
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
@@ -48,18 +62,21 @@ export default function Header() {
   const [loading, setLoading] = useState(true);
   const [usuario, setUsuario] = useState(null);
   const [cartItems, setCartItems] = useState([]);
+  const [notificacoes, setNotificacoes] = useState([]);
 
   const tipoUsuario = normalizarTipoUsuario(usuario);
   const nomeUsuario = obterNomeUsuario(usuario);
 
   const usuarioLogado = Boolean(usuario);
-  const usuarioFornecedor = tipoUsuario === "fornecedor" || tipoUsuario === "supplier";
-  const usuarioComum = tipoUsuario === "comum";
-  const usuarioSemTipo = usuarioLogado && !tipoUsuario;
-
-  const exibirLinksCliente = !usuarioLogado || usuarioComum || usuarioSemTipo;
-  const exibirCarrinho = usuarioLogado && (usuarioComum || usuarioSemTipo);
+  const usuarioFornecedor =
+    tipoUsuario === "fornecedor" ||
+    tipoUsuario === "fornecedores" ||
+    tipoUsuario === "supplier";
+  const usuarioComum = tipoUsuario === "comum" || tipoUsuario === "cliente";
+  const exibirLinksCliente = !usuarioLogado || usuarioComum;
+  const exibirCarrinho = usuarioLogado && usuarioComum;
   const exibirOpcoesFornecedor = usuarioLogado && usuarioFornecedor;
+  const notificacoesNaoLidas = notificacoes.filter((item) => !item.lida).length;
 
   const atualizarCarrinhoDoStorage = () => {
     try {
@@ -95,27 +112,45 @@ export default function Header() {
     }
   };
 
+  const carregarNotificacoes = async () => {
+    const token = obterTokenLocal();
+
+    if (!token) {
+      setNotificacoes([]);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${NOTIFICACOES_URL}?pagina=1&limite=5`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok || !data?.sucesso) {
+        setNotificacoes([]);
+        return;
+      }
+
+      setNotificacoes(Array.isArray(data?.dados) ? data.dados : []);
+    } catch (error) {
+      setNotificacoes([]);
+    }
+  };
+
   const atualizarDadosLocais = () => {
     carregarUsuarioDoStorage();
     atualizarCarrinhoDoStorage();
+    carregarNotificacoes();
   };
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     import("bootstrap/dist/js/bootstrap.bundle.min.js");
-
-    const alertOriginal = window.alert;
-
-    const alertFiltrado = (mensagem) => {
-      if (String(mensagem).trim() === ALERT_PRODUTO_ADICIONADO) {
-        return;
-      }
-
-      alertOriginal.call(window, mensagem);
-    };
-
-    window.alert = alertFiltrado;
 
     atualizarDadosLocais();
 
@@ -126,9 +161,6 @@ export default function Header() {
       window.removeEventListener("carrinhoAtualizado", atualizarCarrinhoDoStorage);
       window.removeEventListener("storage", atualizarDadosLocais);
 
-      if (window.alert === alertFiltrado) {
-        window.alert = alertOriginal;
-      }
     };
   }, [pathname]);
 
@@ -138,12 +170,40 @@ export default function Header() {
     localStorage.removeItem("usuario");
     localStorage.removeItem("token");
     localStorage.removeItem("authToken");
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("usuarioToken");
     localStorage.removeItem("jwt");
 
     setUsuario(null);
     setCartItems([]);
+    setNotificacoes([]);
 
     router.push("/login");
+  };
+
+  const marcarNotificacaoLida = async (notificacao) => {
+    if (!notificacao?.id_notificacao || notificacao.lida) return;
+
+    const token = obterTokenLocal();
+
+    try {
+      await fetch(`${NOTIFICACOES_URL}/${notificacao.id_notificacao}/lida`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setNotificacoes((atuais) =>
+        atuais.map((item) =>
+          item.id_notificacao === notificacao.id_notificacao
+            ? { ...item, lida: 1 }
+            : item
+        )
+      );
+    } catch (error) {
+      // Mantem a notificacao como nao lida para nova tentativa.
+    }
   };
 
   const handleRemoveItem = (idToRemove) => {
@@ -228,6 +288,58 @@ export default function Header() {
                 </div>
               )}
 
+              {usuarioLogado && (
+                <div className="profile-wrapper">
+                  <button className="cart-btn" type="button" aria-label="Notificações">
+                    <i className="bi bi-bell"></i>
+
+                    {notificacoesNaoLidas > 0 && (
+                      <span className="cart-badge">{notificacoesNaoLidas}</span>
+                    )}
+                  </button>
+
+                  <div className="profile-dropdown" style={{ minWidth: "280px" }}>
+                    <span
+                      style={{
+                        padding: "10px 15px",
+                        display: "block",
+                        fontWeight: "bold",
+                        borderBottom: "1px solid rgba(255,255,255,0.1)",
+                      }}
+                    >
+                      Notificações
+                    </span>
+
+                    {notificacoes.length === 0 ? (
+                      <span style={{ padding: "10px 15px", display: "block" }}>
+                        Nenhuma notificação.
+                      </span>
+                    ) : (
+                      notificacoes.map((notificacao) => (
+                        <button
+                          key={notificacao.id_notificacao}
+                          type="button"
+                          onClick={() => marcarNotificacaoLida(notificacao)}
+                          style={{
+                            width: "100%",
+                            textAlign: "left",
+                            background: notificacao.lida ? "transparent" : "rgba(255,136,0,0.10)",
+                            border: "none",
+                            color: "inherit",
+                            padding: "10px 15px",
+                          }}
+                        >
+                          <strong style={{ display: "block" }}>{notificacao.titulo}</strong>
+                          <small>{notificacao.mensagem}</small>
+                        </button>
+                      ))
+                    )}
+
+                    <Link href="/notificacoes">Ver todas</Link>
+                  </div>
+                </div>
+              )}
+
               <div className="profile-wrapper">
                 <div className="profile-btn">
                   <i className="bi bi-person-fill"></i>
@@ -280,14 +392,14 @@ export default function Header() {
 
             <div className="collapse navbar-collapse order-lg-2" id="navbarNav">
               <ul className="navbar-nav navbar-center gap-lg-4">
+                <li className="nav-item">
+                  <Link className="nav-link" href="/produtos">
+                    Produtos
+                  </Link>
+                </li>
+
                 {exibirLinksCliente && (
                   <>
-                    <li className="nav-item">
-                      <Link className="nav-link" href="/produtos">
-                        Produtos
-                      </Link>
-                    </li>
-
                     <li className="nav-item">
                       <Link className="nav-link" href="/pedidos">
                         Pedidos

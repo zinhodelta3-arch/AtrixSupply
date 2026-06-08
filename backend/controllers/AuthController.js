@@ -3,6 +3,14 @@ import UsuarioModel from '../models/UsuarioModel.js';
 import bcrypt from 'bcryptjs';
 import { JWT_CONFIG } from '../config/jwt.js';
 
+function normalizarTipoUsuario(tipo) {
+    return String(tipo || '').trim().toLowerCase();
+}
+
+function usuarioEhAdmin(usuario) {
+    return ['admin', 'administrador'].includes(normalizarTipoUsuario(usuario?.tipo));
+}
+
 // Controller para operações de autenticação e gerenciamento de usuários
 class AuthController {
 
@@ -466,13 +474,13 @@ class AuthController {
                 });
             }
 
-            // REFACHADO: Admin pode criar contas do tipo 'admin', 'comum' ou 'fornecedor'
-            const tiposValidos = ['comum', 'fornecedor', 'admin'];
-            if (!tiposValidos.includes(tipo)) {
+            const tipoNormalizado = normalizarTipoUsuario(tipo);
+            const tiposValidos = ['comum', 'fornecedor', 'admin', 'administrador'];
+            if (!tiposValidos.includes(tipoNormalizado)) {
                 return res.status(400).json({
                     sucesso: false,
                     erro: 'Tipo inválido',
-                    mensagem: 'O tipo do usuário deve ser: comum, fornecedor ou admin'
+                    mensagem: 'O tipo do usuário deve ser: comum, fornecedor, administrador ou admin'
                 });
             }
 
@@ -494,7 +502,7 @@ class AuthController {
                 cargo: cargo.trim(),
                 email: email.trim().toLowerCase(),
                 senha: senha,
-                tipo: tipo,
+                tipo: tipoNormalizado,
                 cep: cepLimpo
             };
 
@@ -533,17 +541,19 @@ class AuthController {
                 });
             }
 
-            const duplicata = await AuthController.validarDuplicatasUsuario({
-                email,
-                cnpjLimpo,
-                cepLimpo
-            });
-
-            if (duplicata) {
-                return res.status(duplicata.status).json(duplicata.resposta);
+            const usuarioExistente = await UsuarioModel.buscarPorId(id_user);
+            if (!usuarioExistente) {
+                return res.status(404).json({
+                    sucesso: false,
+                    erro: 'Usuário não encontrado',
+                    mensagem: `Usuário com ID ${id_user} não foi encontrado`
+                });
             }
 
             const dadosAtualizacao = {};
+            let cnpjLimpoAtualizado = null;
+            let cepLimpoAtualizado = null;
+            let emailAtualizado = null;
             
             if (nome_user !== undefined) {
                 if (nome_user.trim() === '' || nome_user.length < 2) {
@@ -557,15 +567,15 @@ class AuthController {
             }
 
             if (cnpj !== undefined) {
-                const cnpjLimpo = cnpj.replace(/\D/g, '');
-                if (cnpjLimpo.length !== 14) {
+                cnpjLimpoAtualizado = cnpj.replace(/\D/g, '');
+                if (cnpjLimpoAtualizado.length !== 14) {
                     return res.status(400).json({
                         sucesso: false,
                         erro: 'CNPJ inválido',
                         mensagem: 'O CNPJ precisa conter 14 dígitos válidos'
                     });
                 }
-                dadosAtualizacao.cnpj = cnpjLimpo;
+                dadosAtualizacao.cnpj = cnpjLimpoAtualizado;
             }
 
             if (endereco !== undefined) {
@@ -604,8 +614,9 @@ class AuthController {
             }
 
             if (email !== undefined) {
+                emailAtualizado = email.trim().toLowerCase();
                 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                if (!emailRegex.test(email)) {
+                if (!emailRegex.test(emailAtualizado)) {
                     return res.status(400).json({
                         sucesso: false,
                         erro: 'Email inválido',
@@ -613,7 +624,7 @@ class AuthController {
                     });
                 }
                 
-                const usuarioComEmail = await UsuarioModel.buscarPorEmail(email);
+                const usuarioComEmail = await UsuarioModel.buscarPorEmail(emailAtualizado);
                 if (usuarioComEmail && usuarioComEmail.id_user !== parseInt(id_user)) {
                     return res.status(409).json({
                         sucesso: false,
@@ -621,7 +632,7 @@ class AuthController {
                         mensagem: 'Este email já está sendo usado por outro usuário'
                     });
                 }
-                dadosAtualizacao.email = email.trim().toLowerCase();
+                dadosAtualizacao.email = emailAtualizado;
             }
 
             if (senha !== undefined) {
@@ -632,33 +643,40 @@ class AuthController {
                         mensagem: 'A senha deve ter pelo menos 6 caracteres'
                     });
                 }
-                const saltRounds = 10;
                 dadosAtualizacao.senha = senha;
             }
 
             if (cep !== undefined) {
-                const cepLimpo = cep.replace(/\D/g, '');
-                if (cepLimpo.length !== 8) {
+                cepLimpoAtualizado = cep.replace(/\D/g, '');
+                if (cepLimpoAtualizado.length !== 8) {
                     return res.status(400).json({
                         sucesso: false,
                         erro: 'CEP inválido',
                         mensagem: 'O CEP precisa ser válido e conter 8 dígitos'
                     });
                 }
-                dadosAtualizacao.cep = cepLimpo;
+                dadosAtualizacao.cep = cepLimpoAtualizado;
             }
 
-            // REFACHADO: Permite que o admin altere o nível de privilégio (cargo/role) do usuário gerenciado
             if (tipo !== undefined) {
-                const tiposValidos = ['comum', 'fornecedor', 'admin'];
-                if (!tiposValidos.includes(tipo)) {
+                if (!usuarioEhAdmin(req.usuario)) {
+                    return res.status(403).json({
+                        sucesso: false,
+                        erro: 'Acesso negado',
+                        mensagem: 'Você não tem permissão para alterar o tipo do usuário'
+                    });
+                }
+
+                const tipoNormalizado = normalizarTipoUsuario(tipo);
+                const tiposValidos = ['comum', 'fornecedor', 'admin', 'administrador'];
+                if (!tiposValidos.includes(tipoNormalizado)) {
                     return res.status(400).json({
                         sucesso: false,
                         erro: 'Tipo inválido',
-                        mensagem: 'O tipo deve ser alterado para comum, fornecedor ou admin'
+                        mensagem: 'O tipo deve ser alterado para comum, fornecedor, administrador ou admin'
                     });
                 }
-                dadosAtualizacao.tipo = tipo;
+                dadosAtualizacao.tipo = tipoNormalizado;
             }
 
             if (req.file) {
@@ -671,6 +689,17 @@ class AuthController {
                     erro: 'Nenhum dado para atualizar',
                     mensagem: 'Forneça pelo menos um campo para atualizar'
                 });
+            }
+
+            const duplicata = await AuthController.validarDuplicatasUsuario({
+                email: emailAtualizado,
+                cnpjLimpo: cnpjLimpoAtualizado,
+                cepLimpo: cepLimpoAtualizado,
+                ignorarIdUser: id_user
+            });
+
+            if (duplicata) {
+                return res.status(duplicata.status).json(duplicata.resposta);
             }
 
             const resultado = await UsuarioModel.atualizar(id_user, dadosAtualizacao);

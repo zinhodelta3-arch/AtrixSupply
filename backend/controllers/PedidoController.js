@@ -4,6 +4,18 @@ import ProdutoModel from '../models/ProdutoModel.js';
 import { fileURLToPath } from 'url';
 import path from 'path';
 
+const STATUS_PEDIDO_VALIDOS = ['carrinho', 'pendente', 'processando', 'enviado', 'entregue', 'cancelado'];
+const STATUS_PEDIDO_FINAIS = ['entregue', 'cancelado'];
+
+function usuarioEhAdmin(req) {
+    const tipo = String(req.usuario?.tipo || '').trim().toLowerCase();
+    return tipo === 'admin' || tipo === 'administrador';
+}
+
+function pedidoPertenceAoUsuario(pedido, req) {
+    return Number(pedido?.id_user) === Number(req.usuario?.id_user);
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -43,7 +55,9 @@ class PedidoController {
 
             const offset = (pagina - 1) * limite;
 
-            const resultado = await PedidosModel.listarTodos(limite, offset); 
+            const resultado = usuarioEhAdmin(req)
+                ? await PedidosModel.listarTodos(limite, offset)
+                : await PedidosModel.buscarPorIdUser(req.usuario.id_user, limite, offset);
 
             res.status(200).json({
                 sucesso: true,
@@ -89,6 +103,14 @@ class PedidoController {
                 });
             }
 
+            if (!usuarioEhAdmin(req) && !pedidoPertenceAoUsuario(pedido, req)) {
+                return res.status(403).json({
+                    sucesso: false,
+                    erro: 'Acesso negado',
+                    mensagem: 'Voce nao tem permissao para acessar este pedido.'
+                });
+            }
+
             res.status(200).json({
                 sucesso: true,
                 dados: pedido
@@ -115,6 +137,14 @@ class PedidoController {
                     sucesso: false,
                     erro: 'ID inválido',
                     mensagem: 'O ID deve ser um número válido'
+                });
+            }
+
+            if (!usuarioEhAdmin(req) && Number(id_user) !== Number(req.usuario.id_user)) {
+                return res.status(403).json({
+                    sucesso: false,
+                    erro: 'Acesso negado',
+                    mensagem: 'Voce nao tem permissao para acessar pedidos de outro usuario.'
                 });
             }
 
@@ -174,7 +204,15 @@ class PedidoController {
     // GET /pedidos/nome_user/:nome_user - Listar todos os pedidos com o nome do usuário (com paginação)
     static async buscarPorNome(req, res) {
         try {
-            
+            if (!usuarioEhAdmin(req)) {
+                return res.status(403).json({
+                    sucesso: false,
+                    erro: 'Acesso negado',
+                    mensagem: 'Voce nao tem permissao para consultar pedidos de outros usuarios.'
+                });
+            }
+
+
             let nome_user = req.params.nome_user || '*';
             let pagina = parseInt(req.query.pagina) || 1;
             let limite = parseInt(req.query.limite) || 10;
@@ -230,7 +268,15 @@ class PedidoController {
     // GET /pedidos/status/:status - Listar todos os pedidos com o status (com paginação, para admin)
     static async buscarPorStatus(req, res) {
         try {
-            
+            if (!usuarioEhAdmin(req)) {
+                return res.status(403).json({
+                    sucesso: false,
+                    erro: 'Acesso negado',
+                    mensagem: 'Voce nao tem permissao para consultar pedidos por status.'
+                });
+            }
+
+
             let status = req.params.status || '*';
             let pagina = parseInt(req.query.pagina) || 1;
             let limite = parseInt(req.query.limite) || 10;
@@ -326,6 +372,14 @@ class PedidoController {
                 });
             }
 
+            if (!usuarioEhAdmin(req) && Number(id_user) !== Number(req.usuario.id_user)) {
+                return res.status(403).json({
+                    sucesso: false,
+                    erro: 'Acesso negado',
+                    mensagem: 'Voce nao pode criar pedido para outro usuario.'
+                });
+            }
+
             // Verificar se o user existe
             const userExistente = await UsuarioModel.buscarPorId(id_user);
             if (!userExistente) {
@@ -377,61 +431,11 @@ class PedidoController {
         }
     }
     
-    // PUT /pedido/:id - Atualizar pedido (a caminho)
-    static async atualizar(req, res) {
-        try {
-            const { id_pedido } = req.params;
-
-            // Validação do ID
-            if (!id_pedido || isNaN(id_pedido)) {
-                return res.status(400).json({
-                    sucesso: false,
-                    erro: 'ID inválido',
-                    mensagem: 'O ID deve ser um número válido'
-                });
-            }
-
-            // Verificar se o pedido existe
-            const pedidoExistente = await PedidosModel.buscarPorId(id_pedido);
-            if (!pedidoExistente) {
-                return res.status(404).json({
-                    sucesso: false,
-                    erro: 'Pedido não encontrado',
-                    mensagem: `Pedido com ID ${id_pedido} não foi encontrado`
-                });
-            }
-
-            // Preparar dados para atualização
-            const dadosAtualizacao = {};
-            const hoje = new Date();
-
-            dadosAtualizacao.status = 'enviado';
-            dadosAtualizacao.data_entrega = hoje.getDate() + 20;
-
-            const resultado = await PedidosModel.atualizar(id_pedido, dadosAtualizacao);
-
-            res.status(200).json({
-                sucesso: true,
-                mensagem: 'Pedido atualizado com sucesso',
-                dados: {
-                    linhasAfetadas: resultado.affectedRows || 1
-                }
-            });
-        } catch (error) {
-            console.error('Erro ao atualizar pedido:', error);
-            res.status(500).json({
-                sucesso: false,
-                erro: 'Erro interno do servidor',
-                mensagem: 'Não foi possível atualizar o pedido'
-            });
-        }
-    }
-
     // PUT /pedido/:id - Atualizar pedido (admin)
     static async atualizar(req, res) {
         try {
             const { id_pedido } = req.params;
-            const { data_entrega } = req.body;
+            const { data_entrega, status } = req.body;
 
             // Validação do ID
             if (!id_pedido || isNaN(id_pedido)) {
@@ -452,28 +456,41 @@ class PedidoController {
                 });
             }
 
+            if (!usuarioEhAdmin(req)) {
+                return res.status(403).json({
+                    sucesso: false,
+                    erro: 'Acesso negado',
+                    mensagem: 'Voce nao tem permissao para alterar este pedido.'
+                });
+            }
+
             // Preparar dados para atualização
             const dadosAtualizacao = {};
+
+            if (status !== undefined) {
+                const statusNormalizado = String(status || '').trim().toLowerCase();
+                const statusAtual = String(pedidoExistente.status || '').trim().toLowerCase();
+
+                if (!STATUS_PEDIDO_VALIDOS.includes(statusNormalizado)) {
+                    return res.status(400).json({
+                        sucesso: false,
+                        erro: 'Status invalido',
+                        mensagem: 'Escolha um status valido para o pedido.'
+                    });
+                }
+
+                dadosAtualizacao.status = statusNormalizado;
+            }
 
             //validar data de entrega
             if (data_entrega !== undefined) {
                 const date = new Date(data_entrega);
-                const hoje = new Date();
-                hoje.setHours(0,0,0,0);
 
                 if (isNaN(date.getTime())) {
                     return res.status(400).json({
                         sucesso: false,
                         erro: 'Data de entrega inválida',
                         mensagem: 'O formato da data deve ser válido'
-                    });
-                }
-
-                if(date < hoje){
-                    return res.status(400).json({
-                        sucesso: false,
-                        erro: 'Data de entrega inválida',
-                        mensagem: 'A data deve ser posterior a data atual'
                     });
                 }
 
@@ -529,6 +546,23 @@ class PedidoController {
                     sucesso: false,
                     erro: 'Pedido não encontrado',
                     mensagem: `Pedido com ID ${id_pedido} não foi encontrado`
+                });
+            }
+
+            if (!usuarioEhAdmin(req) && !pedidoPertenceAoUsuario(pedidoExistente, req)) {
+                return res.status(403).json({
+                    sucesso: false,
+                    erro: 'Acesso negado',
+                    mensagem: 'Voce nao tem permissao para excluir este pedido.'
+                });
+            }
+
+            const statusAtual = String(pedidoExistente.status || '').trim().toLowerCase();
+            if (!usuarioEhAdmin(req) && STATUS_PEDIDO_FINAIS.includes(statusAtual)) {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'Pedido bloqueado',
+                    mensagem: 'Pedidos entregues ou cancelados nao podem ser excluidos pelo cliente.'
                 });
             }
 

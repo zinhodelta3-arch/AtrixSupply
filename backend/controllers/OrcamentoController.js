@@ -1,4 +1,7 @@
 import OrcamentosModel from '../models/OrcamentoModel.js';
+import EncomendaModel from '../models/EncomendasModel.js';
+import { STATUS_ENCOMENDA } from '../utils/encomendaStatus.js';
+import { isAdmin } from '../middlewares/authMiddleware.js';
 
 // Controller para operações de orçamentos
 class OrcamentosController {
@@ -235,8 +238,21 @@ class OrcamentosController {
                 erros.push({ campo: 'estado', mensagem: 'Estado inválido' });
             }
 
+            if (estado?.toLowerCase() === 'escolhida' && !isAdmin(req.usuario)) {
+                erros.push({ campo: 'estado', mensagem: 'Apenas administradores podem escolher orçamento' });
+            }
+
             if (erros.length > 0) {
                 return res.status(400).json({ sucesso: false, erro: 'Dados inválidos', detalhes: erros });
+            }
+
+            const encomendaExistente = await EncomendaModel.buscarPorId(id_encomenda);
+            if (!encomendaExistente) {
+                return res.status(404).json({
+                    sucesso: false,
+                    erro: 'Encomenda nao encontrada',
+                    mensagem: `Encomenda com ID ${id_encomenda} nao foi encontrada`
+                });
             }
 
             const dadosOrcamento = {
@@ -248,6 +264,18 @@ class OrcamentosController {
             };
 
             const orcamentoId = await OrcamentosModel.criar(dadosOrcamento);
+
+            const dadosEncomenda = {
+                status: dadosOrcamento.estado === 'escolhida'
+                    ? STATUS_ENCOMENDA.AGUARDANDO_LOGISTICA
+                    : STATUS_ENCOMENDA.ORCAMENTO_RECEBIDO
+            };
+
+            if (dadosOrcamento.estado === 'escolhida') {
+                dadosEncomenda.orcamento = dadosOrcamento.estimacao;
+            }
+
+            await EncomendaModel.atualizar(id_encomenda, dadosEncomenda);
 
             res.status(201).json({
                 sucesso: true,
@@ -280,10 +308,22 @@ class OrcamentosController {
             }
 
             const dadosAtualizacao = {};
+            let idEncomendaAlvo = orcamentoExistente.id_encomenda;
 
             if (id_encomenda !== undefined) {
                 if (isNaN(id_encomenda)) return res.status(400).json({ sucesso: false, erro: 'ID da encomenda deve ser numérico' });
-                dadosAtualizacao.id_encomenda = parseInt(id_encomenda);
+                const encomendaExistente = await EncomendaModel.buscarPorId(id_encomenda);
+
+                if (!encomendaExistente) {
+                    return res.status(404).json({
+                        sucesso: false,
+                        erro: 'Encomenda nao encontrada',
+                        mensagem: `Encomenda com ID ${id_encomenda} nao foi encontrada`
+                    });
+                }
+
+                idEncomendaAlvo = parseInt(id_encomenda);
+                dadosAtualizacao.id_encomenda = idEncomendaAlvo;
             }
 
             if (nome_orcamento !== undefined) {
@@ -304,6 +344,13 @@ class OrcamentosController {
             if (estado !== undefined) {
                 const estadosValidos = ['visivel', 'invisivel', 'escolhida'];
                 if (!estadosValidos.includes(estado.toLowerCase())) return res.status(400).json({ sucesso: false, erro: 'Estado inválido' });
+                if (estado.toLowerCase() === 'escolhida' && !isAdmin(req.usuario)) {
+                    return res.status(403).json({
+                        sucesso: false,
+                        erro: 'Acesso negado',
+                        mensagem: 'Apenas administradores podem escolher orçamento por esta rota'
+                    });
+                }
                 dadosAtualizacao.estado = estado.toLowerCase();
             }
 
@@ -312,6 +359,20 @@ class OrcamentosController {
             }
 
             const resultado = await OrcamentosModel.atualizar(id_orcamento, dadosAtualizacao);
+
+            const estadoFinal = dadosAtualizacao.estado || orcamentoExistente.estado;
+            const estimacaoFinal = dadosAtualizacao.estimacao ?? orcamentoExistente.estimacao;
+
+            if (estadoFinal === 'escolhida') {
+                await EncomendaModel.atualizar(idEncomendaAlvo, {
+                    status: STATUS_ENCOMENDA.AGUARDANDO_LOGISTICA,
+                    orcamento: parseFloat(estimacaoFinal)
+                });
+            } else if (estadoFinal === 'visivel') {
+                await EncomendaModel.atualizar(idEncomendaAlvo, {
+                    status: STATUS_ENCOMENDA.ORCAMENTO_RECEBIDO
+                });
+            }
 
             res.status(200).json({
                 sucesso: true,

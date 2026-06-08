@@ -34,6 +34,39 @@ class LogisticaModel {
         }
     }
 
+    static async listarPorDono(id_dono, pagina = 1, limite = 10) {
+        try {
+            const offset = (pagina - 1) * limite;
+            const connection = await getConnection();
+
+            try {
+                const [logistica] = await connection.query(
+                    'SELECT * FROM logistica WHERE id_dono = ? ORDER BY id_logistica DESC LIMIT ? OFFSET ?',
+                    [parseInt(id_dono), parseInt(limite), parseInt(offset)]
+                );
+
+                const [totalResult] = await connection.execute(
+                    'SELECT COUNT(*) as total FROM logistica WHERE id_dono = ?',
+                    [parseInt(id_dono)]
+                );
+                const total = totalResult[0].total;
+
+                return {
+                    logistica,
+                    total,
+                    pagina,
+                    limite,
+                    totalPaginas: Math.ceil(total / limite)
+                };
+            } finally {
+                connection.release();
+            }
+        } catch (error) {
+            console.error('Erro ao listar logistica por dono:', error);
+            throw error;
+        }
+    }
+
     // Buscar logistica por ID
     static async buscarPorId(id_logistica) {
         try {
@@ -70,6 +103,37 @@ class LogisticaModel {
             }
         } catch (error) {
             console.error('Erro ao buscar logistica por nome:', error);
+            throw error;
+        }
+    }
+
+    static async buscarPorNomePorDono(id_dono, nome_logistica, limite = 10, offset = 0) {
+         try {
+            const connection = await getConnection();
+            try {
+                const sql = 'SELECT * FROM logistica WHERE id_dono = ? AND nome_logistica LIKE ? ORDER BY id_logistica DESC LIMIT ? OFFSET ?;';
+                const nome = `%${nome_logistica}%`;
+
+                const [logistica] = await connection.query(sql, [parseInt(id_dono), nome, limite, offset]);
+
+                const [totalResult] = await connection.query(
+                    'SELECT COUNT(*) as total FROM logistica WHERE id_dono = ? AND nome_logistica LIKE ?;',
+                    [parseInt(id_dono), nome]
+                );
+                const total = totalResult[0].total;
+
+                return {
+                    logistica,
+                    total,
+                    pagina: (offset / limite) + 1,
+                    limite,
+                    totalPaginas: Math.ceil(total / limite)
+                };
+            } finally {
+                connection.release();
+            }
+        } catch (error) {
+            console.error('Erro ao buscar logistica por nome e dono:', error);
             throw error;
         }
     }
@@ -133,6 +197,36 @@ class LogisticaModel {
         }
     }
 
+    static async buscarPorVeiculoPorDono(id_dono, veiculo, limite = 10, offset = 0) {
+         try {
+            const connection = await getConnection();
+            try {
+                const sql = 'SELECT * FROM logistica WHERE id_dono = ? AND veiculo = ? ORDER BY id_logistica DESC LIMIT ? OFFSET ?;';
+
+                const [logistica] = await connection.query(sql, [parseInt(id_dono), veiculo, limite, offset]);
+
+                const [totalResult] = await connection.query(
+                    'SELECT COUNT(*) as total FROM logistica WHERE id_dono = ? AND veiculo = ?',
+                    [parseInt(id_dono), veiculo]
+                );
+                const total = totalResult[0].total;
+
+                return {
+                    logistica,
+                    total,
+                    pagina: (offset / limite) + 1,
+                    limite,
+                    totalPaginas: Math.ceil(total / limite)
+                };
+            } finally {
+                connection.release();
+            }
+        } catch (error) {
+            console.error('Erro ao buscar por veículo e dono:', error);
+            throw error;
+        }
+    }
+
     // Buscar por tipo disponibilidade
     static async buscarPorDisponibilidade(disponibilidade, limite = 10, offset = 0) {
          try {
@@ -157,6 +251,36 @@ class LogisticaModel {
             }
         } catch (error) {
             console.error('Erro ao buscar por disponibilidade:', error);
+            throw error;
+        }
+    }
+
+    static async buscarPorDisponibilidadePorDono(id_dono, disponibilidade, limite = 10, offset = 0) {
+         try {
+            const connection = await getConnection();
+            try {
+                const sql = 'SELECT * FROM logistica WHERE id_dono = ? AND disponibilidade = ? ORDER BY id_logistica DESC LIMIT ? OFFSET ?;';
+
+                const [logistica] = await connection.query(sql, [parseInt(id_dono), disponibilidade, limite, offset]);
+
+                const [totalResult] = await connection.query(
+                    'SELECT COUNT(*) as total FROM logistica WHERE id_dono = ? AND disponibilidade = ?',
+                    [parseInt(id_dono), disponibilidade]
+                );
+                const total = totalResult[0].total;
+
+                return {
+                    logistica,
+                    total,
+                    pagina: (offset / limite) + 1,
+                    limite,
+                    totalPaginas: Math.ceil(total / limite)
+                };
+            } finally {
+                connection.release();
+            }
+        } catch (error) {
+            console.error('Erro ao buscar por disponibilidade e dono:', error);
             throw error;
         }
     }

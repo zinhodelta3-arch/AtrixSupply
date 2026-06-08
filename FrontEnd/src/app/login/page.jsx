@@ -50,7 +50,7 @@ export default function Login() {
         const usuario = data.dados?.usuario;
 
         if (!token || !usuario) {
-          setErro("Resposta do servidor incompleta. Token ou usuário não recebido.");
+          setErro("Não foi possível iniciar sua sessão. Tente novamente.");
           return;
         }
 
@@ -71,7 +71,7 @@ export default function Login() {
       setErro(data.mensagem || data.erro || "Email ou senha inválidos.");
     } catch (error) {
       console.error("Erro na requisição de login:", error);
-      setErro("Erro de conexão com o servidor. Verifique se o backend está ligado na porta 3001.");
+      setErro("Não foi possível conectar agora. Tente novamente em instantes.");
     } finally {
       setLoading(false);
     }

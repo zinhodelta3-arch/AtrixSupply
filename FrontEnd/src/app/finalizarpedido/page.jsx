@@ -70,6 +70,8 @@ function obterToken() {
   return (
     localStorage.getItem("token") ||
     localStorage.getItem("authToken") ||
+    localStorage.getItem("accessToken") ||
+    localStorage.getItem("usuarioToken") ||
     localStorage.getItem("jwt") ||
     ""
   );
@@ -112,6 +114,21 @@ function obterIdUsuario(usuario) {
     usuario?.usuario?.id ||
     ""
   );
+}
+
+function obterTipoUsuario(usuario) {
+  return String(
+    usuario?.tipo ||
+      usuario?.tipo_user ||
+      usuario?.role ||
+      usuario?.nivel ||
+      usuario?.dados?.tipo ||
+      usuario?.dados?.tipo_user ||
+      usuario?.usuario?.tipo ||
+      ""
+  )
+    .trim()
+    .toLowerCase();
 }
 
 function montarHeaders() {
@@ -199,9 +216,15 @@ export default function FinalizarPedido() {
       const token = obterToken();
       const usuarioLocal = obterUsuarioLocal();
       const idLogado = obterIdUsuario(usuarioLocal);
+      const tipoUsuario = obterTipoUsuario(usuarioLocal);
 
       if (!token || !usuarioLocal || !idLogado) {
         router.replace("/login");
+        return;
+      }
+
+      if (!["comum", "cliente"].includes(tipoUsuario)) {
+        router.replace("/");
         return;
       }
 
@@ -821,7 +844,7 @@ export default function FinalizarPedido() {
                     marginBottom: "24px",
                   }}
                 >
-                  Esses dados ajudam na confirmação visual da compra. Seu backend atual ainda registra o pedido apenas por usuário e produto.
+                  Esses dados ajudam na confirmação visual da compra e na conferência do pedido.
                 </p>
 
                 <div className="row g-3">
@@ -1111,7 +1134,7 @@ export default function FinalizarPedido() {
                     }}
                   >
                     <i className="bi bi-info-circle me-2" />
-                    Observação técnica
+                    Confirmação do pedido
                   </h6>
 
                   <p
@@ -1122,7 +1145,7 @@ export default function FinalizarPedido() {
                       fontSize: ".92rem",
                     }}
                   >
-                    O pedido será enviado ao backend usando o usuário logado e os produtos do carrinho.
+                    O pedido será registrado com os produtos do carrinho e os dados da sua conta.
                   </p>
                 </div>
               </aside>

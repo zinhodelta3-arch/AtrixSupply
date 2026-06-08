@@ -1305,7 +1305,7 @@ export default function Pedidos() {
                       color: "rgba(255,255,255,.58)",
                     }}
                   >
-                    O backend cria o pedido usando o ID do usuário e o ID do produto.
+                    Informe o cliente e o produto para registrar um novo pedido.
                   </p>
                 </div>
               </div>
@@ -1479,7 +1479,7 @@ export default function Pedidos() {
                       color: "rgba(255,255,255,.58)",
                     }}
                   >
-                    Atualize a data de entrega e, se o backend aceitar, também o status.
+                    Atualize a data de entrega e o status operacional do pedido.
                   </p>
                 </div>
               </div>
@@ -1567,7 +1567,7 @@ export default function Pedidos() {
                         color: "rgba(255,255,255,.52)",
                       }}
                     >
-                      Se o status não salvar, é porque o controller do backend ainda não aceita esse campo no PUT.
+                      Se o status não salvar, revise as permissões e tente novamente.
                     </small>
                   </div>
                 </div>

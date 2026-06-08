@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -13,9 +12,11 @@ const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").rep
 const PRODUTOS_URL = `${API_URL}/api/produtos`;
 
 const produtosPorPagina = 12;
+const produtosLimiteApi = 100;
 
 const categorias = [
   { value: "todas", label: "Todas" },
+  { value: "geral", label: "Geral" },
   { value: "automacao_industrial", label: "Automação Industrial" },
   { value: "eletrica_industrial", label: "Elétrica Industrial" },
   { value: "ferramentas_industriais", label: "Ferramentas Industriais" },
@@ -75,9 +76,21 @@ function getMensagemErro(data) {
   return data?.mensagem || data?.erro || "Não foi possível carregar os produtos.";
 }
 
-export default function Produtos() {
-  const router = useRouter();
+function getMensagemErroCarregamento(error) {
+  const mensagem = String(error?.message || "").toLowerCase();
 
+  if (
+    mensagem.includes("failed to fetch") ||
+    mensagem.includes("networkerror") ||
+    mensagem.includes("load failed")
+  ) {
+    return "Não foi possível carregar os produtos agora. Tente novamente em instantes.";
+  }
+
+  return error?.message || "Não foi possível carregar os produtos agora.";
+}
+
+export default function Produtos() {
   const [produtos, setProdutos] = useState([]);
   const [paginaAtual, setPaginaAtual] = useState(1);
 
@@ -97,41 +110,9 @@ export default function Produtos() {
   }, []);
 
   useEffect(() => {
-    try {
-      const usuarioStorage = localStorage.getItem("usuario");
-
-      if (!usuarioStorage) {
-        setAcessoPermitido(true);
-        return;
-      }
-
-      const usuarioParseado = JSON.parse(usuarioStorage);
-
-      if (!usuarioParseado) {
-        localStorage.removeItem("usuario");
-        setAcessoPermitido(true);
-        return;
-      }
-
-      const tipoUsuario = String(usuarioParseado?.tipo || "")
-        .trim()
-        .toLowerCase();
-
-      if (tipoUsuario !== "comum") {
-        router.replace("/");
-        return;
-      }
-
-      setAcessoPermitido(true);
-    } catch (error) {
-      console.error("Erro ao validar acesso do usuário:", error);
-
-      localStorage.removeItem("usuario");
-      setAcessoPermitido(true);
-    } finally {
-      setValidandoAcesso(false);
-    }
-  }, [router]);
+    setAcessoPermitido(true);
+    setValidandoAcesso(false);
+  }, []);
 
   useEffect(() => {
     if (!acessoPermitido) return;
@@ -141,7 +122,7 @@ export default function Produtos() {
         setCarregandoProdutos(true);
         setErro("");
 
-        const response = await fetch(PRODUTOS_URL, {
+        const response = await fetch(`${PRODUTOS_URL}?limite=${produtosLimiteApi}`, {
           method: "GET",
           cache: "no-store",
         });
@@ -164,7 +145,7 @@ export default function Produtos() {
         setPrecoMaximo(Math.ceil(maiorPreco));
       } catch (error) {
         console.error("Erro ao carregar produtos:", error);
-        setErro(error.message || "Não foi possível carregar os produtos.");
+        setErro(getMensagemErroCarregamento(error));
         setProdutos([]);
       } finally {
         setCarregandoProdutos(false);

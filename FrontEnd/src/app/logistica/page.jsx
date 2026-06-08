@@ -3,7 +3,6 @@
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
@@ -64,6 +63,8 @@ function obterToken() {
   return (
     localStorage.getItem("token") ||
     localStorage.getItem("authToken") ||
+    localStorage.getItem("accessToken") ||
+    localStorage.getItem("usuarioToken") ||
     localStorage.getItem("jwt") ||
     ""
   );
@@ -229,10 +230,11 @@ export default function LogisticaFornecedor() {
   }, []);
 
   useEffect(() => {
+    const token = obterToken();
     const usuario = obterUsuarioAutenticado();
     const tipoUsuario = obterTipoUsuario(usuario);
 
-    if (!usuario || !usuarioPodeAcessarLogistica(tipoUsuario)) {
+    if (!token || !usuario || !usuarioPodeAcessarLogistica(tipoUsuario)) {
       router.replace("/");
       return;
     }
@@ -657,50 +659,7 @@ export default function LogisticaFornecedor() {
                 height: "100%",
               }}
             >
-              <div className="text-center">
-                <div
-                  style={{
-                    width: "140px",
-                    height: "140px",
-                    margin: "0 auto",
-                    borderRadius: "28px",
-                    overflow: "hidden",
-                    position: "relative",
-                    border: "2px solid rgba(255,255,255,.08)",
-                  }}
-                >
-                  <Image
-                    src="/core.png"
-                    alt="Fornecedor"
-                    fill
-                    priority
-                    style={{
-                      objectFit: "cover",
-                    }}
-                  />
-                </div>
-
-                <h3
-                  style={{
-                    marginTop: "22px",
-                    fontWeight: "800",
-                    color: "#ffe082",
-                  }}
-                >
-                  Supplier Prime
-                </h3>
-
-                <p
-                  style={{
-                    color: "rgba(255,255,255,.55)",
-                    marginBottom: 0,
-                  }}
-                >
-                  Central logística premium
-                </p>
-              </div>
-
-              <div className="d-flex flex-column gap-3 mt-5">
+              <div className="d-flex flex-column gap-3">
                 {[
                   {
                     titulo: "Total",

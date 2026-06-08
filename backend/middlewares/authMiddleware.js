@@ -1,108 +1,138 @@
 import jwt from 'jsonwebtoken';
 import { JWT_CONFIG } from '../config/jwt.js';
 
-// Middleware de autenticação JWT
+function normalizarTipo(tipo) {
+    return String(tipo || '').trim().toLowerCase();
+}
+
+function isAdmin(usuario) {
+    return ['admin', 'administrador'].includes(normalizarTipo(usuario?.tipo));
+}
+
+function isFornecedor(usuario) {
+    return normalizarTipo(usuario?.tipo) === 'fornecedor';
+}
+
+function isCliente(usuario) {
+    return ['comum', 'cliente'].includes(normalizarTipo(usuario?.tipo));
+}
+
 const authMiddleware = (req, res, next) => {
     try {
-        // Verificar se o header Authorization existe
         const authHeader = req.headers.authorization;
-        
+
         if (!authHeader) {
-            return res.status(401).json({ 
-                erro: 'Token de acesso não fornecido',
-                mensagem: 'É necessário fornecer um token de autenticação'
+            return res.status(401).json({
+                sucesso: false,
+                erro: 'Sessao necessaria',
+                mensagem: 'Faca login para continuar.'
             });
         }
 
-        // Extrair o token do header (formato: "Bearer TOKEN")
-        const token = authHeader.split(' ')[1];
-        
-        if (!token) {
-            return res.status(401).json({ 
-                erro: 'Token de acesso inválido',
-                mensagem: 'Formato do token incorreto'
+        const [scheme, token] = authHeader.split(' ');
+
+        if (scheme !== 'Bearer' || !token) {
+            return res.status(401).json({
+                sucesso: false,
+                erro: 'Sessao invalida',
+                mensagem: 'Sua sessao nao pode ser validada. Faca login novamente.'
             });
         }
 
-        // Verificar e decodificar o token
         const decoded = jwt.verify(token, JWT_CONFIG.secret);
-        
-        // Adicionar informações do usuário ao request
+
         req.usuario = {
             id_user: decoded.id_user,
-            tipo: decoded.tipo,
+            tipo: normalizarTipo(decoded.tipo),
             email: decoded.email
         };
 
         next();
     } catch (error) {
         if (error.name === 'TokenExpiredError') {
-            return res.status(401).json({ 
-                erro: 'Token expirado',
-                mensagem: 'Faça login novamente'
+            return res.status(401).json({
+                sucesso: false,
+                erro: 'Sessao expirada',
+                mensagem: 'Sua sessao expirou. Faca login novamente.'
             });
         }
-        
+
         if (error.name === 'JsonWebTokenError') {
-            return res.status(401).json({ 
-                erro: 'Token inválido',
-                mensagem: 'Token de autenticação inválido'
+            return res.status(401).json({
+                sucesso: false,
+                erro: 'Sessao invalida',
+                mensagem: 'Sua sessao nao pode ser validada. Faca login novamente.'
             });
         }
 
-        console.error('Erro no middleware de autenticação:', error);
-        return res.status(500).json({ 
+        console.error('Erro no middleware de autenticacao:', error);
+        return res.status(500).json({
+            sucesso: false,
             erro: 'Erro interno do servidor',
-            mensagem: 'Erro ao processar autenticação'
+            mensagem: 'Nao foi possivel validar sua sessao agora.'
         });
     }
 };
 
-// Middleware para verificar se o usuário é administrador
 const adminMiddleware = (req, res, next) => {
-    const tipoUsuario = String(req.usuario.tipo || '').toLowerCase();
-
-    if (!['administrador', 'admin'].includes(tipoUsuario)) {
-        return res.status(403).json({ 
+    if (!isAdmin(req.usuario)) {
+        return res.status(403).json({
+            sucesso: false,
             erro: 'Acesso negado',
-            mensagem: 'Apenas administradores podem acessar este recurso'
+            mensagem: 'Voce nao tem permissao para acessar este recurso.'
         });
     }
+
     next();
 };
 
-
-// Middleware para verificar se o usuário não é fornecedor
 const clientMiddleware = (req, res, next) => {
-    if (req.usuario.tipo === 'fornecedores') {
-        return res.status(403).json({ 
+    if (!isCliente(req.usuario) && !isAdmin(req.usuario)) {
+        return res.status(403).json({
+            sucesso: false,
             erro: 'Acesso negado',
-            mensagem: 'Apenas clientes comuns ou administradores podem acessar este recurso'
+            mensagem: 'Voce nao tem permissao para acessar este recurso.'
         });
     }
+
     next();
 };
 
-// Middleware para verificar se o usuário não é fornecedor
 const supplierMiddleware = (req, res, next) => {
-    if (req.usuario.tipo === 'comum') {
-        return res.status(403).json({ 
+    if (!isFornecedor(req.usuario) && !isAdmin(req.usuario)) {
+        return res.status(403).json({
+            sucesso: false,
             erro: 'Acesso negado',
-            mensagem: 'Apenas fornecedores ou administradores podem acessar este recurso'
+            mensagem: 'Voce nao tem permissao para acessar este recurso.'
         });
     }
+
     next();
 };
 
 const selfMiddleware = (req, res, next) => {
-    if (req.usuario.id_user !== req.params.id_user) {
-        return res.status(403).json({ 
+    if (isAdmin(req.usuario)) {
+        return next();
+    }
+
+    if (Number(req.usuario.id_user) !== Number(req.params.id_user)) {
+        return res.status(403).json({
+            sucesso: false,
             erro: 'Acesso negado',
-            mensagem: 'Somente funcional em próprio usuário'
+            mensagem: 'Voce so pode alterar os seus proprios dados.'
         });
     }
+
     next();
 };
 
-export { authMiddleware, adminMiddleware, clientMiddleware, supplierMiddleware, selfMiddleware };
-
+export {
+    authMiddleware,
+    adminMiddleware,
+    clientMiddleware,
+    supplierMiddleware,
+    selfMiddleware,
+    isAdmin,
+    isFornecedor,
+    isCliente
+};

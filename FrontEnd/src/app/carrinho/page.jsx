@@ -13,7 +13,7 @@ export default function Carrinho() {
       produto: "RTX 4090 ASUS ROG",
       preco: 12499.9,
       quantidade: 1,
-      imagem: "/core.png",
+      imagem: "/logo.png",
       categoria: "Placa de Vídeo",
     },
     {
@@ -21,7 +21,7 @@ export default function Carrinho() {
       produto: "Ryzen 9 9950X",
       preco: 4299.9,
       quantidade: 1,
-      imagem: "/core.png",
+      imagem: "/logo.png",
       categoria: "Processador",
     },
     {
@@ -29,7 +29,7 @@ export default function Carrinho() {
       produto: "SSD NVME 2TB",
       preco: 1049.9,
       quantidade: 2,
-      imagem: "/core.png",
+      imagem: "/logo.png",
       categoria: "Armazenamento",
     },
   ]);
@@ -168,7 +168,7 @@ export default function Carrinho() {
                   }}
                 >
                   <Image
-                    src="/core.png"
+                    src="/logo.png"
                     alt="Usuário"
                     fill
                     sizes="70px"
@@ -186,7 +186,7 @@ export default function Carrinho() {
                       color: "#fff4c4",
                     }}
                   >
-                    Henrique Vieira
+                    Usuário Atrix
                   </h4>
 
                   <span
@@ -195,7 +195,7 @@ export default function Carrinho() {
                         "rgba(255,255,255,.75)",
                     }}
                   >
-                    Cliente Premium
+                    Cliente
                   </span>
                 </div>
               </div>

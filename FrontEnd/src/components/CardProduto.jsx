@@ -1,18 +1,67 @@
+"use client";
+
 import Link from "next/link";
 import "./card.css";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
+const FALLBACK_IMAGE = "/logo.png";
 
-function getImagemUrl(imagem) {
-  if (!imagem) return "/placeholder.png";
+function limparCaminhoImagem(imagem) {
+  return String(imagem || "")
+    .trim()
+    .replaceAll("\\", "/")
+    .replace(/^\/+/, "");
+}
 
-  if (String(imagem).startsWith("http")) return imagem;
+function montarPossiveisImagens(imagem) {
+  const valorOriginal = String(imagem || "").trim().replaceAll("\\", "/");
 
-  if (String(imagem).startsWith("/uploads")) {
-    return `${API_URL}${imagem}`;
+  if (!valorOriginal) {
+    return [FALLBACK_IMAGE];
   }
 
-  return `${API_URL}/uploads/imagens/${imagem}`;
+  if (
+    valorOriginal.startsWith("http://") ||
+    valorOriginal.startsWith("https://") ||
+    valorOriginal.startsWith("data:image")
+  ) {
+    return [valorOriginal, FALLBACK_IMAGE];
+  }
+
+  if (valorOriginal.startsWith("/")) {
+    return [
+      `${API_URL}${valorOriginal}`,
+      valorOriginal,
+      FALLBACK_IMAGE,
+    ];
+  }
+
+  const valor = limparCaminhoImagem(valorOriginal);
+  const nomeArquivo = valor.split("/").pop();
+
+  const candidatos = [
+    `${API_URL}/${valor}`,
+    `${API_URL}/uploads/imagens/${nomeArquivo}`,
+    `${API_URL}/uploads/produtos/${nomeArquivo}`,
+    `${API_URL}/uploads/${nomeArquivo}`,
+    `/${valor}`,
+    FALLBACK_IMAGE,
+  ];
+
+  return [...new Set(candidatos.filter(Boolean))];
+}
+
+function obterImagemProduto(produto) {
+  return (
+    produto?.imagem ||
+    produto?.imagem_produto ||
+    produto?.url_imagem ||
+    produto?.imagem_url ||
+    produto?.foto ||
+    produto?.img ||
+    produto?.image ||
+    ""
+  );
 }
 
 function formatarPreco(valor) {
@@ -35,13 +84,33 @@ function formatarCategoria(categoria) {
 }
 
 export default function CardProduto({ produto }) {
-  const imagemUrl = getImagemUrl(produto?.imagem);
-  const nomeProduto = produto?.nome_produto || "Produto sem nome";
+  const idProduto = produto?.id_produto || produto?.id;
+  const nomeProduto = produto?.nome_produto || produto?.nome || "Produto sem nome";
+
+  const imagemOriginal = obterImagemProduto(produto);
+  const imagensPossiveis = montarPossiveisImagens(imagemOriginal);
+  const imagemUrl = imagensPossiveis[0];
+
+  function tentarProximaImagem(event) {
+    const imagemAtual = event.currentTarget;
+    const indexAtual = Number(imagemAtual.dataset.index || 0);
+    const proximoIndex = indexAtual + 1;
+    const proximaImagem = imagensPossiveis[proximoIndex];
+
+    if (proximaImagem) {
+      imagemAtual.dataset.index = String(proximoIndex);
+      imagemAtual.src = proximaImagem;
+      return;
+    }
+
+    imagemAtual.onerror = null;
+    imagemAtual.src = FALLBACK_IMAGE;
+  }
 
   return (
     <div className="col-md-6 col-lg-3">
       <Link
-        href={`/produtos/${produto.id_produto}`}
+        href={idProduto ? `/produtos/${idProduto}` : "/produtos"}
         style={{ textDecoration: "none" }}
       >
         <div
@@ -54,12 +123,13 @@ export default function CardProduto({ produto }) {
         >
           <img
             src={imagemUrl}
+            data-index="0"
             className="card-img-top"
             alt={nomeProduto}
-            onError={(event) => {
-              event.currentTarget.src = "/logo.png";
-            }}
+            loading="lazy"
+            onError={tentarProximaImagem}
             style={{
+              width: "100%",
               height: "220px",
               objectFit: "cover",
               background: "#09090b",
@@ -86,7 +156,7 @@ export default function CardProduto({ produto }) {
                 lineHeight: "1.55",
               }}
             >
-              {produto.descricao || "Produto sem descrição."}
+              {produto?.descricao || "Produto sem descrição."}
             </p>
 
             <p
@@ -98,7 +168,7 @@ export default function CardProduto({ produto }) {
                 textTransform: "capitalize",
               }}
             >
-              {formatarCategoria(produto.categoria)}
+              {formatarCategoria(produto?.categoria)}
             </p>
 
             <p
@@ -108,7 +178,7 @@ export default function CardProduto({ produto }) {
                 fontSize: "1rem",
               }}
             >
-              {formatarPreco(produto.preco)}
+              {formatarPreco(produto?.preco)}
             </p>
           </div>
         </div>

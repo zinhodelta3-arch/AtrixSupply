@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
@@ -33,9 +34,27 @@ function obterToken() {
   return (
     localStorage.getItem("token") ||
     localStorage.getItem("authToken") ||
+    localStorage.getItem("accessToken") ||
+    localStorage.getItem("usuarioToken") ||
     localStorage.getItem("jwt") ||
     ""
   );
+}
+
+function obterUsuarioLocal() {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const usuarioStorage = localStorage.getItem("usuario");
+    return usuarioStorage ? JSON.parse(usuarioStorage) : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+function usuarioFornecedorOuAdmin(usuario) {
+  const tipo = String(usuario?.tipo || usuario?.tipo_user || "").toLowerCase();
+  return ["fornecedor", "supplier", "admin", "administrador"].includes(tipo);
 }
 
 function montarHeaders() {
@@ -74,34 +93,64 @@ function normalizarTotalPaginas(data) {
   return data?.paginacao?.totalPaginas || data?.totalPaginas || 1;
 }
 
+const STATUS_LABELS = {
+  pendente: "Solicitação enviada",
+  solicitada: "Solicitação enviada",
+  aguardando_orcamento: "Aguardando orçamento",
+  orcamento_recebido: "Orçamento recebido",
+  orcamento_escolhido: "Orçamento escolhido",
+  aguardando_logistica: "Aguardando logística",
+  logistica_definida: "Logística definida",
+  preparando_envio: "Preparando envio",
+  em_andamento: "Em transporte",
+  em_transporte: "Em transporte",
+  finalizado: "Entregue",
+  entregue: "Entregue",
+  cancelado: "Cancelada",
+  cancelada: "Cancelada",
+  recusada: "Recusada",
+};
+
+function normalizarStatus(status) {
+  const valor = String(status || "").trim().toLowerCase();
+
+  if (valor === "pendente") return "solicitada";
+  if (valor === "em_andamento") return "em_transporte";
+  if (valor === "finalizado") return "entregue";
+  if (valor === "cancelado") return "cancelada";
+
+  return valor;
+}
+
 function formatarStatus(status) {
-  switch (status) {
-    case "pendente":
-      return "Pendente";
-    case "em_andamento":
-      return "Em andamento";
-    case "finalizado":
-      return "Finalizado";
-    case "cancelado":
-      return "Cancelado";
-    default:
-      return "Não informado";
-  }
+  return STATUS_LABELS[normalizarStatus(status)] || "Não informado";
 }
 
 function corStatus(status) {
-  switch (status) {
-    case "pendente":
-      return "bg-warning text-dark";
-    case "em_andamento":
-      return "bg-primary";
-    case "finalizado":
-      return "bg-success";
-    case "cancelado":
-      return "bg-danger";
-    default:
-      return "bg-secondary";
+  const statusNormalizado = normalizarStatus(status);
+
+  if (statusNormalizado === "cancelada" || statusNormalizado === "recusada") {
+    return "bg-danger";
   }
+
+  if (statusNormalizado === "entregue") {
+    return "bg-success";
+  }
+
+  if (statusNormalizado === "em_transporte" || statusNormalizado === "preparando_envio") {
+    return "bg-primary";
+  }
+
+  if (
+    statusNormalizado === "orcamento_recebido" ||
+    statusNormalizado === "orcamento_escolhido" ||
+    statusNormalizado === "aguardando_logistica" ||
+    statusNormalizado === "logistica_definida"
+  ) {
+    return "bg-info text-dark";
+  }
+
+  return "bg-warning text-dark";
 }
 
 function formatarEstadoOrcamento(estado) {
@@ -152,6 +201,7 @@ function formatarDinheiro(valor) {
 }
 
 export default function PainelFornecedor() {
+  const router = useRouter();
   const [listaEncomendas, setListaEncomendas] = useState([]);
   const [paginaAtual, setPaginaAtual] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(1);
@@ -167,6 +217,8 @@ export default function PainelFornecedor() {
   const [erroOrcamento, setErroOrcamento] = useState(null);
   const [feedbackOrcamento, setFeedbackOrcamento] = useState(null);
   const [salvandoOrcamento, setSalvandoOrcamento] = useState(false);
+  const [validandoAcesso, setValidandoAcesso] = useState(true);
+  const [acessoValidado, setAcessoValidado] = useState(false);
 
   const [formOrcamento, setFormOrcamento] = useState({
     id_orcamento: null,
@@ -181,6 +233,30 @@ export default function PainelFornecedor() {
   }, []);
 
   useEffect(() => {
+    const token = obterToken();
+    const usuario = obterUsuarioLocal();
+
+    if (!token) {
+      setAcessoValidado(false);
+      setValidandoAcesso(false);
+      router.replace("/login");
+      return;
+    }
+
+    if (!usuarioFornecedorOuAdmin(usuario)) {
+      setAcessoValidado(false);
+      setValidandoAcesso(false);
+      router.replace("/not-found");
+      return;
+    }
+
+    setAcessoValidado(true);
+    setValidandoAcesso(false);
+  }, [router]);
+
+  useEffect(() => {
+    if (!acessoValidado) return;
+
     const controller = new AbortController();
 
     async function buscarDadosDoBackend() {
@@ -246,7 +322,15 @@ export default function PainelFornecedor() {
       clearTimeout(delayDebounce);
       controller.abort();
     };
-  }, [paginaAtual, busca]);
+  }, [paginaAtual, busca, acessoValidado]);
+
+  if (validandoAcesso || !acessoValidado) {
+    return (
+      <main className="min-vh-100 d-flex align-items-center justify-content-center bg-dark text-white">
+        Validando acesso...
+      </main>
+    );
+  }
 
   function handleBuscaChange(event) {
     setBusca(event.target.value);
@@ -422,9 +506,20 @@ export default function PainelFornecedor() {
   const metricas = useMemo(() => {
     return {
       total: listaEncomendas.length,
-      pendentes: listaEncomendas.filter((pedido) => pedido.status === "pendente").length,
-      andamento: listaEncomendas.filter((pedido) => pedido.status === "em_andamento").length,
-      finalizadas: listaEncomendas.filter((pedido) => pedido.status === "finalizado").length,
+      pendentes: listaEncomendas.filter((pedido) =>
+        ["solicitada", "aguardando_orcamento"].includes(normalizarStatus(pedido.status))
+      ).length,
+      andamento: listaEncomendas.filter((pedido) =>
+        [
+          "orcamento_recebido",
+          "orcamento_escolhido",
+          "aguardando_logistica",
+          "logistica_definida",
+          "preparando_envio",
+          "em_transporte",
+        ].includes(normalizarStatus(pedido.status))
+      ).length,
+      finalizadas: listaEncomendas.filter((pedido) => normalizarStatus(pedido.status) === "entregue").length,
     };
   }, [listaEncomendas]);
 
@@ -601,7 +696,7 @@ export default function PainelFornecedor() {
                   </h3>
 
                   <p className="mb-0">
-                    Tente alterar a pesquisa ou confira se a API retornou dados.
+                    Tente alterar a pesquisa ou aguarde novas solicitações.
                   </p>
                 </div>
               )}

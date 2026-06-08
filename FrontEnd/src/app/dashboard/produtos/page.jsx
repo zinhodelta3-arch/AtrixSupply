@@ -10,6 +10,7 @@ const categorias = [
   { value: "geral", label: "Geral" },
   { value: "automacao_industrial", label: "Automação Industrial" },
   { value: "eletrica_industrial", label: "Elétrica Industrial" },
+  { value: "ferramentas_industriais", label: "Ferramentas Industriais" },
   { value: "fixacao_industrial", label: "Fixação Industrial" },
   { value: "instrumentacao_e_medicao", label: "Instrumentação e Medição" },
   { value: "lubrificacao_e_manutencao", label: "Lubrificação e Manutenção" },

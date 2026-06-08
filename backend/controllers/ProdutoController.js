@@ -3,6 +3,101 @@ import { fileURLToPath } from 'url';
 import path from 'path';
 import { removerArquivoAntigo } from '../middlewares/uploadMiddleware.js';
 
+const CATEGORIAS_VALIDAS = [
+    'geral',
+    'automacao_industrial',
+    'eletrica_industrial',
+    'ferramentas_industriais',
+    'fixacao_industrial',
+    'instrumentacao_e_medicao',
+    'lubrificacao_e_manutencao',
+    'maquinas_industriais',
+    'motores_e_acionamentos',
+    'pecas_mecanicas',
+    'pneumatica_e_hidraulica',
+    'seguranca_industrial_(epi)',
+    'solda_e_metalurgia'
+];
+
+const ORDENACOES_VALIDAS = ['recentes', 'preco_asc', 'preco_desc', 'nome'];
+
+function normalizarCategoria(categoria) {
+    return String(categoria || '')
+        .trim()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[\s-]+/g, '_');
+}
+
+function prepararFiltros(query) {
+    const erros = [];
+    const filtros = {};
+
+    const nome = String(query.nome || query.busca || '').trim();
+    if (nome) {
+        filtros.nome = nome.slice(0, 120);
+    }
+
+    const categoria = normalizarCategoria(query.categoria);
+    if (categoria && categoria !== 'todas') {
+        if (!CATEGORIAS_VALIDAS.includes(categoria)) {
+            erros.push({ campo: 'categoria', mensagem: 'Categoria nao encontrada' });
+        } else {
+            filtros.categoria = categoria;
+        }
+    }
+
+    if (query.precoMin !== undefined && query.precoMin !== '') {
+        const precoMin = Number(query.precoMin);
+        if (Number.isNaN(precoMin) || precoMin < 0) {
+            erros.push({ campo: 'precoMin', mensagem: 'Preco minimo invalido' });
+        } else {
+            filtros.precoMin = precoMin;
+        }
+    }
+
+    if (query.precoMax !== undefined && query.precoMax !== '') {
+        const precoMax = Number(query.precoMax);
+        if (Number.isNaN(precoMax) || precoMax < 0) {
+            erros.push({ campo: 'precoMax', mensagem: 'Preco maximo invalido' });
+        } else {
+            filtros.precoMax = precoMax;
+        }
+    }
+
+    if (
+        filtros.precoMin !== undefined &&
+        filtros.precoMax !== undefined &&
+        filtros.precoMin > filtros.precoMax
+    ) {
+        erros.push({ campo: 'preco', mensagem: 'Preco minimo nao pode ser maior que o maximo' });
+    }
+
+    const estoque = String(query.estoque || '').trim().toLowerCase();
+    if (estoque && estoque !== 'todos') {
+        if (estoque !== 'disponivel') {
+            erros.push({ campo: 'estoque', mensagem: 'Filtro de estoque invalido' });
+        } else {
+            filtros.estoque = estoque;
+        }
+    }
+
+    const fornecedor = String(query.fornecedor || '').trim();
+    if (fornecedor) {
+        filtros.fornecedor = fornecedor.slice(0, 120);
+    }
+
+    const ordenar = String(query.ordenar || 'recentes').trim().toLowerCase();
+    if (!ORDENACOES_VALIDAS.includes(ordenar)) {
+        erros.push({ campo: 'ordenar', mensagem: 'Ordenacao invalida' });
+    } else {
+        filtros.ordenar = ordenar;
+    }
+
+    return { filtros, erros };
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -41,8 +136,19 @@ class ProdutoController {
             }
 
             const offset = (pagina - 1) * limite;
+            const { filtros, erros } = prepararFiltros(req.query);
 
-            const resultado = await ProdutoModel.listarTodos(limite, offset); 
+            if (erros.length > 0) {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'Dados invalidos',
+                    detalhes: erros
+                });
+            }
+
+            const resultado = Object.keys(filtros).length > 1 || filtros.ordenar !== 'recentes'
+                ? await ProdutoModel.listarComFiltros(filtros, limite, offset)
+                : await ProdutoModel.listarTodos(limite, offset);
 
             res.status(200).json({
                 sucesso: true,
@@ -69,13 +175,14 @@ class ProdutoController {
         try {
             
             const categoria = req.params.categoria || 'geral';
-            let categoriaValidada = categoria.toLowerCase().trim().split(' ').join('_'); 
+            const categoriaValidada = normalizarCategoria(categoria);
             let pagina = parseInt(req.query.pagina) || 1;
             let limite = parseInt(req.query.limite) || 10;
             const defaultCategorias = [
                 'geral', 
                 'automacao_industrial', 
                 'eletrica_industrial', 
+                'ferramentas_industriais',
                 'fixacao_industrial', 
                 'instrumentacao_e_medicao',
                 'lubrificacao_e_manutencao',
@@ -93,7 +200,7 @@ class ProdutoController {
                     erro: "categoria obrigatória",
                     mensagem: "A categoria é obrigatória para essa operação"
                 })
-            } else if(!defaultCategorias.includes(categoriaValidada)){
+            } else if(!CATEGORIAS_VALIDAS.includes(categoriaValidada)){
                 return res.status(400).json({
                     sucesso: false,
                     erro: "categoria inexistente",
@@ -249,11 +356,12 @@ class ProdutoController {
     static async criar(req, res) {
         try {
             const { nome_produto, descricao, preco, categoria, estoque, fornecedor  } = req.body;
-            let categoriaValidada = categoria.toLowerCase().trim().split(' ').join('_'); 
+            const categoriaValidada = normalizarCategoria(categoria);
             const defaultCategorias = [
                 'geral', 
                 'automacao_industrial', 
                 'eletrica_industrial', 
+                'ferramentas_industriais',
                 'fixacao_industrial', 
                 'instrumentacao_e_medicao',
                 'lubrificacao_e_manutencao',
@@ -304,7 +412,7 @@ class ProdutoController {
                     erro: "categoria obrigatória",
                     mensagem: "A categoria é obrigatória para essa operação"
                 })
-            } else if(!defaultCategorias.includes(categoriaValidada)){
+            } else if(!CATEGORIAS_VALIDAS.includes(categoriaValidada)){
                 return res.status(400).json({
                     sucesso: false,
                     erro: "categoria inexistente",
@@ -313,7 +421,7 @@ class ProdutoController {
             }
 
             //validar estoque
-            if (!estoque || isNaN(estoque) || estoque < 0){
+            if (estoque === undefined || estoque === null || estoque === '' || isNaN(estoque) || Number(estoque) < 0){
                 erros.push({
                     campo: 'estoque',
                     mensagem: 'Estoque deve ser um número positivo'
@@ -352,7 +460,7 @@ class ProdutoController {
                 nome_produto: nome_produto.trim(),
                 descricao: descricao ? descricao.trim() : null,
                 preco: parseFloat(preco),
-                categoria: categoria ? categoria.trim() : 'Geral',
+                categoria: categoriaValidada || 'geral',
                 estoque: parseInt(estoque),
    //             imagem: imagem.trim(),
                 fornecedor: fornecedor.trim()
@@ -388,11 +496,12 @@ class ProdutoController {
         try {
             const { id_produto } = req.params;
             const { nome_produto, descricao, preco, categoria, estoque, fornecedor } = req.body;
-            let categoriaValidada = categoria.toLowerCase().trim().split(' ').join('_'); 
+            const categoriaValidada = categoria !== undefined ? normalizarCategoria(categoria) : undefined;
             const defaultCategorias = [
                 'geral', 
                 'automacao_industrial', 
                 'eletrica_industrial', 
+                'ferramentas_industriais',
                 'fixacao_industrial', 
                 'instrumentacao_e_medicao',
                 'lubrificacao_e_manutencao',
@@ -463,14 +572,14 @@ class ProdutoController {
                             erro: "categoria obrigatória",
                             mensagem: "A categoria é obrigatória para essa operação"
                         })
-                    } else if(!defaultCategorias.includes(categoriaValidada)){
+                    } else if(!CATEGORIAS_VALIDAS.includes(categoriaValidada)){
                         return res.status(400).json({
                             sucesso: false,
                             erro: "categoria inexistente",
                             mensagem: "Categoria não encontrada"
                         })
                     }
-                    dadosAtualizacao.categoria = categoriaValidada ? categoria.trim() : 'Geral';
+                    dadosAtualizacao.categoria = categoriaValidada || 'geral';
 
                 }
             }

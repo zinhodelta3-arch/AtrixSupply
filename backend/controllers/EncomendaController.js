@@ -1,11 +1,22 @@
 import EncomendaModel from '../models/EncomendasModel.js';
 import UsuarioModel from '../models/UsuarioModel.js';
 import LogisticaModel from '../models/LogisticaModel.js';
+import {
+    STATUS_ENCOMENDA,
+    anexarStatusApresentacao,
+    podeDefinirLogistica,
+    podeEditarDadosBasicos
+} from '../utils/encomendaStatus.js';
+import { isAdmin, isCliente } from '../middlewares/authMiddleware.js';
 import { fileURLToPath } from 'url';
 import path from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+function podeAcessarEncomenda(req, encomenda) {
+    return isAdmin(req.usuario) || Number(encomenda?.id_user) === Number(req.usuario?.id_user);
+}
 
 // Controller para operações com pedidos
 class EncomendaController {
@@ -41,11 +52,13 @@ class EncomendaController {
             }
 
             const offset = (pagina - 1) * limite;
-            const resultado = await EncomendaModel.listarTodos(limite, offset); 
+            const resultado = isCliente(req.usuario)
+                ? await EncomendaModel.listarPorUsuario(req.usuario.id_user, limite, offset)
+                : await EncomendaModel.listarTodos(limite, offset);
 
             res.status(200).json({
                 sucesso: true,
-                dados: resultado.encomendas,
+                dados: resultado.encomendas.map(anexarStatusApresentacao),
                 paginacao: {
                     pagina: resultado.pagina, 
                     limite: resultado.limite, 
@@ -82,13 +95,21 @@ class EncomendaController {
                 return res.status(404).json({
                     sucesso: false,
                     erro: 'Encomenda não encontrada',
-                    mensagem: `Encomenda com ID ${id_encomenda} não foi encontrado`
+                    mensagem: `Encomenda com ID ${id_encomenda} nao foi encontrada`
+                });
+            }
+
+            if (isCliente(req.usuario) && !podeAcessarEncomenda(req, encomenda)) {
+                return res.status(403).json({
+                    sucesso: false,
+                    erro: 'Acesso negado',
+                    mensagem: 'Você não tem permissão para acessar esta encomenda'
                 });
             }
 
             res.status(200).json({
                 sucesso: true,
-                dados: encomenda
+                dados: anexarStatusApresentacao(encomenda)
             });
         } catch (error) {
             console.error('Erro ao buscar encomenda:', error);
@@ -132,11 +153,13 @@ class EncomendaController {
             }
 
             const offset = (pagina - 1) * limite;
-            const resultado = await EncomendaModel.buscarPorNome(pecas, limite, offset); 
+            const resultado = isCliente(req.usuario)
+                ? await EncomendaModel.buscarPorNomePorUsuario(req.usuario.id_user, pecas, limite, offset)
+                : await EncomendaModel.buscarPorNome(pecas, limite, offset);
 
             res.status(200).json({
                 sucesso: true,
-                dados: resultado.encomendas,
+                dados: resultado.encomendas.map(anexarStatusApresentacao),
                 paginacao: {
                     pagina: resultado.pagina, 
                     limite: resultado.limite, 
@@ -159,8 +182,9 @@ class EncomendaController {
         try {
             const { id_user, pecas, descricao } = req.body;
             const erros = [];
+            const idUsuarioEncomenda = isAdmin(req.usuario) && id_user ? id_user : req.usuario?.id_user;
 
-            if (!id_user || isNaN(id_user) || id_user < 0){
+            if (!idUsuarioEncomenda || isNaN(idUsuarioEncomenda) || idUsuarioEncomenda < 0){
                 erros.push({ campo: 'id_user', mensagem: 'formato de id inválido' });
             }
 
@@ -180,12 +204,12 @@ class EncomendaController {
                 return res.status(400).json({ sucesso: false, erro: 'Dados inválidos', detalhes: erros });
             }
 
-            const userExistente = await UsuarioModel.buscarPorId(id_user);
+            const userExistente = await UsuarioModel.buscarPorId(idUsuarioEncomenda);
             if (!userExistente) {
                 return res.status(404).json({
                     sucesso: false,
                     erro: 'Usuário não encontrado',
-                    mensagem: `Usuário com ID ${id_user} não foi encontrado`
+                    mensagem: `Usuário com ID ${idUsuarioEncomenda} não foi encontrado`
                 });
             }
 
@@ -194,11 +218,11 @@ class EncomendaController {
             const data_atual = hoje.toISOString().split('T')[0];
 
             const dadosEncomenda = {
-                id_user: parseInt(id_user),
+                id_user: parseInt(idUsuarioEncomenda),
                 id_logistica: null,
                 pecas: pecas.trim(),
                 descricao: descricao.trim(),
-                status: 'pendente',
+                status: STATUS_ENCOMENDA.SOLICITADA,
                 orcamento: null,
                 data_com: data_atual,
                 data_entrega: null
@@ -208,15 +232,15 @@ class EncomendaController {
 
             res.status(201).json({
                 sucesso: true,
-                mensagem: 'Produto criado com sucesso',
+                mensagem: 'Encomenda criada com sucesso',
                 dados: { id: encomendaId, ...dadosEncomenda }
             });
         } catch (error) {
-            console.error('Erro ao criar produto:', error);
+            console.error('Erro ao criar encomenda:', error);
             res.status(500).json({
                 sucesso: false,
                 erro: 'Erro interno do servidor',
-                mensagem: 'Não foi possível criar o pedido'
+                mensagem: 'Nao foi possivel criar a encomenda'
             });
         }
     }
@@ -239,16 +263,24 @@ class EncomendaController {
             if (!encomendaExistente) {
                 return res.status(404).json({
                     sucesso: false,
-                    erro: 'Encomenda não encontrado',
+                    erro: 'Encomenda nao encontrada',
                     mensagem: `Encomenda com ID ${id_encomenda} não foi encontrada`
                 });
             }
 
-            if (!encomendaExistente.status || encomendaExistente.status.trim() !== 'pendente'){
+            if (!podeEditarDadosBasicos(encomendaExistente.status)){
                 return res.status(400).json({
                     sucesso: false, 
-                    erro: 'Edição Inválida',
-                    mensagem: 'A encomenda não pode ser editada pois não está mais pendente'
+                    erro: 'Edicao invalida',
+                    mensagem: 'Esta encomenda nao pode mais ser editada.'
+                });
+            }
+
+            if (!podeAcessarEncomenda(req, encomendaExistente)) {
+                return res.status(403).json({
+                    sucesso: false,
+                    erro: 'Acesso negado',
+                    mensagem: 'Você não tem permissão para editar esta encomenda'
                 });
             }
 
@@ -300,7 +332,7 @@ class EncomendaController {
     static async atualizarCheck(req, res) {
         try {
             const { id_encomenda } = req.params;
-            const { id_logistica, orcamento } = req.body;
+            const { id_logistica, orcamento, motivo_admin } = req.body;
             const erros = []; // Corrigido: adicionada a declaração da array
 
             if (!id_encomenda || isNaN(id_encomenda)) {
@@ -323,8 +355,8 @@ class EncomendaController {
             if (!encomendaExistente) {
                 return res.status(404).json({
                     sucesso: false,
-                    erro: 'Produto não encontrado',
-                    mensagem: `Pedido com ID ${id_encomenda} não foi encontrado`
+                    erro: 'Encomenda nao encontrada',
+                    mensagem: `Encomenda com ID ${id_encomenda} nao foi encontrada`
                 });
             }
 
@@ -333,22 +365,30 @@ class EncomendaController {
                 return res.status(404).json({
                     sucesso: false,
                     erro: 'Logística não encontrada',
-                    mensagem: `Logística com ID ${id_logistica} não foi encontrado`
+                    mensagem: `Logistica com ID ${id_logistica} nao foi encontrada`
                 });
             }
 
-            if (!encomendaExistente.status || encomendaExistente.status.trim() !== 'pendente'){
+            if (String(logisticaExistente.disponibilidade || '').toLowerCase() !== 'disponivel') {
+                return res.status(409).json({
+                    sucesso: false,
+                    erro: 'Logística indisponível',
+                    mensagem: 'Selecione uma logística disponível para esta encomenda'
+                });
+            }
+
+            if (!podeDefinirLogistica(encomendaExistente.status, req.usuario, motivo_admin)){
                 return res.status(400).json({
                     sucesso: false, 
-                    erro: 'Edição Inválida',
-                    mensagem: 'A encomenda não pode ser editada'
+                    erro: 'Etapa invalida',
+                    mensagem: 'A logistica so pode ser definida apos a escolha do orcamento.'
                 });
             }
 
             // Montando objeto de atualização
             const dadosAtualizacao = {
-                id_logistica: parseInt(id_logistica), // Corrigido: Inserido o id mapeado
-                status: 'verificado' // Corrigido: Avança o status do processo
+                id_logistica: parseInt(id_logistica),
+                status: STATUS_ENCOMENDA.LOGISTICA_DEFINIDA
             };
 
             if (orcamento !== undefined) {
@@ -368,18 +408,19 @@ class EncomendaController {
             dadosAtualizacao.data_entrega = hoje.toISOString().split('T')[0];
 
             const resultado = await EncomendaModel.atualizar(id_encomenda, dadosAtualizacao);
+            await LogisticaModel.atualizar(id_logistica, { disponibilidade: 'ocupado' });
 
             res.status(200).json({
                 sucesso: true,
-                mensagem: 'Produto atualizado com sucesso',
+                mensagem: 'Logistica definida para a encomenda',
                 dados: { linhasAfetadas: resultado.affectedRows || 1 }
             });
         } catch (error) {
-            console.error('Erro ao atualizar produto:', error);
+            console.error('Erro ao atualizar encomenda:', error);
             res.status(500).json({
                 sucesso: false,
                 erro: 'Erro interno do servidor',
-                mensagem: 'Não foi possível atualizar o produto'
+                mensagem: 'Nao foi possivel atualizar a encomenda'
             });
         }
     }
@@ -410,8 +451,8 @@ class EncomendaController {
             if (!encomendaExistente) {
                 return res.status(404).json({
                     sucesso: false,
-                    erro: 'Produto não encontrado',
-                    mensagem: `Pedido com ID ${id_encomenda} não foi encontrado`
+                    erro: 'Encomenda nao encontrada',
+                    mensagem: `Encomenda com ID ${id_encomenda} nao foi encontrada`
                 });
             }
 
@@ -420,13 +461,13 @@ class EncomendaController {
                 return res.status(404).json({
                     sucesso: false,
                     erro: 'Logística não encontrada',
-                    mensagem: `Produto com ID ${id_logistica} não foi encontrado`
+                    mensagem: `Logistica com ID ${id_logistica} nao foi encontrada`
                 });
             }
 
             const dadosAtualizacao = {
-                id_logistica: parseInt(id_logistica), // Corrigido: Inserido o campo que faltava salvar
-                status: 'concluido' // Atualiza status final do fluxo do fornecedor
+                id_logistica: parseInt(id_logistica),
+                status: STATUS_ENCOMENDA.EM_TRANSPORTE
             };
 
             if (data_entrega !== undefined) {
@@ -457,15 +498,15 @@ class EncomendaController {
 
             res.status(200).json({
                 sucesso: true,
-                mensagem: 'Produto atualizado com sucesso',
+                mensagem: 'Encomenda atualizada com sucesso',
                 dados: { linhasAfetadas: resultado.affectedRows || 1 }
             });
         } catch (error) {
-            console.error('Erro ao atualizar produto:', error);
+            console.error('Erro ao atualizar encomenda:', error);
             res.status(500).json({
                 sucesso: false,
                 erro: 'Erro interno do servidor',
-                mensagem: 'Não foi possível atualizar o produto'
+                mensagem: 'Nao foi possivel atualizar a encomenda'
             });
         }
     }
@@ -488,7 +529,15 @@ class EncomendaController {
                 return res.status(404).json({
                     sucesso: false,
                     erro: 'Encomenda não encontrada',
-                    mensagem: `Produto com ID ${id_encomenda} não foi encontrado`
+                    mensagem: `Encomenda com ID ${id_encomenda} nao foi encontrada`
+                });
+            }
+
+            if (!podeAcessarEncomenda(req, encomendaExistente)) {
+                return res.status(403).json({
+                    sucesso: false,
+                    erro: 'Acesso negado',
+                    mensagem: 'Você não tem permissão para excluir esta encomenda'
                 });
             }
 
@@ -496,15 +545,15 @@ class EncomendaController {
 
             res.status(200).json({
                 sucesso: true,
-                mensagem: 'Produto excluído com sucesso',
+                mensagem: 'Encomenda excluida com sucesso',
                 dados: { linhasAfetadas: resultado.affectedRows || 1 }
             });
         } catch (error) {
-            console.error('Erro ao excluir produto:', error);
+            console.error('Erro ao excluir encomenda:', error);
             res.status(500).json({
                 sucesso: false,
                 erro: 'Erro interno do servidor',
-                mensagem: 'Não foi possível excluir o produto'
+                mensagem: 'Nao foi possivel excluir a encomenda'
             });
         }
     }

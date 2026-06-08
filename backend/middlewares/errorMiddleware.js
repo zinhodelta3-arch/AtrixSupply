@@ -1,4 +1,4 @@
-import { ApiError } from '../utils/ApiError.js';
+import { ApiError } from '../utils/apiError.js';
 
 // Middleware centralizado para tratamento de erros
 export const errorMiddleware = (error, req, res, next) => {
@@ -20,16 +20,16 @@ export const errorMiddleware = (error, req, res, next) => {
     if (error.name === 'JsonWebTokenError') {
         return res.status(401).json({
             sucesso: false,
-            erro: 'Token inválido',
-            mensagem: 'Token de autenticação inválido'
+            erro: 'Sessao invalida',
+            mensagem: 'Sua sessao nao pode ser validada. Faca login novamente.'
         });
     }
     
     if (error.name === 'TokenExpiredError') {
         return res.status(401).json({
             sucesso: false,
-            erro: 'Token expirado',
-            mensagem: 'Faça login novamente'
+            erro: 'Sessao expirada',
+            mensagem: 'Sua sessao expirou. Faca login novamente.'
         });
     }
     
@@ -37,8 +37,8 @@ export const errorMiddleware = (error, req, res, next) => {
     if (error instanceof SyntaxError && error.status === 400 && 'body' in error) {
         return res.status(400).json({
             sucesso: false,
-            erro: 'JSON inválido',
-            mensagem: 'O JSON enviado está malformado'
+            erro: 'Dados invalidos',
+            mensagem: 'Nao foi possivel ler os dados enviados. Revise as informacoes e tente novamente.'
         });
     }
     
@@ -55,9 +55,7 @@ export const errorMiddleware = (error, req, res, next) => {
     res.status(500).json({
         sucesso: false,
         erro: 'Erro interno do servidor',
-        mensagem: process.env.NODE_ENV === 'development' 
-            ? error.message 
-            : 'Ocorreu um erro inesperado no servidor'
+        mensagem: 'Ocorreu um erro inesperado. Tente novamente em instantes.'
     });
 };
 

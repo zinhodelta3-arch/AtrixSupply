@@ -1,6 +1,6 @@
 import express from 'express';
 import EncomendaController from '../controllers/EncomendaController.js';
-import { authMiddleware, supplierMiddleware } from '../middlewares/authMiddleware.js';
+import { authMiddleware, clientMiddleware, supplierMiddleware } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
@@ -14,11 +14,11 @@ router.get('/pecas/:pecas', authMiddleware, EncomendaController.buscarPorNome);
 router.get('/:id_encomenda', authMiddleware, EncomendaController.buscarPorId); 
 
 // Rotas protegidas POST, PUT & DELETE
-router.post('/', authMiddleware, EncomendaController.criar);
-router.put('/user/:id_encomenda', authMiddleware, EncomendaController.atualizar);
-router.put('/processo/check/:id_encomenda', authMiddleware, EncomendaController.atualizarCheck);
+router.post('/', authMiddleware, clientMiddleware, EncomendaController.criar);
+router.put('/user/:id_encomenda', authMiddleware, clientMiddleware, EncomendaController.atualizar);
+router.put('/processo/check/:id_encomenda', authMiddleware, supplierMiddleware, EncomendaController.atualizarCheck);
 router.put('/processo/apos/:id_encomenda', authMiddleware, supplierMiddleware, EncomendaController.atualizarApos);
-router.delete('/:id_encomenda', authMiddleware, EncomendaController.excluir);
+router.delete('/:id_encomenda', authMiddleware, clientMiddleware, EncomendaController.excluir);
 
 // ==========================================================
 // 2. ROTAS OPTIONS (CORS Preflight) - CORRIGIDAS

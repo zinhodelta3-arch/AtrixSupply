@@ -88,6 +88,8 @@ function obterToken() {
   return (
     localStorage.getItem("token") ||
     localStorage.getItem("authToken") ||
+    localStorage.getItem("accessToken") ||
+    localStorage.getItem("usuarioToken") ||
     localStorage.getItem("jwt") ||
     ""
   );
@@ -429,7 +431,7 @@ export default function Pedidos() {
         return;
       }
 
-      if (tipoUsuario !== "comum") {
+      if (!["comum", "cliente"].includes(tipoUsuario)) {
         router.replace("/");
         return;
       }
@@ -715,7 +717,7 @@ export default function Pedidos() {
                     }}
                   >
                     <Image
-                      src="/core.png"
+                      src="/logo.png"
                       alt="Usuário"
                       width={130}
                       height={130}
@@ -1406,8 +1408,7 @@ export default function Pedidos() {
                         <strong style={{ color: "#ffb300" }}>
                           {getEntregaLabel(pedidoDetalhe)}
                         </strong>
-                        . As informações exibidas são baseadas nos dados atuais da
-                        API de pedidos e produtos.
+                        . As informações exibidas refletem os dados mais recentes do pedido.
                       </p>
                     </div>
 
@@ -1636,9 +1637,8 @@ export default function Pedidos() {
                     }}
                   >
                     <i className="bi bi-info-circle-fill me-2 text-warning" />
-                    Este rastreamento usa o status atual do pedido. Quando o
-                    backend tiver transportadora/código de rastreio, essa área pode
-                    ser conectada ao rastreio real.
+                    Este rastreamento usa o status atual do pedido. Atualizações de
+                    transportadora e código de rastreio aparecerão aqui quando disponíveis.
                   </div>
 
                   <div className="d-flex justify-content-end mt-4">

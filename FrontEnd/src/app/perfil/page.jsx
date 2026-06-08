@@ -75,6 +75,8 @@ function obterToken() {
   return (
     localStorage.getItem("token") ||
     localStorage.getItem("authToken") ||
+    localStorage.getItem("accessToken") ||
+    localStorage.getItem("usuarioToken") ||
     localStorage.getItem("jwt") ||
     ""
   );
@@ -382,10 +384,11 @@ export default function Perfil() {
       setCarregando(true);
       setErro(null);
 
+      const token = obterToken();
       const usuarioLocal = obterUsuarioLocal();
       const idUsuario = obterIdUsuario(usuarioLocal);
 
-      if (!idUsuario) {
+      if (!token || !idUsuario) {
         router.replace("/login");
         return;
       }
@@ -408,7 +411,7 @@ export default function Perfil() {
       }
     } catch (error) {
       console.error("Erro ao carregar perfil:", error);
-      setErro(error.message || "Não foi possível carregar o perfil.");
+      setErro("Não foi possível carregar o perfil agora. Tente novamente em instantes.");
     } finally {
       setCarregando(false);
     }
@@ -618,7 +621,7 @@ export default function Perfil() {
           <h4 className="fw-bold">Carregando perfil...</h4>
 
           <p className="text-secondary mb-0">
-            Buscando suas informações na API.
+            Buscando suas informações com segurança.
           </p>
         </div>
       </main>
@@ -665,10 +668,7 @@ export default function Perfil() {
               lineHeight: "1.7",
             }}
           >
-            Verifique se o router foi registrado como{" "}
-            <strong>/api/usuarios</strong>, <strong>/usuarios</strong>,{" "}
-            <strong>/api/auth</strong> ou <strong>/auth</strong>, e se o token
-            está salvo no localStorage.
+            Confira sua conexão, faça login novamente se necessário e tente outra vez.
           </div>
 
           <button
@@ -800,7 +800,7 @@ export default function Perfil() {
                   }}
                 >
                   <Image
-                    src="/core.png"
+                    src="/logo.png"
                     alt="Perfil"
                     fill
                     priority

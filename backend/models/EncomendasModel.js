@@ -33,6 +33,35 @@ class EncomendaModel {
         }
     }
 
+    static async listarPorUsuario(id_user, limite, offset) {
+        try {
+            const connection = await getConnection();
+            try {
+                const sql = 'SELECT * FROM encomendas WHERE id_user = ? ORDER BY id_encomenda DESC LIMIT ? OFFSET ?';
+                const [encomendas] = await connection.query(sql, [parseInt(id_user), parseInt(limite), parseInt(offset)]);
+
+                const [totalResult] = await connection.execute('SELECT COUNT(*) as total FROM encomendas WHERE id_user = ?', [parseInt(id_user)]);
+                const total = totalResult[0].total;
+
+                const paginaAtual = (offset / limite) + 1;
+                const totalPaginas = Math.ceil(total / limite);
+
+                return {
+                    encomendas,
+                    total,
+                    pagina: paginaAtual,
+                    limite,
+                    totalPaginas
+                };
+            } finally {
+                connection.release();
+            }
+        } catch (error) {
+            console.error('Erro ao listar encomendas por usuário:', error);
+            throw error;
+        }
+    }
+
     // Buscar encomenda por ID (Seguro usando placeholders)
     static async buscarPorId(id_encomenda) {
         try {
@@ -106,6 +135,40 @@ class EncomendaModel {
             }
         } catch (error) {
             console.error('Erro ao buscar encomendas por nome:', error);
+            throw error;
+        }
+    }
+
+    static async buscarPorNomePorUsuario(id_user, pecas, limite, offset) {
+         try {
+            const connection = await getConnection();
+            try {
+                const sql = 'SELECT * FROM encomendas WHERE id_user = ? AND pecas LIKE ? ORDER BY id_encomenda DESC LIMIT ? OFFSET ?';
+                const nome = `%${pecas}%`;
+
+                const [encomendas] = await connection.query(sql, [parseInt(id_user), nome, parseInt(limite), parseInt(offset)]);
+
+                const [totalResult] = await connection.query(
+                    'SELECT COUNT(*) as total FROM encomendas WHERE id_user = ? AND pecas LIKE ?',
+                    [parseInt(id_user), nome]
+                );
+                const total = totalResult[0].total;
+
+                const paginaAtual = (offset / limite) + 1;
+                const totalPaginas = Math.ceil(total / limite);
+
+                return {
+                    encomendas,
+                    total,
+                    pagina: paginaAtual,
+                    limite,
+                    totalPaginas
+                };
+            } finally {
+                connection.release();
+            }
+        } catch (error) {
+            console.error('Erro ao buscar encomendas por usuário:', error);
             throw error;
         }
     }

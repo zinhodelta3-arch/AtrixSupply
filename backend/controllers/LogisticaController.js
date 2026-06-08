@@ -1,5 +1,6 @@
 import LogisticaModel from '../models/LogisticaModel.js';
 import UsuarioModel from '../models/UsuarioModel.js';
+import { isAdmin } from '../middlewares/authMiddleware.js';
 
 const VEICULOS_VALIDOS = ['caminhao', 'van', 'moto', 'carro', 'bicicleta', 'nao_selecionado'];
 const DISPONIBILIDADES_VALIDAS = ['disponivel', 'ocupado', 'manutencao'];
@@ -33,6 +34,10 @@ function normalizarDisponibilidade(disponibilidade) {
     return DISPONIBILIDADES_VALIDAS.includes(disponibilidadeNormalizada)
         ? disponibilidadeNormalizada
         : null;
+}
+
+function podeGerenciarLogistica(req, logistica) {
+    return isAdmin(req.usuario) || Number(logistica?.id_dono) === Number(req.usuario?.id_user);
 }
 
 // Controller para operações de logística
@@ -69,7 +74,9 @@ class LogisticaController {
                 });
             }
 
-            const resultado = await LogisticaModel.listarTodos(pagina, limite);
+            const resultado = isAdmin(req.usuario)
+                ? await LogisticaModel.listarTodos(pagina, limite)
+                : await LogisticaModel.listarPorDono(req.usuario.id_user, pagina, limite);
 
             res.status(200).json({
                 sucesso: true,
@@ -108,7 +115,9 @@ class LogisticaController {
             let limite = parseInt(req.query.limite) || 10;
             const offset = (pagina - 1) * limite;
 
-            const resultado = await LogisticaModel.buscarPorVeiculo(veiculo, limite, offset);
+            const resultado = isAdmin(req.usuario)
+                ? await LogisticaModel.buscarPorVeiculo(veiculo, limite, offset)
+                : await LogisticaModel.buscarPorVeiculoPorDono(req.usuario.id_user, veiculo, limite, offset);
 
             res.status(200).json({
                 sucesso: true,
@@ -133,12 +142,22 @@ class LogisticaController {
     // GET /logistica/disponibilidade/:disponibilidade - Listar por disponibilidade (com paginação)
     static async buscarPorDisponibilidade(req, res) {
         try {
-            let disponibilidade = req.params.disponibilidade || 'disponivel';
+            let disponibilidade = normalizarDisponibilidade(req.params.disponibilidade || 'disponivel');
             let pagina = parseInt(req.query.pagina) || 1;
             let limite = parseInt(req.query.limite) || 10;
             const offset = (pagina - 1) * limite;
 
-            const resultado = await LogisticaModel.buscarPorDisponibilidade(disponibilidade, limite, offset);
+            if (!disponibilidade) {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'Disponibilidade inválida',
+                    mensagem: 'Forneça uma disponibilidade válida'
+                });
+            }
+
+            const resultado = isAdmin(req.usuario)
+                ? await LogisticaModel.buscarPorDisponibilidade(disponibilidade, limite, offset)
+                : await LogisticaModel.buscarPorDisponibilidadePorDono(req.usuario.id_user, disponibilidade, limite, offset);
 
             res.status(200).json({
                 sucesso: true,
@@ -168,7 +187,9 @@ class LogisticaController {
             let limite = parseInt(req.query.limite) || 10;
             const offset = (pagina - 1) * limite;
 
-            const resultado = await LogisticaModel.buscarPorNome(nome_logistica, limite, offset);
+            const resultado = isAdmin(req.usuario)
+                ? await LogisticaModel.buscarPorNome(nome_logistica, limite, offset)
+                : await LogisticaModel.buscarPorNomePorDono(req.usuario.id_user, nome_logistica, limite, offset);
 
             res.status(200).json({
                 sucesso: true,
@@ -213,6 +234,14 @@ class LogisticaController {
                 });
             }
 
+            if (!podeGerenciarLogistica(req, logistica)) {
+                return res.status(403).json({
+                    sucesso: false,
+                    erro: 'Acesso negado',
+                    mensagem: 'Você não tem permissão para acessar esta logística'
+                });
+            }
+
             res.status(200).json({
                 sucesso: true,
                 dados: logistica
@@ -234,9 +263,10 @@ class LogisticaController {
             const erros = [];
             const veiculoNormalizado = normalizarVeiculo(veiculo);
             const disponibilidadeNormalizada = normalizarDisponibilidade(disponibilidade);
+            const idDonoEfetivo = isAdmin(req.usuario) && id_dono ? id_dono : req.usuario?.id_user;
 
             // Validar id_dono
-            if (!id_dono || isNaN(id_dono) || parseInt(id_dono) <= 0) {
+            if (!idDonoEfetivo || isNaN(idDonoEfetivo) || parseInt(idDonoEfetivo) <= 0) {
                 erros.push({
                     campo: 'id_dono',
                     mensagem: 'ID do dono é obrigatório e deve ser numérico'
@@ -289,18 +319,18 @@ class LogisticaController {
             }
 
             // Verificar se o dono existe
-            const donoExistente = await UsuarioModel.buscarPorId(id_dono);
+            const donoExistente = await UsuarioModel.buscarPorId(idDonoEfetivo);
 
             if (!donoExistente) {
                 return res.status(404).json({
                     sucesso: false,
                     erro: 'Dono não encontrado',
-                    mensagem: `Usuário com ID ${id_dono} não foi encontrado`
+                    mensagem: `Usuário com ID ${idDonoEfetivo} não foi encontrado`
                 });
             }
 
             const dadosLogistica = {
-                id_dono: parseInt(id_dono),
+                id_dono: parseInt(idDonoEfetivo),
                 nome_logistica: nome_logistica.trim(),
                 veiculo: veiculoNormalizado,
                 disponibilidade: disponibilidadeNormalizada,
@@ -348,6 +378,14 @@ class LogisticaController {
                     sucesso: false,
                     erro: 'Não encontrado',
                     mensagem: `Registro com ID ${id_logistica} não encontrado`
+                });
+            }
+
+            if (!podeGerenciarLogistica(req, logisticaExistente)) {
+                return res.status(403).json({
+                    sucesso: false,
+                    erro: 'Acesso negado',
+                    mensagem: 'Você não tem permissão para alterar esta logística'
                 });
             }
 
@@ -460,6 +498,14 @@ class LogisticaController {
                     sucesso: false,
                     erro: 'Não encontrado',
                     mensagem: `Registro com ID ${id_logistica} não encontrado`
+                });
+            }
+
+            if (!podeGerenciarLogistica(req, logisticaExistente)) {
+                return res.status(403).json({
+                    sucesso: false,
+                    erro: 'Acesso negado',
+                    mensagem: 'Você não tem permissão para excluir esta logística'
                 });
             }
 
