@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Footer() {
   const termosPdf = "/docs/Termos_de_Uso.pdf";
   const privacidadePdf = "/docs/Politica_de_Privacidade";
@@ -21,31 +23,31 @@ export default function Footer() {
 
             <ul className="list-unstyled d-flex flex-column gap-2">
               <li>
-                <a href="/suporte" className="footer-link">
+                <Link href="/suporte" className="footer-link">
                   Ajuda
-                </a>
+                </Link>
               </li>
 
               <li>
-                <a
+                <Link
                   href={termosPdf}
                   className="footer-link"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
                   Termos
-                </a>
+                </Link>
               </li>
 
               <li>
-                <a
-                  href={privacidadePdf}
+                <Link
+                  href="/privacidade"
                   className="footer-link"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
                   Privacidade
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -55,15 +57,15 @@ export default function Footer() {
             <h5 className="fw-bold mb-3">Redes Sociais</h5>
 
             <div className="d-flex align-items-center gap-3 flex-wrap">
-              <a href="#" className="social-icon" aria-label="Instagram">
+              <a href="https://www.instagram.com/" className="social-icon" aria-label="Instagram" target="_blank">
                 <i className="bi bi-instagram" />
               </a>
 
-              <a href="#" className="social-icon" aria-label="Facebook">
+              <a href="https://www.facebook.com/" className="social-icon" aria-label="Facebook" target="_blank">
                 <i className="bi bi-facebook" />
               </a>
 
-              <a href="#" className="social-icon" aria-label="Twitter/X">
+              <a href="https://x.com/" className="social-icon" aria-label="Twitter/X" target="_blank">
                 <i className="bi bi-twitter-x" />
               </a>
             </div>

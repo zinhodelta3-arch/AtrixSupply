@@ -21,9 +21,6 @@ ALTER TABLE encomendas
         'cancelado'
     ) NOT NULL DEFAULT 'pendente';
 
-ALTER TABLE orcamentos
-    ADD COLUMN id_fornecedor INT NULL AFTER id_encomenda;
-
 UPDATE orcamentos o
 JOIN encomendas e ON e.id_encomenda = o.id_encomenda
 SET o.id_fornecedor = e.id_fornecedor
