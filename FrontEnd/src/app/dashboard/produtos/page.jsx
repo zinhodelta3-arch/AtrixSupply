@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { resolveImageUrl } from "@/utils/imageUrl";
+import "../algo.css";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
 const PRODUTOS_URL = `${API_URL}/api/produtos`;

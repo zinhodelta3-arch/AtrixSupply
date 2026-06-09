@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "./suporte.css";
+import "../algo.css";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
 const SUPORTE_URL = `${API_URL}/api/suporte`;
