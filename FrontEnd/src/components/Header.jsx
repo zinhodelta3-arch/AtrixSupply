@@ -393,7 +393,7 @@ export default function Header() {
             <div className="collapse navbar-collapse order-lg-2" id="navbarNav">
               <ul className="navbar-nav navbar-center gap-lg-4">
                 <li className="nav-item">
-                  {usuario.tipo !== 'fornecedor' ? (
+                  {usuario?.tipo !== 'fornecedor' ? (
                     <>
                       <Link className="nav-link" href="/produtos">
                         Produtos
