@@ -5,30 +5,13 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "./suporte.css";
 
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
+const SUPORTE_URL = `${API_URL}/api/suporte`;
+
 const STATUS_OPTIONS = ["Pendente", "Em análise", "Respondida", "Resolvida"];
 const PRIORIDADE_OPTIONS = ["Baixa", "Média", "Alta", "Urgente"];
 
-const MENSAGENS_INICIAIS = [
-  {
-    id: 1,
-    nome: "Nome do cliente",
-    email: "emaildocliente@gmail.com",
-    assunto: "Assunto",
-    mensagem: "Mensagem, reclamação, dúvida",
-    status: "Pendente",
-    prioridade: "Alta",
-    categoria: "Dúvida",
-    data: "15/06/2026",
-    resposta: "",
-    historico: [
-      {
-        autor: "Cliente",
-        texto: "Mensagem, reclamação, dúvida",
-        data: "15/06/2026",
-      },
-    ],
-  },
-];
+const MENSAGENS_INICIAIS = [];
 
 const RESPOSTAS_RAPIDAS = [
   {
@@ -228,6 +211,88 @@ function getStatusDot(status) {
   return "#5cff95";
 }
 
+function obterToken() {
+  if (typeof window === "undefined") return "";
+
+  return (
+    localStorage.getItem("token") ||
+    localStorage.getItem("authToken") ||
+    localStorage.getItem("accessToken") ||
+    localStorage.getItem("usuarioToken") ||
+    localStorage.getItem("jwt") ||
+    ""
+  );
+}
+
+function statusApiParaTela(status) {
+  const valor = String(status || "").toLowerCase();
+
+  if (valor === "em_atendimento") return "Em análise";
+  if (valor === "respondido") return "Respondida";
+  if (valor === "fechado") return "Resolvida";
+
+  return "Pendente";
+}
+
+function statusTelaParaApi(status) {
+  if (status === "Em análise") return "em_atendimento";
+  if (status === "Respondida") return "respondido";
+  if (status === "Resolvida") return "fechado";
+
+  return "aberto";
+}
+
+function formatarDataTicket(data) {
+  const dataObj = new Date(data);
+
+  if (Number.isNaN(dataObj.getTime())) return "Agora";
+
+  return dataObj.toLocaleDateString("pt-BR");
+}
+
+function normalizarTicket(ticket) {
+  const data = formatarDataTicket(ticket.data_criacao);
+  const historico = [
+    {
+      autor: ticket.nome_user || "Cliente",
+      texto: ticket.mensagem || "",
+      data,
+    },
+  ];
+
+  if (ticket.resposta_admin) {
+    historico.push({
+      autor: "Suporte",
+      texto: ticket.resposta_admin,
+      data: formatarDataTicket(ticket.data_atualizacao),
+    });
+  }
+
+  return {
+    id: ticket.id_ticket,
+    nome: ticket.nome_user || "Cliente",
+    email: ticket.email || "",
+    assunto: ticket.assunto || "Sem assunto",
+    mensagem: ticket.mensagem || "",
+    status: statusApiParaTela(ticket.status),
+    prioridade: "Média",
+    categoria: ticket.categoria || "geral",
+    data,
+    resposta: ticket.resposta_admin || "",
+    historico,
+  };
+}
+
+async function lerResposta(response) {
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(data?.mensagem || data?.erro || "Não foi possível concluir a operação.");
+  }
+
+  return data;
+}
+
 export default function SuporteAdmin() {
   const [mensagens, setMensagens] = useState(MENSAGENS_INICIAIS);
 
@@ -245,12 +310,54 @@ export default function SuporteAdmin() {
   const [resposta, setResposta] = useState("");
   const [feedback, setFeedback] = useState(null);
   const [erro, setErro] = useState(null);
+  const [carregando, setCarregando] = useState(true);
 
   const [cardHoverAtivo, setCardHoverAtivo] = useState(null);
   const [ticketHoverAtivo, setTicketHoverAtivo] = useState(null);
 
   useEffect(() => {
     import("bootstrap/dist/js/bootstrap.bundle.min.js");
+  }, []);
+
+  useEffect(() => {
+    async function carregarTickets() {
+      try {
+        setCarregando(true);
+        setErro(null);
+
+        const token = obterToken();
+
+        if (!token) {
+          setErro("Faça login como administrador para acessar o suporte.");
+          setMensagens([]);
+          setMensagemSelecionada(null);
+          return;
+        }
+
+        const response = await fetch(`${SUPORTE_URL}?pagina=1&limite=100`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const data = await lerResposta(response);
+        const tickets = Array.isArray(data?.dados)
+          ? data.dados.map(normalizarTicket)
+          : [];
+
+        setMensagens(tickets);
+        setMensagemSelecionada(tickets[0] || null);
+      } catch (error) {
+        setErro(error.message || "Não foi possível carregar as solicitações.");
+        setMensagens([]);
+        setMensagemSelecionada(null);
+      } finally {
+        setCarregando(false);
+      }
+    }
+
+    carregarTickets();
   }, []);
 
   useEffect(() => {
@@ -274,8 +381,25 @@ export default function SuporteAdmin() {
     setResposta(mensagem.resposta || "");
   }
 
-  function alterarStatus(id, novoStatus) {
+  async function alterarStatus(id, novoStatus) {
     limparFeedbacks();
+
+    try {
+      const token = obterToken();
+      const response = await fetch(`${SUPORTE_URL}/${id}/status`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: statusTelaParaApi(novoStatus) }),
+      });
+
+      await lerResposta(response);
+    } catch (error) {
+      setErro(error.message || "Não foi possível atualizar o status.");
+      return;
+    }
 
     setMensagens((mensagensAtuais) =>
       mensagensAtuais.map((mensagem) =>
@@ -336,7 +460,7 @@ export default function SuporteAdmin() {
     });
   }
 
-  function enviarResposta(event) {
+  async function enviarResposta(event) {
     event.preventDefault();
     limparFeedbacks();
 
@@ -351,6 +475,23 @@ export default function SuporteAdmin() {
     }
 
     const respostaFinal = resposta.trim();
+
+    try {
+      const token = obterToken();
+      const response = await fetch(`${SUPORTE_URL}/${mensagemSelecionada.id}/responder`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ resposta: respostaFinal }),
+      });
+
+      await lerResposta(response);
+    } catch (error) {
+      setErro(error.message || "Não foi possível enviar a resposta.");
+      return;
+    }
 
     setMensagens((mensagensAtuais) =>
       mensagensAtuais.map((mensagem) =>
@@ -773,7 +914,19 @@ export default function SuporteAdmin() {
               }}
             >
               <div className="d-flex flex-column gap-3">
-                {mensagensAtuais.length === 0 ? (
+                {carregando ? (
+                  <div
+                    className="text-center p-5"
+                    style={{
+                      background: "rgba(255,255,255,.025)",
+                      border: "1px solid rgba(255,255,255,.06)",
+                      borderRadius: "24px",
+                    }}
+                  >
+                    <div className="spinner-border text-warning mb-3" />
+                    <h5 className="fw-bold mb-1">Carregando solicitações...</h5>
+                  </div>
+                ) : mensagensAtuais.length === 0 ? (
                   <div
                     className="text-center p-5"
                     style={{

@@ -1,5 +1,5 @@
 -- Migration: Atualizar fluxo de encomendas, orçamentos e perfil
--- Data: 2026-06-04
+-- Data: 2026-06-09
 -- Descrição: adiciona estados do fluxo completo, fornecedor no orçamento e suporte a admin.
 
 USE projeto;
@@ -40,9 +40,7 @@ SET id_fornecedor = (
 )
 WHERE id_fornecedor IS NULL;
 
+
 ALTER TABLE orcamentos
     MODIFY id_fornecedor INT NOT NULL,
-    MODIFY estado ENUM('visivel','invisivel','escolhida','recusado','cancelado') NOT NULL DEFAULT 'visivel',
-    ADD CONSTRAINT fk_orcamento_fornecedor
-        FOREIGN KEY (id_fornecedor)
-        REFERENCES usuarios(id_user) ON UPDATE CASCADE ON DELETE CASCADE;
+    MODIFY estado ENUM('visivel','invisivel','escolhida','recusado','cancelado') NOT NULL DEFAULT 'visivel';

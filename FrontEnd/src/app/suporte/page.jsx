@@ -6,9 +6,38 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 import Image from "next/image";
 import { useState } from "react";
 
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
+const SUPORTE_URL = `${API_URL}/api/suporte`;
+
+function obterToken() {
+  if (typeof window === "undefined") return "";
+
+  return (
+    localStorage.getItem("token") ||
+    localStorage.getItem("authToken") ||
+    localStorage.getItem("accessToken") ||
+    localStorage.getItem("usuarioToken") ||
+    localStorage.getItem("jwt") ||
+    ""
+  );
+}
+
+async function lerResposta(response) {
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(data?.mensagem || data?.erro || "Não foi possível enviar a solicitação.");
+  }
+
+  return data;
+}
+
 export default function Suporte() {
   const [titulo, setTitulo] = useState("");
   const [mensagem, setMensagem] = useState("");
+  const [feedback, setFeedback] = useState("");
+  const [erro, setErro] = useState("");
+  const [enviando, setEnviando] = useState(false);
 
   const solucoes = [
     {
@@ -33,13 +62,48 @@ export default function Suporte() {
     },
   ];
 
-  function enviarSuporte() {
-    if (!titulo || !mensagem) return;
+  async function enviarSuporte() {
+    setFeedback("");
+    setErro("");
 
-    alert("Solicitação enviada com sucesso!");
+    if (!titulo.trim() || !mensagem.trim()) {
+      setErro("Preencha o título e a descrição da solicitação.");
+      return;
+    }
 
-    setTitulo("");
-    setMensagem("");
+    const token = obterToken();
+
+    if (!token) {
+      setErro("Faça login para enviar uma solicitação de suporte.");
+      return;
+    }
+
+    try {
+      setEnviando(true);
+
+      const response = await fetch(SUPORTE_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          assunto: titulo.trim(),
+          mensagem: mensagem.trim(),
+          categoria: "geral",
+        }),
+      });
+
+      await lerResposta(response);
+
+      setFeedback("Solicitação enviada com sucesso. Nossa equipe acompanhará seu caso.");
+      setTitulo("");
+      setMensagem("");
+    } catch (error) {
+      setErro(error.message || "Não foi possível enviar a solicitação.");
+    } finally {
+      setEnviando(false);
+    }
   }
 
   return (
@@ -119,7 +183,7 @@ export default function Suporte() {
                     }}
                   >
                     <Image
-                      src="/core.png"
+                      src="/logo.png"
                       alt="Usuário"
                       fill
                       priority
@@ -139,7 +203,7 @@ export default function Suporte() {
                         fontSize: "1.2rem",
                       }}
                     >
-                      Henrique Vieira
+                      Usuário Atrix
                     </h4>
 
                     <span
@@ -425,10 +489,22 @@ export default function Suporte() {
                         fontSize: ".86rem",
                       }}
                     >
-                      Descreva detalhadamente o problem.
+                      Descreva detalhadamente o problema.
                     </span>
                   </div>
                 </div>
+
+                {feedback && (
+                  <div className="alert alert-success border-0" style={{ borderRadius: "16px" }}>
+                    {feedback}
+                  </div>
+                )}
+
+                {erro && (
+                  <div className="alert alert-danger border-0" style={{ borderRadius: "16px" }}>
+                    {erro}
+                  </div>
+                )}
 
                 <div className="mb-3">
                   <label
@@ -504,6 +580,7 @@ export default function Suporte() {
 
                   <button
                     onClick={enviarSuporte}
+                    disabled={enviando}
                     className="btn"
                     style={{
                       background: "linear-gradient(90deg,#ffcf40,#ff9d00,#c0012a)",
@@ -515,7 +592,7 @@ export default function Suporte() {
                       fontSize: ".9rem",
                     }}
                   >
-                    Enviar solicitação
+                    {enviando ? "Enviando..." : "Enviar solicitação"}
                   </button>
                 </div>
               </div>

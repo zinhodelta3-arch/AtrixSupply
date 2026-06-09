@@ -1,161 +1,8 @@
+-- Migration: Insert de dados de teste
+-- Data: 2026-06-09
+-- Descricao: Dados para testes de dados iniciais
+
 USE projeto;
-
-INSERT INTO usuarios (
-    nome_user,
-    cnpj,
-    endereco,
-    foto,
-    empresa,
-    cargo,
-    descricao,
-    tipo,
-    email,
-    senha,
-    cep
-) VALUES (
-    'carlos prates',
-    '12.345.678/0001-90',
-    'Rua das Flores, 120 - São Paulo/SP',
-    'carlos.png',
-    'Silva Tech',
-    'Gerente',
-    'Fornecedor de peças industriais',
-    'fornecedor',
-    'carlos@pratestech.com',
-    '$2a$10$buPZe1aioomTKna06bHeCeHwbXMGb0ivFQM2FjZrY4zUzE.ixPMAm',
-    '05273-120'
-);
-
-INSERT INTO usuarios (
-    nome_user,
-    cnpj,
-    endereco,
-    foto,
-    empresa,
-    cargo,
-    descricao,
-    tipo,
-    email,
-    senha,
-    cep
-) VALUES (
-    'marie moreau',
-    '98.765.432/0001-11',
-    'Av. Paulista, 500 - São Paulo/SP',
-    'marie.png',
-    'Costa Imports',
-    'Compradora',
-    'Cliente especializado em importações',
-    'comum',
-    'marie@moreauimports.com',
-    'senha123',
-    '01310-000'
-);
-
-INSERT INTO usuarios (
-    nome_user,
-    cnpj,
-    endereco,
-    foto,
-    empresa,
-    cargo,
-    descricao,
-    tipo,
-    email,
-    senha,
-    cep
-) VALUES (
-    'jorel garcia',
-    '45.222.111/0001-77',
-    'Rua Central, 89 - Campinas/SP',
-    'jorel.png',
-    'Almeida Transportes',
-    'Motorista',
-    'Responsável pela logística e entregas',
-    'admin',
-    'jorel@garciatransportes.com',
-    'abc123',
-    '13056-297'
-);
-
-INSERT INTO usuarios (
-    nome_user,
-    cnpj,
-    endereco,
-    foto,
-    empresa,
-    cargo,
-    descricao,
-    tipo,
-    email,
-    senha,
-    cep
-) VALUES (
-    'Julio Cesar',
-    '54.987.321/0001-45',
-    'Avenida Brasil, 850 - Curitiba/PR',
-    'julio.png',
-    'Silva Tech',
-    'Gerente',
-    'Especialista em fornecimento de equipamentos industriais e logística empresarial',
-    'fornecedor',
-    'julio@cesartech.com',
-    '$2a$10$buPZe1aioomTKna06bHeCeHwbXMGb0ivFQM2FjZrY4zUzE.ixPMAm',
-    '80040-120'
-);
-
-INSERT INTO usuarios (
-    nome_user,
-    cnpj,
-    endereco,
-    foto,
-    empresa,
-    cargo,
-    descricao,
-    tipo,
-    email,
-    senha,
-    cep
-) VALUES (
-    'Magno Abrão',
-    '33.654.987/0001-22',
-    'Rua XV de Novembro, 340 - Belo Horizonte/MG',
-    'marie.png',
-    'Costa Imports',
-    'Compradora',
-    'Responsável pela negociação e importação de equipamentos tecnológicos e industriais',
-    'comum',
-    'magno@abraoimports.com',
-    'magno2026',
-    '30140-080'
-);
-
-INSERT INTO usuarios (
-    nome_user,
-    cnpj,
-    endereco,
-    foto,
-    empresa,
-    cargo,
-    descricao,
-    tipo,
-    email,
-    senha,
-    cep
-) VALUES (
-    'Laura Santos',
-    '67.890.123/0001-54',
-    'Rua José Paulino, 415 - Campinas/SP',
-    'laura.png',
-    'Almeida Transportes',
-    'Coordenadora de Logística',
-    'Especialista em gerenciamento de transporte, distribuição e controle de entregas empresariais',
-    'admin',
-    'laura@santostransportes.com',
-    'Laura2026',
-    '13013-001'
-);
-
 
 INSERT INTO produtos (
     nome_produto,
@@ -366,16 +213,14 @@ INSERT INTO pedidos (
 
 INSERT INTO orcamentos (
     id_encomenda, 
-    id_fornecedor,
     nome_orcamento, 
     tipo_orcamento, 
     estimacao, 
     estado) 
 VALUES (
     3,
-    1,
     "básico",
     "versão barata, mas menos eficiente",
     8000.00,
-    "visivel"
+    "invisivel"
 );
