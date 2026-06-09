@@ -6,13 +6,13 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "./pedidos.css";
 
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { FALLBACK_IMAGE, resolveImageUrl, useImageFallback } from "@/utils/imageUrl";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
 const PEDIDOS_URL = `${API_URL}/api/pedidos`;
 const PRODUTOS_URL = `${API_URL}/api/produtos`;
+const FOTO_USUARIO_FALLBACK = "/core.png";
 
 const PEDIDOS_POR_PAGINA = 6;
 
@@ -137,6 +137,29 @@ function obterTipoUsuario(usuario) {
   )
     .trim()
     .toLowerCase();
+}
+
+function obterFotoUsuario(usuario) {
+  const fotoUsuario =
+    usuario?.foto ||
+    usuario?.foto_user ||
+    usuario?.foto_perfil ||
+    usuario?.imagem ||
+    usuario?.avatar ||
+    usuario?.profile_image ||
+    usuario?.dados?.foto ||
+    usuario?.dados?.foto_user ||
+    usuario?.dados?.foto_perfil ||
+    usuario?.dados?.imagem ||
+    usuario?.dados?.avatar ||
+    usuario?.usuario?.foto ||
+    usuario?.usuario?.foto_user ||
+    usuario?.usuario?.foto_perfil ||
+    usuario?.usuario?.imagem ||
+    usuario?.usuario?.avatar ||
+    "";
+
+  return resolveImageUrl(fotoUsuario, FOTO_USUARIO_FALLBACK);
 }
 
 function montarHeaders() {
@@ -703,11 +726,12 @@ export default function Pedidos() {
                       boxShadow: "0 18px 40px rgba(0,0,0,.35)",
                     }}
                   >
-                    <Image
-                      src="/core.png"
-                      alt="Usuário"
-                      width={130}
-                      height={130}
+                    <img
+                      src={obterFotoUsuario(usuario)}
+                      alt={usuario?.nome_user ? `Foto de ${usuario.nome_user}` : "Foto do usuário"}
+                      onError={(event) => {
+                        useImageFallback(event, FOTO_USUARIO_FALLBACK);
+                      }}
                       style={{
                         width: "100%",
                         height: "100%",
