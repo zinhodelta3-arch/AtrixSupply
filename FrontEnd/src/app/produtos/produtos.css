@@ -52,3 +52,8 @@
   font-size: 12px;
 }
 
+/* CORRIGIDO: Seletor corrigido para o padrão do Bootstrap e adicionado opacidade */
+.form-control::placeholder {
+  color: rgba(255, 255, 255, 0.4) !important; /* Branco fosco sutil. Se quiser totalmente branco, mude para #ffffff */
+  opacity: 1; /* Garante que nenhum navegador diminua a opacidade além do definido */
+}

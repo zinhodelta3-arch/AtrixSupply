@@ -8,6 +8,7 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 
 import "./produtos.css";
 import CardProduto from "@/components/CardProduto";
+import { color } from "chart.js/helpers";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
 const PRODUTOS_URL = `${API_URL}/api/produtos`;
@@ -334,7 +335,7 @@ export default function Produtos() {
                 </div>
 
                 <div className="mb-4">
-                  <label className="form-label text-white">
+                  <label className="form-label text-white" >
                     Buscar Produto
                   </label>
 
@@ -345,6 +346,7 @@ export default function Produtos() {
                     value={busca}
                     onChange={(event) => setBusca(event.target.value)}
                     style={inputStyle}
+                    
                   />
                 </div>
 
@@ -363,7 +365,7 @@ export default function Produtos() {
                       <option
                         key={categoria.value}
                         value={categoria.value}
-                        style={{ color: "#111" }}
+                        style={{ color: "#ffffff" }}
                       >
                         {categoria.label}
                       </option>
