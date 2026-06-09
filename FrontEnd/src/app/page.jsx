@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./page.css";
 
 const pageBackground = `
@@ -55,9 +55,44 @@ const statsCardStyle = {
   boxShadow: "none",
 };
 
+// Função auxiliar idêntica à do seu Header para normalizar o tipo
+function normalizarTipoUsuario(usuario) {
+  if (!usuario) return "";
+  if (typeof usuario === "string") return usuario.trim().toLowerCase();
+  return String(
+    usuario?.tipo ||
+    usuario?.tipo_user ||
+    usuario?.role ||
+    usuario?.nivel ||
+    usuario?.dados?.tipo ||
+    usuario?.dados?.tipo_user ||
+    usuario?.usuario?.tipo ||
+    ""
+  ).trim().toLowerCase();
+}
+
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [isFornecedor, setIsFornecedor] = useState(false);
   const totalSlides = 2;
+
+  // Carrega o tipo do usuário para definir as rotas dos botões
+  useEffect(() => {
+    try {
+      const usuarioStorage = localStorage.getItem("usuario");
+      if (usuarioStorage) {
+        const userParsed = JSON.parse(usuarioStorage);
+        const tipo = normalizarTipoUsuario(userParsed);
+        
+        // Verifica se o usuário se enquadra como fornecedor
+        if (tipo === "fornecedor" || tipo === "fornecedores" || tipo === "supplier") {
+          setIsFornecedor(true);
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao verificar tipo de usuário na Home:", error);
+    }
+  }, []);
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev === totalSlides - 1 ? 0 : prev + 1));
@@ -132,22 +167,24 @@ export default function Home() {
                 </p>
 
                 <div className="d-grid gap-2 d-md-flex justify-content-md-start">
-                  <Link
-                    type="button"
-                    className="btn btn-outline-secondary btn-lg px-4 btn-custom"
-                    href="/encomendas"
-                  >
-                    Confira agora!
-                  </Link>
+  {/* Botão Confira Agora condicional */}
+  <Link style={{ color: "#ffffff" }}
+    type="button"
+    className="btn btn-outline-secondary btn-lg px-4 btn-custom"
+    href={isFornecedor ? "/encomendasrecebe" : "/encomendas"}
+  >
+    Confira agora!
+  </Link>
 
-                  <Link
-                    type="button"
-                    className="btn btn-outline-secondary btn-lg px-4 btn-sec"
-                    href="/produtos"
-                  >
-                    Categorias
-                  </Link>
-                </div>
+  {/* Botão Categorias / Central condicional no link e no texto */}
+  <Link
+    type="button"
+    className="btn btn-outline-secondary btn-lg px-4 btn-sec"
+    href={isFornecedor ? "/logistica" : "/produtos"}
+  >
+    {isFornecedor ? "Central" : "Categorias"}
+  </Link>
+</div>
               </div>
 
               <div
@@ -428,79 +465,12 @@ export default function Home() {
                           </h5>
 
                           <p className="card-text" style={{ color: "#b3b3b3" }}>
-                            Rolamentos resistentes para aplicações industriais
-                            pesadas.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className={`carousel-item ${currentSlide === 1 ? "active" : ""}`}>
-                  <div className="row g-4">
-                    <div className="col-md-4">
-                      <div className="card produto-card h-100 border-0" style={productCardStyle}>
-                        <img
-                          src="/hidraulica.png"
-                          className="card-img-top produto-img"
-                          alt="Hidráulica"
-                        />
-
-                        <div className="card-body">
-                          <h5 className="card-title text-white">
-                            Hidráulica
-                          </h5>
-
-                          <p className="card-text" style={{ color: "#b3b3b3" }}>
-                            Componentes hidráulicos para sistemas industriais
-                            modernos.
+                            Rolamentos de esferas e rolos para alta carga e performance.
                           </p>
                         </div>
                       </div>
                     </div>
 
-                    <div className="col-md-4">
-                      <div className="card produto-card h-100 border-0" style={productCardStyle}>
-                        <img
-                          src="/motores.png"
-                          className="card-img-top produto-img"
-                          alt="Motores"
-                        />
-
-                        <div className="card-body">
-                          <h5 className="card-title text-white">
-                            Motores
-                          </h5>
-
-                          <p className="card-text" style={{ color: "#b3b3b3" }}>
-                            Motores industriais de alta performance e eficiência
-                            energética.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="col-md-4">
-                      <div className="card produto-card h-100 border-0" style={productCardStyle}>
-                        <img
-                          src="/ferramentas.png"
-                          className="card-img-top produto-img"
-                          alt="Ferramentas"
-                        />
-
-                        <div className="card-body">
-                          <h5 className="card-title text-white">
-                            Ferramentas
-                          </h5>
-
-                          <p className="card-text" style={{ color: "#b3b3b3" }}>
-                            Ferramentas profissionais para manutenção e produção
-                            industrial.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -508,12 +478,6 @@ export default function Home() {
           </div>
         </section>
       </main>
-
-      <br />
-      <br />
-      <br />
-      <br />
-      <br />
     </>
   );
 }
