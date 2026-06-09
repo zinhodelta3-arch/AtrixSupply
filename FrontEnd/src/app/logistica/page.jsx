@@ -3,12 +3,12 @@
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
 const LOGISTICA_URL = `${API_URL}/api/logistica`;
+const FOTO_USUARIO_FALLBACK = "/logo.png";
 
 const veiculosValidos = [
   "caminhão",
@@ -161,8 +161,108 @@ function obterIdUsuarioLogado() {
     usuario?.dados?.id ||
     usuario?.dados?.userId ||
     usuario?.dados?.idUser ||
+    usuario?.usuario?.id_user ||
+    usuario?.usuario?.id_usuario ||
+    usuario?.usuario?.id ||
+    usuario?.usuario?.userId ||
     ""
   );
+}
+
+function obterNomeUsuario(usuario) {
+  return (
+    usuario?.nome_user ||
+    usuario?.nome ||
+    usuario?.name ||
+    usuario?.empresa ||
+    usuario?.dados?.nome_user ||
+    usuario?.dados?.nome ||
+    usuario?.dados?.empresa ||
+    usuario?.usuario?.nome_user ||
+    usuario?.usuario?.nome ||
+    usuario?.usuario?.empresa ||
+    "Usuário"
+  );
+}
+
+function obterFotoBrutaUsuario(usuario) {
+  return (
+    usuario?.foto ||
+    usuario?.foto_user ||
+    usuario?.foto_perfil ||
+    usuario?.imagem ||
+    usuario?.avatar ||
+    usuario?.profile_image ||
+    usuario?.dados?.foto ||
+    usuario?.dados?.foto_user ||
+    usuario?.dados?.foto_perfil ||
+    usuario?.dados?.imagem ||
+    usuario?.dados?.avatar ||
+    usuario?.usuario?.foto ||
+    usuario?.usuario?.foto_user ||
+    usuario?.usuario?.foto_perfil ||
+    usuario?.usuario?.imagem ||
+    usuario?.usuario?.avatar ||
+    ""
+  );
+}
+
+function resolverUrlImagemUsuario(imagem) {
+  const valorOriginal = String(imagem || "")
+    .trim()
+    .replace(/\\/g, "/");
+
+  if (!valorOriginal) {
+    return FOTO_USUARIO_FALLBACK;
+  }
+
+  if (
+    valorOriginal.startsWith("http://") ||
+    valorOriginal.startsWith("https://") ||
+    valorOriginal.startsWith("data:image") ||
+    valorOriginal.startsWith("blob:")
+  ) {
+    return valorOriginal;
+  }
+
+  if (valorOriginal.startsWith("/")) {
+    if (valorOriginal.startsWith("/uploads")) {
+      return `${API_URL}${valorOriginal}`;
+    }
+
+    return valorOriginal;
+  }
+
+  const caminhoLimpo = valorOriginal.replace(/^\/+/, "");
+
+  if (caminhoLimpo.startsWith("uploads/")) {
+    return `${API_URL}/${caminhoLimpo}`;
+  }
+
+  return `${API_URL}/uploads/imagens/${caminhoLimpo}`;
+}
+
+function obterFotoUsuario(usuario) {
+  return resolverUrlImagemUsuario(obterFotoBrutaUsuario(usuario));
+}
+
+function aplicarFallbackImagemUsuario(event) {
+  if (!event?.currentTarget) return;
+
+  event.currentTarget.onerror = null;
+  event.currentTarget.src = FOTO_USUARIO_FALLBACK;
+}
+
+function formatarPerfilLogistica(tipoUsuario) {
+  if (tipoUsuario === "admin" || tipoUsuario === "administrador") {
+    return "Administrador logístico";
+  }
+
+  if (tipoUsuario === "fornecedor") {
+    return "Fornecedor logístico";
+  }
+
+  return "Central logística";
 }
 
 function getCorDisponibilidade(disponibilidade) {
@@ -195,6 +295,7 @@ export default function LogisticaFornecedor() {
   const router = useRouter();
 
   const [validandoAcesso, setValidandoAcesso] = useState(true);
+  const [usuarioLogado, setUsuarioLogado] = useState(null);
 
   const [logisticas, setLogisticas] = useState([]);
   const [pesquisa, setPesquisa] = useState("");
@@ -217,7 +318,6 @@ export default function LogisticaFornecedor() {
   const [formErro, setFormErro] = useState(null);
 
   const [formData, setFormData] = useState({
-    id_dono: "",
     nome_logistica: "",
     veiculo: "não selecionado",
     disponibilidade: "disponivel",
@@ -237,15 +337,7 @@ export default function LogisticaFornecedor() {
       return;
     }
 
-    const idUsuario = obterIdUsuarioLogado();
-
-    if (idUsuario) {
-      setFormData((prev) => ({
-        ...prev,
-        id_dono: String(idUsuario),
-      }));
-    }
-
+    setUsuarioLogado(usuario);
     setValidandoAcesso(false);
   }, [router]);
 
@@ -314,10 +406,7 @@ export default function LogisticaFornecedor() {
   }
 
   function limparFormulario() {
-    const idUsuario = obterIdUsuarioLogado();
-
     setFormData({
-      id_dono: idUsuario ? String(idUsuario) : "",
       nome_logistica: "",
       veiculo: "não selecionado",
       disponibilidade: "disponivel",
@@ -352,7 +441,6 @@ export default function LogisticaFornecedor() {
     setEditandoId(item.id_logistica);
 
     setFormData({
-      id_dono: item.id_dono ? String(item.id_dono) : "",
       nome_logistica: item.nome_logistica || "",
       veiculo: item.veiculo || "não selecionado",
       disponibilidade: item.disponibilidade || "disponivel",
@@ -399,7 +487,7 @@ export default function LogisticaFornecedor() {
         tipo: "success",
         texto:
           data?.mensagem ||
-          `Status da logística LG-${item.id_logistica} atualizado com sucesso.`,
+          "Status da logística atualizado com sucesso.",
       });
 
       await carregarLogisticas();
@@ -430,13 +518,16 @@ export default function LogisticaFornecedor() {
         return;
       }
 
-      if (!editandoId && !formData.id_dono) {
-        setFormErro("O ID do dono é obrigatório para criar uma logística");
+
+      const idDonoLogado = obterIdUsuarioLogado();
+
+      if (!idDonoLogado) {
+        setFormErro("Não foi possível identificar o usuário logado. Faça login novamente.");
         return;
       }
 
       const bodyCriacao = {
-        id_dono: Number(formData.id_dono),
+        id_dono: Number(idDonoLogado),
         nome_logistica: formData.nome_logistica.trim(),
         veiculo: formData.veiculo,
         disponibilidade: formData.disponibilidade,
@@ -540,6 +631,10 @@ export default function LogisticaFornecedor() {
     };
   }, [logisticas]);
 
+  const nomeUsuarioPainel = obterNomeUsuario(usuarioLogado);
+  const fotoUsuarioPainel = obterFotoUsuario(usuarioLogado);
+  const perfilUsuarioPainel = formatarPerfilLogistica(obterTipoUsuario(usuarioLogado));
+
   if (validandoAcesso) {
     return (
       <main
@@ -632,17 +727,6 @@ export default function LogisticaFornecedor() {
               </div>
             </div>
 
-            <button
-              onClick={abrirModalCriacao}
-              className="btn"
-              style={{
-                ...buttonGradient,
-                padding: "14px 24px",
-              }}
-            >
-              <i className="bi bi-plus-circle-fill me-2" />
-              Nova Logística
-            </button>
           </div>
         </div>
       </section>
@@ -669,12 +753,13 @@ export default function LogisticaFornecedor() {
                     border: "2px solid rgba(255,255,255,.08)",
                   }}
                 >
-                  <Image
-                    src="/core.png"
-                    alt="Fornecedor"
-                    fill
-                    priority
+                  <img
+                    src={fotoUsuarioPainel}
+                    alt={`Foto de ${nomeUsuarioPainel}`}
+                    onError={aplicarFallbackImagemUsuario}
                     style={{
+                      width: "100%",
+                      height: "100%",
                       objectFit: "cover",
                     }}
                   />
@@ -687,7 +772,7 @@ export default function LogisticaFornecedor() {
                     color: "#ffe082",
                   }}
                 >
-                  Supplier Prime
+                  {nomeUsuarioPainel}
                 </h3>
 
                 <p
@@ -696,11 +781,24 @@ export default function LogisticaFornecedor() {
                     marginBottom: 0,
                   }}
                 >
-                  Central logística premium
+                  {perfilUsuarioPainel}
                 </p>
+
+                <button
+                  type="button"
+                  onClick={abrirModalCriacao}
+                  className="btn w-100 mt-4"
+                  style={{
+                    ...buttonGradient,
+                    padding: "13px 18px",
+                  }}
+                >
+                  <i className="bi bi-plus-circle-fill me-2" />
+                  Nova Logística
+                </button>
               </div>
 
-              <div className="d-flex flex-column gap-3 mt-5">
+              <div className="d-flex flex-column gap-3 mt-4">
                 {[
                   {
                     titulo: "Total",
@@ -1030,7 +1128,7 @@ export default function LogisticaFornecedor() {
                                   letterSpacing: ".8px",
                                 }}
                               >
-                                Logística #{item.id_logistica}
+                                Registro logístico
                               </p>
 
                               <h4
@@ -1216,11 +1314,7 @@ export default function LogisticaFornecedor() {
                             </div>
 
                             <div className="col-lg-2 d-flex justify-content-lg-end">
-                              <div
-                                style={{
-                                  textAlign: "right",
-                                }}
-                              >
+                              <div style={{ textAlign: "right" }}>
                                 <p
                                   style={{
                                     color: "rgba(255,255,255,.5)",
@@ -1229,21 +1323,11 @@ export default function LogisticaFornecedor() {
                                     textTransform: "uppercase",
                                   }}
                                 >
-                                  Código
+                                  Perfil
                                 </p>
 
-                                <h6
-                                  style={{
-                                    color: "#ffe082",
-                                    fontWeight: "700",
-                                    margin: 0,
-                                  }}
-                                >
-                                  LG-{item.id_logistica}
-                                </h6>
-
                                 <span
-                                  className="badge mt-3"
+                                  className="badge"
                                   style={{
                                     background: "rgba(255,255,255,.06)",
                                     color: "rgba(255,255,255,.75)",
@@ -1252,7 +1336,7 @@ export default function LogisticaFornecedor() {
                                     padding: "8px 10px",
                                   }}
                                 >
-                                  Dono #{item.id_dono}
+                                  Minha logística
                                 </span>
                               </div>
                             </div>
@@ -1411,8 +1495,8 @@ export default function LogisticaFornecedor() {
                     }}
                   >
                     {editandoId
-                      ? `Atualizando o registro LG-${editandoId}`
-                      : "Cadastre uma nova logística para o painel"}
+                      ? "Atualize os dados desta logística."
+                      : "Cadastre uma nova logística para o painel."}
                   </p>
                 </div>
               </div>
@@ -1438,26 +1522,7 @@ export default function LogisticaFornecedor() {
             <form onSubmit={salvarLogistica}>
               <div style={{ padding: "28px 32px 10px" }}>
                 <div className="row g-3">
-                  {!editandoId && (
-                    <div className="col-md-6">
-                      <label className="form-label small text-white-50">
-                        ID do dono
-                      </label>
-
-                      <input
-                        type="number"
-                        className="form-control"
-                        value={formData.id_dono}
-                        onChange={(event) =>
-                          atualizarCampo("id_dono", event.target.value)
-                        }
-                        placeholder="Ex: 1"
-                        style={inputStyle}
-                      />
-                    </div>
-                  )}
-
-                  <div className={editandoId ? "col-12" : "col-md-6"}>
+                  <div className="col-12">
                     <label className="form-label small text-white-50">
                       Nome da logística
                     </label>
