@@ -31,3 +31,21 @@ CREATE TABLE IF NOT EXISTS notificacoes (
 CREATE INDEX idx_suporte_tickets_id_user ON suporte_tickets(id_user);
 CREATE INDEX idx_suporte_tickets_status ON suporte_tickets(status);
 CREATE INDEX idx_notificacoes_id_user_lida ON notificacoes(id_user, lida);
+
+
+ALTER TABLE suporte_tickets
+    ADD COLUMN id_admin_resposta INT NULL AFTER resposta_admin,
+    ADD CONSTRAINT fk_suporte_admin_resposta
+        FOREIGN KEY (id_admin_resposta)
+        REFERENCES usuarios(id_user)
+        ON UPDATE CASCADE
+        ON DELETE SET NULL;
+
+ALTER TABLE notificacoes
+    ADD COLUMN id_ticket INT NULL AFTER id_user,
+    ADD INDEX idx_notificacoes_id_ticket (id_ticket),
+    ADD CONSTRAINT fk_notificacoes_suporte_ticket
+        FOREIGN KEY (id_ticket)
+        REFERENCES suporte_tickets(id_ticket)
+        ON UPDATE CASCADE
+        ON DELETE SET NULL;
