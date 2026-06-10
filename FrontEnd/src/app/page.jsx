@@ -320,6 +320,10 @@ export default function Home() {
     setCurrentSlide((prev) => (prev === 0 ? totalSlides - 1 : prev - 1));
   }
 
+  function impedirArrastarBotao(event) {
+    event.preventDefault();
+  }
+
   return (
     <>
       <main
@@ -384,18 +388,32 @@ export default function Home() {
 
                 <div className="d-grid gap-2 d-md-flex justify-content-md-start">
                   <Link
-                    style={{ color: "#ffffff" }}
+                    style={{
+                      color: "#ffffff",
+                      userSelect: "none",
+                      WebkitUserSelect: "none",
+                      WebkitUserDrag: "none",
+                    }}
                     type="button"
-                    className="btn btn-outline-secondary btn-lg px-4 btn-custom"
+                    className="btn btn-outline-secondary btn-lg px-4 btn-custom hero-action-btn"
                     href={isFornecedor ? "/encomendasrecebe" : "/encomendas"}
+                    draggable={false}
+                    onDragStart={impedirArrastarBotao}
                   >
                     Confira agora!
                   </Link>
 
                   <Link
                     type="button"
-                    className="btn btn-outline-secondary btn-lg px-4 btn-sec"
+                    className="btn btn-outline-secondary btn-lg px-4 btn-sec hero-action-btn"
                     href={isFornecedor ? "/logistica" : "/produtos"}
+                    draggable={false}
+                    onDragStart={impedirArrastarBotao}
+                    style={{
+                      userSelect: "none",
+                      WebkitUserSelect: "none",
+                      WebkitUserDrag: "none",
+                    }}
                   >
                     {isFornecedor ? "Central" : "Categorias"}
                   </Link>
@@ -632,7 +650,15 @@ export default function Home() {
                           <Link
                             href="/produtos"
                             aria-label={`Ver produtos de ${produto.titulo}`}
-                            style={{ textDecoration: "none", color: "inherit" }}
+                            draggable={false}
+                            onDragStart={impedirArrastarBotao}
+                            style={{
+                              textDecoration: "none",
+                              color: "inherit",
+                              userSelect: "none",
+                              WebkitUserSelect: "none",
+                              WebkitUserDrag: "none",
+                            }}
                           >
                             <div
                               className="card produto-card h-100 border-0"

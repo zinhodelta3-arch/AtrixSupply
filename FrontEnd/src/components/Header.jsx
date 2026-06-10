@@ -42,6 +42,171 @@ function obterNomeUsuario(usuario) {
   );
 }
 
+function obterIniciaisUsuario(nome) {
+  if (!nome) return "US";
+
+  const partes = String(nome).trim().split(" ").filter(Boolean);
+
+  if (partes.length === 0) return "US";
+
+  if (partes.length === 1) {
+    return partes[0].slice(0, 2).toUpperCase();
+  }
+
+  return `${partes[0][0]}${partes[partes.length - 1][0]}`.toUpperCase();
+}
+
+function obterFotoBrutaUsuario(usuario) {
+  if (!usuario || typeof usuario === "string") return "";
+
+  return (
+    usuario?.foto ||
+    usuario?.foto_user ||
+    usuario?.foto_perfil ||
+    usuario?.imagem ||
+    usuario?.avatar ||
+    usuario?.profile_image ||
+    usuario?.dados?.foto ||
+    usuario?.dados?.foto_user ||
+    usuario?.dados?.foto_perfil ||
+    usuario?.dados?.imagem ||
+    usuario?.dados?.avatar ||
+    usuario?.usuario?.foto ||
+    usuario?.usuario?.foto_user ||
+    usuario?.usuario?.foto_perfil ||
+    usuario?.usuario?.imagem ||
+    usuario?.usuario?.avatar ||
+    ""
+  );
+}
+
+function resolverUrlImagemUsuario(imagem) {
+  const valorOriginal = String(imagem || "")
+    .trim()
+    .replace(/\\/g, "/");
+
+  if (!valorOriginal) return "";
+
+  if (
+    valorOriginal.startsWith("http://") ||
+    valorOriginal.startsWith("https://") ||
+    valorOriginal.startsWith("data:image") ||
+    valorOriginal.startsWith("blob:")
+  ) {
+    return valorOriginal;
+  }
+
+  if (valorOriginal.startsWith("/")) {
+    if (valorOriginal.startsWith("/uploads")) {
+      return `${API_URL}${valorOriginal}`;
+    }
+
+    return valorOriginal;
+  }
+
+  const caminhoLimpo = valorOriginal.replace(/^\/+/, "");
+
+  if (caminhoLimpo.startsWith("uploads/")) {
+    return `${API_URL}/${caminhoLimpo}`;
+  }
+
+  return `${API_URL}/uploads/imagens/${caminhoLimpo}`;
+}
+
+function obterFotoUsuario(usuario) {
+  return resolverUrlImagemUsuario(obterFotoBrutaUsuario(usuario));
+}
+
+function obterIdUsuario(usuario) {
+  if (!usuario || typeof usuario === "string") return "";
+
+  return (
+    usuario?.id_user ||
+    usuario?.id_usuario ||
+    usuario?.id ||
+    usuario?.userId ||
+    usuario?.idUser ||
+    usuario?.sub ||
+    usuario?.dados?.id_user ||
+    usuario?.dados?.id_usuario ||
+    usuario?.dados?.id ||
+    usuario?.dados?.userId ||
+    usuario?.dados?.idUser ||
+    usuario?.dados?.sub ||
+    usuario?.usuario?.id_user ||
+    usuario?.usuario?.id_usuario ||
+    usuario?.usuario?.id ||
+    ""
+  );
+}
+
+function normalizarUsuarioPayload(data) {
+  return (
+    data?.dados?.usuario ||
+    data?.dados?.user ||
+    data?.dados ||
+    data?.usuario ||
+    data?.user ||
+    data ||
+    null
+  );
+}
+
+function mesclarUsuarioLocalComApi(usuarioLocal, usuarioApi) {
+  const idSeguro = obterIdUsuario(usuarioLocal) || obterIdUsuario(usuarioApi);
+
+  return {
+    ...(usuarioLocal || {}),
+    ...(usuarioApi || {}),
+    id_user: idSeguro || usuarioApi?.id_user || usuarioLocal?.id_user,
+  };
+}
+
+async function buscarUsuarioAtualizado(usuarioBase) {
+  const token = obterTokenLocal();
+  const idUsuario = obterIdUsuario(usuarioBase);
+
+  if (!token) return null;
+
+  const urls = [];
+
+  if (idUsuario) {
+    urls.push(`${API_URL}/api/usuarios/${idUsuario}`);
+    urls.push(`${API_URL}/usuarios/${idUsuario}`);
+  }
+
+  urls.push(`${API_URL}/api/auth/perfil`);
+  urls.push(`${API_URL}/auth/perfil`);
+
+  for (const url of urls) {
+    try {
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        cache: "no-store",
+      });
+
+      if (!response.ok) continue;
+
+      const data = await response.json().catch(() => null);
+
+      if (!data || data?.sucesso === false) continue;
+
+      const usuarioApi = normalizarUsuarioPayload(data);
+
+      if (!usuarioApi || typeof usuarioApi === "string") continue;
+
+      return mesclarUsuarioLocalComApi(usuarioBase, usuarioApi);
+    } catch (error) {
+      // Tenta a próxima rota disponível.
+    }
+  }
+
+  return null;
+}
+
 function obterTokenLocal() {
   if (typeof window === "undefined") return "";
 
@@ -55,6 +220,86 @@ function obterTokenLocal() {
   );
 }
 
+function obterIdNotificacao(notificacao, index = 0) {
+  return (
+    notificacao?.id_notificacao ||
+    notificacao?.id ||
+    notificacao?.id_notificacao_usuario ||
+    `${notificacao?.titulo || "notificacao"}-${index}`
+  );
+}
+
+function obterTituloNotificacao(notificacao) {
+  return (
+    notificacao?.titulo ||
+    notificacao?.assunto ||
+    notificacao?.suporte_assunto ||
+    notificacao?.dados?.titulo ||
+    "Notificação"
+  );
+}
+
+function obterMensagemNotificacao(notificacao) {
+  return (
+    notificacao?.mensagem ||
+    notificacao?.descricao ||
+    notificacao?.texto ||
+    notificacao?.dados?.mensagem ||
+    "Sem mensagem disponível."
+  );
+}
+
+function obterTipoNotificacao(notificacao) {
+  return String(
+    notificacao?.tipo ||
+      notificacao?.categoria ||
+      notificacao?.tipo_notificacao ||
+      notificacao?.dados?.tipo ||
+      "sistema"
+  )
+    .trim()
+    .toLowerCase();
+}
+
+function obterDataNotificacao(notificacao) {
+  return (
+    notificacao?.data_criacao ||
+    notificacao?.created_at ||
+    notificacao?.data ||
+    notificacao?.dados?.data_criacao ||
+    null
+  );
+}
+
+function formatarDataNotificacao(valor) {
+  if (!valor) return "Agora";
+
+  const data = new Date(valor);
+
+  if (Number.isNaN(data.getTime())) return "Agora";
+
+  return data.toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function notificacaoEstaLida(notificacao) {
+  return Boolean(Number(notificacao?.lida ?? notificacao?.visualizada ?? 0));
+}
+
+function notificacaoPossuiResposta(notificacao) {
+  return Boolean(
+    notificacao?.resposta_admin ||
+      notificacao?.resposta ||
+      notificacao?.mensagem_resposta ||
+      notificacao?.dados?.resposta_admin ||
+      notificacao?.dados?.resposta
+  );
+}
+
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
@@ -63,11 +308,15 @@ export default function Header() {
   const [usuario, setUsuario] = useState(null);
   const [cartItems, setCartItems] = useState([]);
   const [notificacoes, setNotificacoes] = useState([]);
+  const [fotoPerfilQuebrou, setFotoPerfilQuebrou] = useState(false);
 
   const tipoUsuario = normalizarTipoUsuario(usuario);
   const nomeUsuario = obterNomeUsuario(usuario);
+  const iniciaisUsuario = obterIniciaisUsuario(nomeUsuario);
+  const fotoUsuario = obterFotoUsuario(usuario);
 
   const usuarioLogado = Boolean(usuario);
+  const exibirFotoPerfil = Boolean(usuarioLogado && fotoUsuario && !fotoPerfilQuebrou);
   const usuarioFornecedor =
     tipoUsuario === "fornecedor" ||
     tipoUsuario === "fornecedores" ||
@@ -76,7 +325,7 @@ export default function Header() {
   const exibirLinksCliente = !usuarioLogado || usuarioComum;
   const exibirCarrinho = usuarioLogado && usuarioComum;
   const exibirOpcoesFornecedor = usuarioLogado && usuarioFornecedor;
-  const notificacoesNaoLidas = notificacoes.filter((item) => !item.lida).length;
+  const notificacoesNaoLidas = notificacoes.filter((item) => !notificacaoEstaLida(item)).length;
 
   const atualizarCarrinhoDoStorage = () => {
     try {
@@ -94,13 +343,15 @@ export default function Header() {
     }
   };
 
-  const carregarUsuarioDoStorage = () => {
+  const carregarUsuarioDoStorage = async () => {
+    let usuarioLocal = null;
+
     try {
       const usuarioStorage = localStorage.getItem("usuario");
 
       if (usuarioStorage) {
-        const userParsed = JSON.parse(usuarioStorage);
-        setUsuario(userParsed || null);
+        usuarioLocal = JSON.parse(usuarioStorage) || null;
+        setUsuario(usuarioLocal);
       } else {
         setUsuario(null);
       }
@@ -109,6 +360,20 @@ export default function Header() {
       setUsuario(null);
     } finally {
       setLoading(false);
+    }
+
+    if (!usuarioLocal) return;
+
+    const usuarioAtualizado = await buscarUsuarioAtualizado(usuarioLocal);
+
+    if (!usuarioAtualizado) return;
+
+    setUsuario(usuarioAtualizado);
+
+    try {
+      localStorage.setItem("usuario", JSON.stringify(usuarioAtualizado));
+    } catch (error) {
+      console.error("Erro ao atualizar usuário no localStorage:", error);
     }
   };
 
@@ -148,6 +413,10 @@ export default function Header() {
   };
 
   useEffect(() => {
+    setFotoPerfilQuebrou(false);
+  }, [usuario]);
+
+  useEffect(() => {
     if (typeof window === "undefined") return;
 
     import("bootstrap/dist/js/bootstrap.bundle.min.js");
@@ -182,12 +451,14 @@ export default function Header() {
   };
 
   const marcarNotificacaoLida = async (notificacao) => {
-    if (!notificacao?.id_notificacao || notificacao.lida) return;
+    const idNotificacao = obterIdNotificacao(notificacao);
+
+    if (!idNotificacao || notificacaoEstaLida(notificacao)) return;
 
     const token = obterTokenLocal();
 
     try {
-      await fetch(`${NOTIFICACOES_URL}/${notificacao.id_notificacao}/lida`, {
+      await fetch(`${NOTIFICACOES_URL}/${idNotificacao}/lida`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -196,13 +467,42 @@ export default function Header() {
 
       setNotificacoes((atuais) =>
         atuais.map((item) =>
-          item.id_notificacao === notificacao.id_notificacao
-            ? { ...item, lida: 1 }
+          String(obterIdNotificacao(item)) === String(idNotificacao)
+            ? { ...item, lida: 1, visualizada: 1 }
             : item
         )
       );
     } catch (error) {
-      // Mantem a notificacao como nao lida para nova tentativa.
+      // Mantém a notificação como não lida para nova tentativa.
+    }
+  };
+
+  const marcarTodasNotificacoesLidas = async () => {
+    if (notificacoesNaoLidas === 0) return;
+
+    const token = obterTokenLocal();
+
+    if (!token) return;
+
+    try {
+      await fetch(`${NOTIFICACOES_URL}/lidas`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setNotificacoes((atuais) =>
+        atuais.map((item) => ({
+          ...item,
+          lida: 1,
+          visualizada: 1,
+        }))
+      );
+
+      window.dispatchEvent(new Event("storage"));
+    } catch (error) {
+      // Mantém a lista atual se a API falhar.
     }
   };
 
@@ -290,7 +590,16 @@ export default function Header() {
 
               {usuarioLogado && (
                 <div className="profile-wrapper">
-                  <button className="cart-btn" type="button" aria-label="Notificações">
+                  <button
+                    className="cart-btn"
+                    type="button"
+                    aria-label="Notificações"
+                    title={
+                      notificacoesNaoLidas > 0
+                        ? `${notificacoesNaoLidas} notificação(ões) não lida(s)`
+                        : "Notificações"
+                    }
+                  >
                     <i className="bi bi-bell"></i>
 
                     {notificacoesNaoLidas > 0 && (
@@ -298,51 +607,292 @@ export default function Header() {
                     )}
                   </button>
 
-                  <div className="profile-dropdown" style={{ minWidth: "280px" }}>
-                    <span
+                  <div
+                    className="profile-dropdown"
+                    style={{
+                      minWidth: "380px",
+                      maxWidth: "min(92vw, 430px)",
+                      padding: "10px",
+                      borderRadius: "22px",
+                    }}
+                  >
+                    <div
+                      className="d-flex justify-content-between align-items-start gap-3"
                       style={{
-                        padding: "10px 15px",
-                        display: "block",
-                        fontWeight: "bold",
-                        borderBottom: "1px solid rgba(255,255,255,0.1)",
+                        padding: "10px 10px 12px",
+                        borderBottom: "1px solid rgba(255,255,255,0.10)",
                       }}
                     >
-                      Notificações
-                    </span>
-
-                    {notificacoes.length === 0 ? (
-                      <span style={{ padding: "10px 15px", display: "block" }}>
-                        Nenhuma notificação.
-                      </span>
-                    ) : (
-                      notificacoes.map((notificacao) => (
-                        <button
-                          key={notificacao.id_notificacao}
-                          type="button"
-                          onClick={() => marcarNotificacaoLida(notificacao)}
+                      <div>
+                        <strong
                           style={{
-                            width: "100%",
-                            textAlign: "left",
-                            background: notificacao.lida ? "transparent" : "rgba(255,136,0,0.10)",
-                            border: "none",
-                            color: "inherit",
-                            padding: "10px 15px",
+                            display: "block",
+                            color: "#ffffff",
+                            fontSize: ".95rem",
+                            lineHeight: 1.2,
                           }}
                         >
-                          <strong style={{ display: "block" }}>{notificacao.titulo}</strong>
-                          <small>{notificacao.mensagem}</small>
+                          Notificações
+                        </strong>
+
+                        <small style={{ color: "rgba(255,255,255,.55)" }}>
+                          {notificacoesNaoLidas > 0
+                            ? `${notificacoesNaoLidas} não lida(s)`
+                            : "Tudo em dia"}
+                        </small>
+                      </div>
+
+                      {notificacoesNaoLidas > 0 && (
+                        <button
+                          type="button"
+                          onClick={marcarTodasNotificacoesLidas}
+                          style={{
+                            background: "rgba(255,179,0,.10)",
+                            border: "1px solid rgba(255,179,0,.22)",
+                            color: "#ffcf40",
+                            borderRadius: "999px",
+                            padding: "6px 10px",
+                            fontSize: ".72rem",
+                            fontWeight: 800,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          Marcar lidas
                         </button>
-                      ))
+                      )}
+                    </div>
+
+                    {notificacoes.length === 0 ? (
+                      <div
+                        className="text-center"
+                        style={{
+                          padding: "28px 18px",
+                          color: "rgba(255,255,255,.62)",
+                        }}
+                      >
+                        <i
+                          className="bi bi-bell-slash d-block mb-2"
+                          style={{
+                            color: "#ffcf40",
+                            fontSize: "1.7rem",
+                          }}
+                        />
+
+                        <strong
+                          style={{
+                            display: "block",
+                            color: "#ffffff",
+                            marginBottom: "4px",
+                          }}
+                        >
+                          Nenhuma notificação
+                        </strong>
+
+                        <small>Quando houver novidades, elas aparecerão aqui.</small>
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          maxHeight: "340px",
+                          overflowY: "auto",
+                          padding: "10px 4px",
+                        }}
+                      >
+                        {notificacoes.map((notificacao, index) => {
+                          const idNotificacao = obterIdNotificacao(notificacao, index);
+                          const lida = notificacaoEstaLida(notificacao);
+                          const tipoNotificacao = obterTipoNotificacao(notificacao);
+                          const tituloNotificacao = obterTituloNotificacao(notificacao);
+                          const mensagemNotificacao = obterMensagemNotificacao(notificacao);
+                          const temResposta = notificacaoPossuiResposta(notificacao);
+
+                          return (
+                            <button
+                              key={idNotificacao}
+                              type="button"
+                              onClick={() => marcarNotificacaoLida(notificacao)}
+                              style={{
+                                width: "100%",
+                                textAlign: "left",
+                                background: lida
+                                  ? "rgba(255,255,255,.035)"
+                                  : "linear-gradient(135deg,rgba(255,136,0,.16),rgba(148,5,51,.20))",
+                                border: lida
+                                  ? "1px solid rgba(255,255,255,.07)"
+                                  : "1px solid rgba(255,179,0,.22)",
+                                color: "inherit",
+                                padding: "12px",
+                                borderRadius: "16px",
+                                marginBottom: "8px",
+                                display: "block",
+                                boxShadow: "none",
+                              }}
+                            >
+                              <div className="d-flex align-items-start gap-3">
+                                <span
+                                  className="d-flex align-items-center justify-content-center"
+                                  style={{
+                                    width: "36px",
+                                    height: "36px",
+                                    borderRadius: "13px",
+                                    background: temResposta
+                                      ? "rgba(92,255,149,.12)"
+                                      : "rgba(255,179,0,.12)",
+                                    border: temResposta
+                                      ? "1px solid rgba(92,255,149,.20)"
+                                      : "1px solid rgba(255,179,0,.20)",
+                                    color: temResposta ? "#5cff95" : "#ffcf40",
+                                    flexShrink: 0,
+                                  }}
+                                >
+                                  <i
+                                    className={
+                                      temResposta
+                                        ? "bi bi-chat-left-text-fill"
+                                        : tipoNotificacao === "suporte"
+                                        ? "bi bi-headset"
+                                        : "bi bi-bell-fill"
+                                    }
+                                  />
+                                </span>
+
+                                <span style={{ minWidth: 0, flex: 1 }}>
+                                  <span className="d-flex justify-content-between align-items-start gap-2 mb-1">
+                                    <strong
+                                      style={{
+                                        display: "block",
+                                        color: "#ffffff",
+                                        fontSize: ".88rem",
+                                        lineHeight: 1.25,
+                                      }}
+                                    >
+                                      {tituloNotificacao}
+                                    </strong>
+
+                                    {!lida && (
+                                      <span
+                                        style={{
+                                          width: "8px",
+                                          height: "8px",
+                                          borderRadius: "999px",
+                                          background: "#ffcf40",
+                                          flexShrink: 0,
+                                          marginTop: "4px",
+                                        }}
+                                      />
+                                    )}
+                                  </span>
+
+                                  <small
+                                    style={{
+                                      display: "-webkit-box",
+                                      WebkitLineClamp: 2,
+                                      WebkitBoxOrient: "vertical",
+                                      overflow: "hidden",
+                                      color: "rgba(255,255,255,.62)",
+                                      lineHeight: 1.45,
+                                    }}
+                                  >
+                                    {mensagemNotificacao}
+                                  </small>
+
+                                  <span
+                                    className="d-flex align-items-center justify-content-between gap-2 mt-2"
+                                    style={{
+                                      color: "rgba(255,255,255,.42)",
+                                      fontSize: ".72rem",
+                                    }}
+                                  >
+                                    <span
+                                      style={{
+                                        textTransform: "capitalize",
+                                      }}
+                                    >
+                                      {tipoNotificacao}
+                                    </span>
+
+                                    <span>{formatarDataNotificacao(obterDataNotificacao(notificacao))}</span>
+                                  </span>
+                                </span>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
                     )}
 
-                    <Link href="/notificacoes">Ver todas</Link>
+                    <div
+                      style={{
+                        padding: "10px 4px 2px",
+                        borderTop: "1px solid rgba(255,255,255,0.08)",
+                      }}
+                    >
+                      <Link
+                        href="/notificacoes"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "8px",
+                          width: "100%",
+                          padding: "11px 14px",
+                          borderRadius: "14px",
+                          background: "linear-gradient(90deg,#940533,#c0012a,#ff8800)",
+                          color: "#ffffff",
+                          textDecoration: "none",
+                          fontWeight: 800,
+                        }}
+                      >
+                        Abrir central de notificações
+                        <i className="bi bi-arrow-right-short" style={{ fontSize: "1.2rem" }} />
+                      </Link>
+                    </div>
                   </div>
                 </div>
               )}
 
               <div className="profile-wrapper">
-                <div className="profile-btn">
-                  <i className="bi bi-person-fill"></i>
+                <div
+                  className="profile-btn"
+                  title={usuarioLogado ? nomeUsuario || "Usuário" : "Entrar"}
+                  style={{
+                    overflow: "hidden",
+                    position: "relative",
+                  }}
+                >
+                  {!usuarioLogado ? (
+                    <i className="bi bi-person-fill"></i>
+                  ) : exibirFotoPerfil ? (
+                    <img
+                      src={fotoUsuario}
+                      alt={nomeUsuario ? `Foto de ${nomeUsuario}` : "Foto do usuário"}
+                      onError={() => setFotoPerfilQuebrou(true)}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        display: "block",
+                        borderRadius: "inherit",
+                      }}
+                    />
+                  ) : (
+                    <span
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "#ffcf40",
+                        fontWeight: "900",
+                        fontSize: ".78rem",
+                        letterSpacing: ".4px",
+                        lineHeight: 1,
+                      }}
+                    >
+                      {iniciaisUsuario}
+                    </span>
+                  )}
                 </div>
 
                 <div className="profile-dropdown">

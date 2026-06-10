@@ -177,6 +177,62 @@ function obterIniciais(nome) {
     .toUpperCase();
 }
 
+
+function obterFotoBrutaUsuario(usuario) {
+  return (
+    usuario?.foto ||
+    usuario?.foto_user ||
+    usuario?.foto_perfil ||
+    usuario?.imagem ||
+    usuario?.avatar ||
+    usuario?.profile_image ||
+    usuario?.dados?.foto ||
+    usuario?.dados?.foto_user ||
+    usuario?.dados?.foto_perfil ||
+    usuario?.dados?.imagem ||
+    usuario?.dados?.avatar ||
+    usuario?.usuario?.foto ||
+    usuario?.usuario?.foto_user ||
+    usuario?.usuario?.foto_perfil ||
+    usuario?.usuario?.imagem ||
+    usuario?.usuario?.avatar ||
+    ""
+  );
+}
+
+function resolverUrlImagemUsuario(usuario) {
+  const valorOriginal = String(obterFotoBrutaUsuario(usuario) || "")
+    .trim()
+    .replace(/\\/g, "/");
+
+  if (!valorOriginal) return "";
+
+  if (
+    valorOriginal.startsWith("http://") ||
+    valorOriginal.startsWith("https://") ||
+    valorOriginal.startsWith("data:image") ||
+    valorOriginal.startsWith("blob:")
+  ) {
+    return valorOriginal;
+  }
+
+  if (valorOriginal.startsWith("/")) {
+    if (valorOriginal.startsWith("/uploads")) {
+      return `${API_URL}${valorOriginal}`;
+    }
+
+    return valorOriginal;
+  }
+
+  const caminhoLimpo = valorOriginal.replace(/^\/+/, "");
+
+  if (caminhoLimpo.startsWith("uploads/")) {
+    return `${API_URL}/${caminhoLimpo}`;
+  }
+
+  return `${API_URL}/uploads/imagens/${caminhoLimpo}`;
+}
+
 function normalizarTipo(tipo) {
   return String(tipo || "comum").trim().toLowerCase();
 }
@@ -1232,25 +1288,58 @@ export default function Usuarios() {
               ) : (
                 usuariosFiltrados.map((user) => {
                   const tipoStyle = getTipoBadgeStyle(user.tipo);
+                  const fotoUsuario = resolverUrlImagemUsuario(user);
 
                   return (
                     <tr key={user.id_user}>
                       <td style={dashboardTableCellStyle}>
                         <div className="d-flex align-items-center">
                           <div
-                            className="d-flex justify-content-center align-items-center fw-bold text-uppercase"
                             style={{
                               width: "48px",
                               height: "48px",
                               borderRadius: "16px",
-                              background: "rgba(255,179,0,.12)",
-                              border: "1px solid rgba(255,179,0,.20)",
-                              color: "#ffcf40",
-                              fontSize: ".9rem",
+                              overflow: "hidden",
+                              position: "relative",
                               flexShrink: 0,
+                              border: "1px solid rgba(255,179,0,.20)",
+                              background: "rgba(255,179,0,.12)",
                             }}
                           >
-                            {obterIniciais(user.nome_user)}
+                            {fotoUsuario && (
+                              <img
+                                src={fotoUsuario}
+                                alt={user.nome_user ? `Foto de ${user.nome_user}` : "Foto do usuário"}
+                                onError={(event) => {
+                                  event.currentTarget.style.display = "none";
+
+                                  const fallback = event.currentTarget.nextElementSibling;
+
+                                  if (fallback) {
+                                    fallback.style.display = "flex";
+                                  }
+                                }}
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "cover",
+                                  display: "block",
+                                }}
+                              />
+                            )}
+
+                            <div
+                              className="justify-content-center align-items-center fw-bold text-uppercase"
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                display: fotoUsuario ? "none" : "flex",
+                                color: "#ffcf40",
+                                fontSize: ".9rem",
+                              }}
+                            >
+                              {obterIniciais(user.nome_user)}
+                            </div>
                           </div>
 
                           <div className="ms-3" style={{ minWidth: 0 }}>

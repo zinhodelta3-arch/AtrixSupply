@@ -1,8 +1,8 @@
 import Link from "next/link";
 
 export default function Footer() {
-  const termosPdf = "/docs/Termos_de_Uso.pdf";
-  const privacidadePdf = "/docs/Politica_de_Privacidade";
+  const termosPdf = "/docs/Termos_de_Servico_ATRIX_SUPPLY_texto.pdf";
+  const privacidadePdf = "/docs/Termos_de_Privacidade.pdf";
 
   return (
     <footer className="footer-custom text-white">
@@ -41,7 +41,7 @@ export default function Footer() {
 
               <li>
                 <Link
-                  href="/privacidade"
+                  href={privacidadePdf}
                   className="footer-link"
                   target="_blank"
                   rel="noopener noreferrer"

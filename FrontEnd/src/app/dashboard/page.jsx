@@ -28,6 +28,48 @@ ChartJS.register(
 );
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
+const PROFILE_IMAGE_FALLBACK = "/core.png";
+const PRODUCT_IMAGE_FALLBACK = "/logo.png";
+
+function resolverUrlImagem(imagem, fallback = PRODUCT_IMAGE_FALLBACK) {
+  const valorOriginal = String(imagem || "")
+    .trim()
+    .replace(/\\/g, "/");
+
+  if (!valorOriginal) return fallback;
+
+  if (
+    valorOriginal.startsWith("http://") ||
+    valorOriginal.startsWith("https://") ||
+    valorOriginal.startsWith("data:image") ||
+    valorOriginal.startsWith("blob:")
+  ) {
+    return valorOriginal;
+  }
+
+  if (valorOriginal.startsWith("/")) {
+    if (valorOriginal.startsWith("/uploads")) {
+      return `${API_URL}${valorOriginal}`;
+    }
+
+    return valorOriginal;
+  }
+
+  const caminhoLimpo = valorOriginal.replace(/^\/+/, "");
+
+  if (caminhoLimpo.startsWith("uploads/")) {
+    return `${API_URL}/${caminhoLimpo}`;
+  }
+
+  return `${API_URL}/uploads/imagens/${caminhoLimpo}`;
+}
+
+function aplicarFallbackImagem(event, fallback) {
+  if (!event?.currentTarget) return;
+
+  event.currentTarget.onerror = null;
+  event.currentTarget.src = fallback;
+}
 
 const pageBackground = `
   radial-gradient(circle at top left, rgba(255,136,0,.10), transparent 25%),
@@ -320,6 +362,84 @@ function formatarMoeda(valor) {
   });
 }
 
+function obterIdUsuarioRegistro(usuario) {
+  return String(
+    usuario?.id_user ||
+      usuario?.id_usuario ||
+      usuario?.id ||
+      usuario?.userId ||
+      usuario?.idUser ||
+      usuario?.usuario_id ||
+      usuario?.cliente_id ||
+      usuario?.dados?.id_user ||
+      usuario?.dados?.id_usuario ||
+      usuario?.dados?.id ||
+      ""
+  );
+}
+
+function obterIdUsuarioPedido(pedido) {
+  return String(
+    pedido?.id_user ||
+      pedido?.id_usuario ||
+      pedido?.id_cliente ||
+      pedido?.cliente_id ||
+      pedido?.usuario_id ||
+      pedido?.userId ||
+      pedido?.usuario?.id_user ||
+      pedido?.usuario?.id ||
+      ""
+  );
+}
+
+function criarUsuariosMap(usuarios) {
+  const mapa = new Map();
+
+  usuarios.forEach((usuario) => {
+    const id = obterIdUsuarioRegistro(usuario);
+
+    if (id) {
+      mapa.set(id, usuario);
+    }
+  });
+
+  return mapa;
+}
+
+function obterImagemUsuario(usuario) {
+  return (
+    usuario?.foto ||
+    usuario?.foto_user ||
+    usuario?.foto_perfil ||
+    usuario?.imagem ||
+    usuario?.avatar ||
+    usuario?.profile_image ||
+    usuario?.imagem_usuario ||
+    usuario?.usuario_imagem ||
+    usuario?.dados?.foto ||
+    usuario?.dados?.foto_user ||
+    usuario?.dados?.foto_perfil ||
+    usuario?.dados?.imagem ||
+    usuario?.dados?.avatar ||
+    ""
+  );
+}
+
+function obterImagemProduto(produto) {
+  return (
+    produto?.imagem ||
+    produto?.imagem_produto ||
+    produto?.foto ||
+    produto?.foto_produto ||
+    produto?.url_imagem ||
+    produto?.image ||
+    produto?.produto_imagem ||
+    produto?.dados?.imagem ||
+    produto?.dados?.imagem_produto ||
+    ""
+  );
+}
+
 function obterIdProduto(produto) {
   return String(produto?.id_produto || produto?.id || produto?.produto_id || "");
 }
@@ -439,14 +559,44 @@ function getStatusColor(status) {
   }
 }
 
-function obterNomeCliente(pedido) {
+function obterNomeCliente(pedido, usuariosMap) {
+  const idUsuario = obterIdUsuarioPedido(pedido);
+  const usuario = usuariosMap?.get(idUsuario);
+
   return (
     pedido?.nome_user ||
     pedido?.nome_cliente ||
+    pedido?.cliente_nome ||
     pedido?.usuario_nome ||
+    pedido?.nome_usuario ||
     pedido?.usuario?.nome_user ||
+    pedido?.usuario?.nome ||
+    usuario?.nome_user ||
+    usuario?.nome ||
     "Cliente não informado"
   );
+}
+
+function obterFotoCliente(pedido, usuariosMap) {
+  const idUsuario = obterIdUsuarioPedido(pedido);
+  const usuario = usuariosMap?.get(idUsuario);
+
+  const foto =
+    pedido?.foto_user ||
+    pedido?.foto_cliente ||
+    pedido?.foto_perfil ||
+    pedido?.imagem_user ||
+    pedido?.imagem_usuario ||
+    pedido?.imagem_cliente ||
+    pedido?.avatar_cliente ||
+    pedido?.usuario_foto ||
+    pedido?.usuario?.foto ||
+    pedido?.usuario?.foto_user ||
+    pedido?.usuario?.foto_perfil ||
+    pedido?.usuario?.imagem ||
+    obterImagemUsuario(usuario);
+
+  return resolverUrlImagem(foto, PROFILE_IMAGE_FALLBACK);
 }
 
 function obterNomeProduto(pedido, produtosMap) {
@@ -456,6 +606,29 @@ function obterNomeProduto(pedido, produtosMap) {
   const produto = produtosMap.get(idProduto);
 
   return produto?.nome_produto || produto?.nome || "Produto não informado";
+}
+
+function obterFotoProduto(pedido, produtosMap) {
+  const idProduto = String(
+    pedido?.id_produto ||
+      pedido?.produto_id ||
+      pedido?.produto?.id_produto ||
+      pedido?.produto?.id ||
+      ""
+  );
+
+  const produto = produtosMap.get(idProduto);
+
+  const imagem =
+    pedido?.imagem_produto ||
+    pedido?.produto_imagem ||
+    pedido?.imagem ||
+    pedido?.foto_produto ||
+    pedido?.produto?.imagem ||
+    pedido?.produto?.imagem_produto ||
+    obterImagemProduto(produto);
+
+  return resolverUrlImagem(imagem, PRODUCT_IMAGE_FALLBACK);
 }
 
 export default function Dashboard() {
@@ -537,6 +710,7 @@ export default function Dashboard() {
 
   const dadosCalculados = useMemo(() => {
     const produtosMap = criarProdutosMap(produtos);
+    const usuariosMap = criarUsuariosMap(usuarios);
 
     const clientes = usuarios.filter(usuarioEhCliente);
 
@@ -593,11 +767,15 @@ export default function Dashboard() {
       .map((pedido) => ({
         ...pedido,
         valor_calculado: calcularValorPedido(pedido, produtosMap),
+        nome_cliente_calculado: obterNomeCliente(pedido, usuariosMap),
+        foto_cliente_calculada: obterFotoCliente(pedido, usuariosMap),
         nome_produto_calculado: obterNomeProduto(pedido, produtosMap),
+        foto_produto_calculada: obterFotoProduto(pedido, produtosMap),
       }));
 
     return {
       produtosMap,
+      usuariosMap,
       totalPedidos: pedidos.length,
       totalClientes: clientes.length,
       totalUsuarios: usuarios.length,
@@ -1124,11 +1302,61 @@ export default function Dashboard() {
                       </td>
 
                       <td style={dashboardTableCellStyle}>
-                        {obterNomeCliente(pedido)}
+                        <div className="d-flex align-items-center gap-3" style={{ minWidth: "190px" }}>
+                          <img
+                            src={pedido.foto_cliente_calculada}
+                            alt={`Foto de ${pedido.nome_cliente_calculado}`}
+                            onError={(event) => aplicarFallbackImagem(event, PROFILE_IMAGE_FALLBACK)}
+                            style={{
+                              width: "44px",
+                              height: "44px",
+                              borderRadius: "14px",
+                              objectFit: "cover",
+                              border: "1px solid rgba(255,255,255,.12)",
+                              background: "rgba(255,255,255,.04)",
+                              flexShrink: 0,
+                            }}
+                          />
+
+                          <span
+                            style={{
+                              color: "#ffffff",
+                              fontWeight: "700",
+                              wordBreak: "break-word",
+                            }}
+                          >
+                            {pedido.nome_cliente_calculado}
+                          </span>
+                        </div>
                       </td>
 
                       <td style={dashboardTableCellStyle}>
-                        {pedido.nome_produto_calculado}
+                        <div className="d-flex align-items-center gap-3" style={{ minWidth: "220px" }}>
+                          <img
+                            src={pedido.foto_produto_calculada}
+                            alt={pedido.nome_produto_calculado}
+                            onError={(event) => aplicarFallbackImagem(event, PRODUCT_IMAGE_FALLBACK)}
+                            style={{
+                              width: "52px",
+                              height: "52px",
+                              borderRadius: "14px",
+                              objectFit: "cover",
+                              border: "1px solid rgba(255,179,0,.18)",
+                              background: "rgba(255,179,0,.06)",
+                              flexShrink: 0,
+                            }}
+                          />
+
+                          <span
+                            style={{
+                              color: "#ffffff",
+                              fontWeight: "700",
+                              wordBreak: "break-word",
+                            }}
+                          >
+                            {pedido.nome_produto_calculado}
+                          </span>
+                        </div>
                       </td>
 
                       <td style={dashboardTableCellStyle}>

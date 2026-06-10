@@ -6,6 +6,8 @@ import { useState, useEffect, useRef } from "react";
 import * as THREE from "three";
 import Link from "next/link";
 
+const TERMOS_SERVICO_URL = "/docs/Termos_de_Servico_ATRIX_SUPPLY_texto.pdf";
+
 export default function Cadastro() {
   const mountRef = useRef(null);
   const router = useRouter();
@@ -30,6 +32,7 @@ export default function Cadastro() {
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState("");
   const [carregando, setCarregando] = useState(false);
+  const [aceitouTermos, setAceitouTermos] = useState(false);
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -45,6 +48,11 @@ export default function Cadastro() {
 
     setErro("");
     setSucesso("");
+
+    if (!aceitouTermos) {
+      setErro("Você precisa ler e aceitar os Termos de Serviço para continuar o cadastro.");
+      return;
+    }
 
     if (formData.senha !== formData.confirmarSenha) {
       setErro("As senhas não são iguais.");
@@ -99,6 +107,8 @@ export default function Cadastro() {
         senha: "",
         confirmarSenha: "",
       });
+
+      setAceitouTermos(false);
 
       setTimeout(() => {
         router.push("/login");
@@ -669,21 +679,81 @@ export default function Cadastro() {
             </div>
           </div>
 
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: "12px",
+              backgroundColor: aceitouTermos
+                ? "rgba(255, 179, 0, 0.12)"
+                : "rgba(255, 255, 255, 0.055)",
+              border: aceitouTermos
+                ? "1px solid rgba(255, 179, 0, 0.55)"
+                : "1px solid rgba(255, 255, 255, 0.14)",
+              borderRadius: "12px",
+              padding: "14px",
+              color: "#fff",
+            }}
+          >
+            <input
+              id="aceite-termos-servico"
+              type="checkbox"
+              checked={aceitouTermos}
+              onChange={(event) => setAceitouTermos(event.target.checked)}
+              style={{
+                width: "18px",
+                height: "18px",
+                marginTop: "3px",
+                accentColor: "#ffb300",
+                cursor: "pointer",
+                flexShrink: 0,
+              }}
+            />
+
+            <label
+              htmlFor="aceite-termos-servico"
+              style={{
+                fontSize: "13px",
+                lineHeight: "1.55",
+                color: "rgba(255,255,255,0.82)",
+                cursor: "pointer",
+                margin: 0,
+              }}
+            >
+              Para criar sua conta, você precisa ler e aceitar os{" "}
+              <Link
+                href={TERMOS_SERVICO_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  color: "#ffb300",
+                  fontWeight: "bold",
+                  textDecoration: "underline",
+                  textUnderlineOffset: "3px",
+                }}
+              >
+                Termos de Serviço
+              </Link>
+              . Ao marcar esta opção, você confirma que leu, compreendeu e aceita
+              as regras de uso da plataforma ATRIX Supply.
+            </label>
+          </div>
+
           <button
             type="submit"
-            disabled={carregando}
+            disabled={carregando || !aceitouTermos}
             style={{
-              backgroundColor: carregando ? "#946b00" : "#ffb300",
+              backgroundColor: carregando || !aceitouTermos ? "#946b00" : "#ffb300",
               color: "#1a0a0a",
               padding: "12px",
               border: "none",
               borderRadius: "10px",
-              cursor: carregando ? "not-allowed" : "pointer",
+              cursor: carregando || !aceitouTermos ? "not-allowed" : "pointer",
               fontWeight: "bold",
               fontSize: "16px",
               marginTop: "4px",
               boxShadow: "0 0 20px rgba(255,179,0,0.35)",
-              opacity: carregando ? 0.7 : 1,
+              opacity: carregando || !aceitouTermos ? 0.65 : 1,
             }}
           >
             {carregando ? "Cadastrando..." : "Cadastrar"}
