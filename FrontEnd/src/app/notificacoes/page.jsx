@@ -175,17 +175,44 @@ export default function NotificacoesPage() {
                   background: notificacao.lida
                     ? "rgba(17,17,17,.96)"
                     : "linear-gradient(135deg,rgba(255,136,0,.16),rgba(148,5,51,.18))",
-                  border: "1px solid rgba(255,255,255,.10)",
+                  border: notificacao.resposta_admin
+                    ? "1px solid rgba(255,179,0,.26)"
+                    : "1px solid rgba(255,255,255,.10)",
                   borderRadius: "24px",
                   padding: "22px",
                 }}
               >
-                <div className="d-flex justify-content-between gap-3 flex-wrap">
+                <div className="d-flex justify-content-between gap-3 flex-wrap mb-3">
                   <div>
-                    <span className="badge text-bg-dark border border-warning mb-2">
-                      {notificacao.tipo || "sistema"}
-                    </span>
-                    <h2 className="h5 fw-bold mb-2">{notificacao.titulo}</h2>
+                    <div className="d-flex align-items-center gap-2 flex-wrap mb-2">
+                      <span className="badge text-bg-dark border border-warning">
+                        {notificacao.tipo || "sistema"}
+                      </span>
+
+                      {!notificacao.lida && (
+                        <span className="badge bg-warning text-dark">
+                          Nova
+                        </span>
+                      )}
+
+                      {notificacao.resposta_admin && (
+                        <span
+                          className="badge"
+                          style={{
+                            background: "rgba(91,161,0,.14)",
+                            color: "#8dff9f",
+                            border: "1px solid rgba(91,161,0,.28)",
+                          }}
+                        >
+                          Respondida
+                        </span>
+                      )}
+                    </div>
+
+                    <h2 className="h5 fw-bold mb-2">
+                      {notificacao.suporte_assunto || notificacao.titulo}
+                    </h2>
+
                     <p className="mb-0" style={{ color: "rgba(255,255,255,.76)" }}>
                       {notificacao.mensagem}
                     </p>
@@ -195,6 +222,91 @@ export default function NotificacoesPage() {
                     {formatarData(notificacao.data_criacao)}
                   </small>
                 </div>
+
+                {notificacao.mensagem_original && (
+                  <div
+                    className="mb-3"
+                    style={{
+                      background: "rgba(255,255,255,.035)",
+                      border: "1px solid rgba(255,255,255,.08)",
+                      borderRadius: "18px",
+                      padding: "16px",
+                    }}
+                  >
+                    <div className="d-flex align-items-center gap-2 mb-2">
+                      <i className="bi bi-chat-left-text text-warning" />
+
+                      <strong style={{ color: "#ffcf40" }}>
+                        Sua mensagem
+                      </strong>
+                    </div>
+
+                    <p
+                      className="mb-0"
+                      style={{
+                        color: "rgba(255,255,255,.72)",
+                        lineHeight: 1.7,
+                        whiteSpace: "pre-wrap",
+                      }}
+                    >
+                      {notificacao.mensagem_original}
+                    </p>
+                  </div>
+                )}
+
+                {notificacao.resposta_admin ? (
+                  <div
+                    style={{
+                      background:
+                        "linear-gradient(135deg,rgba(91,161,0,.10),rgba(255,179,0,.08))",
+                      border: "1px solid rgba(255,179,0,.22)",
+                      borderRadius: "18px",
+                      padding: "18px",
+                    }}
+                  >
+                    <div className="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-2">
+                      <div className="d-flex align-items-center gap-2">
+                        <i
+                          className="bi bi-person-check-fill"
+                          style={{ color: "#8dff9f" }}
+                        />
+
+                        <strong style={{ color: "#8dff9f" }}>
+                          Resposta do suporte
+                        </strong>
+                      </div>
+
+                      <small style={{ color: "rgba(255,255,255,.55)" }}>
+                        {(notificacao.nome_admin_resposta || "Administração")} •{" "}
+                        {formatarData(notificacao.data_resposta)}
+                      </small>
+                    </div>
+
+                    <p
+                      className="mb-0"
+                      style={{
+                        color: "rgba(255,255,255,.84)",
+                        lineHeight: 1.75,
+                        whiteSpace: "pre-wrap",
+                      }}
+                    >
+                      {notificacao.resposta_admin}
+                    </p>
+                  </div>
+                ) : notificacao.tipo === "suporte" ? (
+                  <div
+                    style={{
+                      background: "rgba(255,255,255,.025)",
+                      border: "1px dashed rgba(255,255,255,.12)",
+                      borderRadius: "16px",
+                      padding: "14px 16px",
+                      color: "rgba(255,255,255,.55)",
+                    }}
+                  >
+                    <i className="bi bi-hourglass-split me-2 text-warning" />
+                    Essa solicitação ainda não recebeu uma resposta detalhada do suporte.
+                  </div>
+                ) : null}
               </article>
             ))}
           </div>

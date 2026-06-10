@@ -977,77 +977,96 @@ export default function Perfil() {
             <section
               style={{
                 ...panelStyle,
-                padding: "35px",
+                padding: "clamp(24px, 3vw, 42px)",
                 height: "100%",
               }}
             >
-              <div className="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
-                <div>
-                  <h2
+              <div
+                className="d-flex justify-content-between align-items-start flex-wrap gap-3"
+                style={{
+                  marginBottom: "32px",
+                  paddingBottom: "22px",
+                  borderBottom: "1px solid rgba(255,255,255,.07)",
+                }}
+              >
+                <div className="d-flex align-items-start gap-3">
+                  <div
+                    className="d-flex justify-content-center align-items-center"
                     style={{
-                      color: "#ffe082",
-                      fontWeight: "800",
-                      marginBottom: "8px",
+                      width: "54px",
+                      height: "54px",
+                      borderRadius: "18px",
+                      background: "rgba(255,179,0,.12)",
+                      border: "1px solid rgba(255,255,255,.08)",
+                      color: "#ffcf40",
+                      flexShrink: 0,
                     }}
                   >
-                    Informações da Conta
-                  </h2>
+                    <i className="bi bi-person-lines-fill" />
+                  </div>
 
-                  <p
-                    style={{
-                      margin: 0,
-                      color: "rgba(255,255,255,.55)",
-                    }}
-                  >
-                    Dados principais usados no sistema.
-                  </p>
+                  <div>
+                    <h2
+                      style={{
+                        color: "#ffe082",
+                        fontWeight: "800",
+                        marginBottom: "10px",
+                      }}
+                    >
+                      Informações da Conta
+                    </h2>
+
+                    <p
+                      style={{
+                        margin: 0,
+                        color: "rgba(255,255,255,.58)",
+                        lineHeight: "1.7",
+                        maxWidth: "620px",
+                      }}
+                    >
+                      Dados principais usados no sistema para identificação,
+                      contato e vínculo profissional.
+                    </p>
+                  </div>
                 </div>
-
-                <span
-                  className="badge"
-                  style={{
-                    background: "rgba(255,255,255,.06)",
-                    color: "rgba(255,255,255,.75)",
-                    border: "1px solid rgba(255,255,255,.08)",
-                    borderRadius: "999px",
-                    padding: "10px 13px",
-                  }}
-                >
-                  ID #{idPerfilSeguro || "---"}
-                </span>
               </div>
 
               <div className="row g-4">
                 {informacoesPrincipais.map((item) => (
                   <div className="col-md-6" key={item.titulo}>
                     <div
-                      className="h-100"
+                      className="h-100 d-flex flex-column"
                       style={{
                         ...innerPanelStyle,
                         borderRadius: "24px",
-                        padding: "24px",
+                        padding: "26px",
+                        minHeight: "178px",
                       }}
                     >
-                      <div className="d-flex align-items-center gap-3 mb-3">
+                      <div className="d-flex align-items-start gap-3 mb-4">
                         <div
                           className="d-flex justify-content-center align-items-center"
                           style={{
-                            width: "48px",
-                            height: "48px",
-                            borderRadius: "16px",
+                            width: "52px",
+                            height: "52px",
+                            minWidth: "52px",
+                            borderRadius: "17px",
                             background: "rgba(255,179,0,.12)",
+                            border: "1px solid rgba(255,179,0,.16)",
                             color: "#ffcf40",
+                            fontSize: "1.15rem",
                           }}
                         >
                           <i className={`bi ${item.icon}`} />
                         </div>
 
-                        <div>
+                        <div style={{ minWidth: 0 }}>
                           <h5
                             style={{
                               margin: 0,
                               color: "#ffcf40",
                               fontWeight: "800",
+                              lineHeight: "1.25",
                             }}
                           >
                             {item.titulo}
@@ -1055,9 +1074,10 @@ export default function Perfil() {
 
                           <p
                             style={{
-                              margin: 0,
-                              color: "rgba(255,255,255,.48)",
-                              fontSize: ".86rem",
+                              margin: "7px 0 0",
+                              color: "rgba(255,255,255,.50)",
+                              fontSize: ".88rem",
+                              lineHeight: "1.55",
                             }}
                           >
                             {item.descricao}
@@ -1065,69 +1085,29 @@ export default function Perfil() {
                         </div>
                       </div>
 
-                      <span
+                      <div
+                        className="mt-auto"
                         style={{
-                          display: "block",
-                          color: "rgba(255,255,255,.92)",
-                          fontSize: "1.02rem",
-                          fontWeight: "600",
-                          wordBreak: "break-word",
+                          paddingTop: "18px",
+                          borderTop: "1px solid rgba(255,255,255,.07)",
                         }}
                       >
-                        {item.valor}
-                      </span>
+                        <span
+                          style={{
+                            display: "block",
+                            color: "rgba(255,255,255,.92)",
+                            fontSize: "1.03rem",
+                            lineHeight: "1.65",
+                            fontWeight: "650",
+                            wordBreak: "break-word",
+                          }}
+                        >
+                          {item.valor}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 ))}
-              </div>
-
-              <div
-                className="mt-4"
-                style={{
-                  ...innerPanelStyle,
-                  borderRadius: "24px",
-                  padding: "26px",
-                }}
-              >
-                <div className="row g-4 align-items-center">
-                  <div className="col-lg-8">
-                    <h4
-                      style={{
-                        color: "#ffe082",
-                        fontWeight: "800",
-                        marginBottom: "8px",
-                      }}
-                    >
-                      Segurança e acesso
-                    </h4>
-
-                    <p
-                      style={{
-                        color: "rgba(255,255,255,.58)",
-                        margin: 0,
-                        lineHeight: "1.7",
-                      }}
-                    >
-                      Use o botão de edição para atualizar seus dados. Para
-                      alterar senha, preencha o campo de nova senha no modal.
-                    </p>
-                  </div>
-
-                  <div className="col-lg-4 d-grid">
-                    <button
-                      type="button"
-                      onClick={abrirModalEdicao}
-                      className="btn"
-                      style={{
-                        ...buttonGradient,
-                        padding: "14px 18px",
-                      }}
-                    >
-                      <i className="bi bi-lock me-2" />
-                      Atualizar dados
-                    </button>
-                  </div>
-                </div>
               </div>
             </section>
           </div>

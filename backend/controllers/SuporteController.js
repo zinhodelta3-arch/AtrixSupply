@@ -39,6 +39,7 @@ class SuporteController {
 
             await NotificacaoModel.criar({
                 id_user: req.usuario.id_user,
+                id_ticket: idTicket,
                 titulo: 'Solicitação de suporte recebida',
                 mensagem: `Recebemos sua solicitação: ${assunto}`,
                 tipo: 'suporte'
@@ -51,6 +52,7 @@ class SuporteController {
                         .filter((admin) => Number(admin.id_user) !== Number(req.usuario.id_user))
                         .map((admin) => NotificacaoModel.criar({
                             id_user: admin.id_user,
+                            id_ticket: idTicket,
                             titulo: 'Novo chamado de suporte',
                             mensagem: `Novo chamado aberto: ${assunto}`,
                             tipo: 'suporte'
@@ -159,12 +161,14 @@ class SuporteController {
 
             const resultado = await SuporteModel.atualizar(id_ticket, {
                 resposta_admin: resposta,
+                id_admin_resposta: req.usuario.id_user,
                 status: 'respondido',
                 data_atualizacao: new Date()
             });
 
             await NotificacaoModel.criar({
                 id_user: ticket.id_user,
+                id_ticket: Number(id_ticket),
                 titulo: 'Resposta do suporte',
                 mensagem: `Sua solicitação "${ticket.assunto}" foi respondida.`,
                 tipo: 'suporte'

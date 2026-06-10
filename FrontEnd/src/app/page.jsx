@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "./page.css";
+
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
+const PRODUTOS_URL = `${API_URL}/api/produtos`;
 
 const pageBackground = `
   radial-gradient(circle at top left, rgba(255,136,0,.10), transparent 25%),
@@ -44,6 +47,8 @@ const productCardStyle = {
   borderRadius: "22px",
   overflow: "hidden",
   boxShadow: "none",
+  cursor: "pointer",
+  transition: "transform .22s ease, border-color .22s ease, background .22s ease",
 };
 
 const statsCardStyle = {
@@ -51,40 +56,160 @@ const statsCardStyle = {
   border: "1px solid rgba(255,255,255,.06)",
   borderRadius: "22px",
   padding: "18px 28px",
-  minWidth: "150px",
+  minWidth: "170px",
   boxShadow: "none",
 };
 
-// Função auxiliar idêntica à do seu Header para normalizar o tipo
+const carouselProdutosFixos = [
+  {
+    titulo: "Fixadores",
+    descricao: "Parafusos, porcas, arruelas e sistemas de fixação industrial.",
+    imagem: "/fixadores.png",
+  },
+  {
+    titulo: "Engrenagens",
+    descricao: "Engrenagens industriais de alta precisão para máquinas e motores.",
+    imagem: "/engrenagens.png",
+  },
+  {
+    titulo: "Rolamentos",
+    descricao: "Rolamentos resistentes para aplicações industriais pesadas.",
+    imagem: "/rolamentos.png",
+  },
+  {
+    titulo: "Hidráulica",
+    descricao: "Componentes hidráulicos para sistemas industriais modernos.",
+    imagem: "/hidra.png",
+  },
+  {
+    titulo: "Motores",
+    descricao: "Motores industriais de alta performance e eficiência energética.",
+    imagem: "/motoress.png",
+  },
+  {
+    titulo: "Ferramentas",
+    descricao: "Ferramentas profissionais para manutenção e produção industrial.",
+    imagem: "/ferramentass.png",
+  },
+];
+
 function normalizarTipoUsuario(usuario) {
   if (!usuario) return "";
   if (typeof usuario === "string") return usuario.trim().toLowerCase();
+
   return String(
     usuario?.tipo ||
-    usuario?.tipo_user ||
-    usuario?.role ||
-    usuario?.nivel ||
-    usuario?.dados?.tipo ||
-    usuario?.dados?.tipo_user ||
-    usuario?.usuario?.tipo ||
-    ""
-  ).trim().toLowerCase();
+      usuario?.tipo_user ||
+      usuario?.role ||
+      usuario?.nivel ||
+      usuario?.dados?.tipo ||
+      usuario?.dados?.tipo_user ||
+      usuario?.usuario?.tipo ||
+      ""
+  )
+    .trim()
+    .toLowerCase();
+}
+
+function normalizarTexto(valor) {
+  return String(valor || "").trim();
+}
+
+function extrairListaProdutos(data) {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.dados)) return data.dados;
+  if (Array.isArray(data?.produtos)) return data.produtos;
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.dados?.produtos)) return data.dados.produtos;
+  if (Array.isArray(data?.dados?.itens)) return data.dados.itens;
+  if (Array.isArray(data?.dados?.rows)) return data.dados.rows;
+
+  return [];
+}
+
+function extrairTotalProdutos(data, listaProdutos) {
+  const possiveisTotais = [
+    data?.paginacao?.total,
+    data?.dados?.total,
+    data?.total,
+    data?.meta?.total,
+    data?.dados?.paginacao?.total,
+  ];
+
+  const totalEncontrado = possiveisTotais.find((valor) => Number(valor) > 0);
+
+  return Number(totalEncontrado || listaProdutos.length || 0);
+}
+
+function obterCategoriaProduto(produto) {
+  return normalizarTexto(
+    produto?.categoria ||
+      produto?.nome_categoria ||
+      produto?.tipo ||
+      produto?.linha ||
+      produto?.grupo ||
+      produto?.categoria_produto
+  );
+}
+
+function obterPrecoProduto(produto) {
+  const valor = produto?.preco ?? produto?.valor ?? produto?.preco_unitario ?? produto?.price;
+  const numero = Number(String(valor || "").replace(",", "."));
+
+  return Number.isFinite(numero) && numero > 0 ? numero : null;
+}
+
+function formatarNumeroCompacto(valor) {
+  const numero = Number(valor || 0);
+
+  if (numero >= 1000) {
+    return numero.toLocaleString("pt-BR", {
+      notation: "compact",
+      maximumFractionDigits: 1,
+    });
+  }
+
+  return numero.toLocaleString("pt-BR");
+}
+
+function formatarMoeda(valor) {
+  const numero = Number(valor || 0);
+
+  return numero.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+}
+
+function dividirEmSlides(lista, tamanho = 3) {
+  const slides = [];
+
+  for (let index = 0; index < lista.length; index += tamanho) {
+    slides.push(lista.slice(index, index + tamanho));
+  }
+
+  return slides;
 }
 
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isFornecedor, setIsFornecedor] = useState(false);
-  const totalSlides = 2;
+  const [produtosBanco, setProdutosBanco] = useState([]);
+  const [totalProdutosBanco, setTotalProdutosBanco] = useState(0);
+  const [carregandoDados, setCarregandoDados] = useState(true);
+  const [erroDados, setErroDados] = useState("");
 
-  // Carrega o tipo do usuário para definir as rotas dos botões
+  const slidesProdutos = useMemo(() => dividirEmSlides(carouselProdutosFixos, 3), []);
+  const totalSlides = slidesProdutos.length;
+
   useEffect(() => {
     try {
       const usuarioStorage = localStorage.getItem("usuario");
+
       if (usuarioStorage) {
         const userParsed = JSON.parse(usuarioStorage);
         const tipo = normalizarTipoUsuario(userParsed);
-        
-        // Verifica se o usuário se enquadra como fornecedor
+
         if (tipo === "fornecedor" || tipo === "fornecedores" || tipo === "supplier") {
           setIsFornecedor(true);
         }
@@ -94,13 +219,106 @@ export default function Home() {
     }
   }, []);
 
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev === totalSlides - 1 ? 0 : prev + 1));
-  };
+  useEffect(() => {
+    carregarDadosReaisHome();
+  }, []);
 
-  const prevSlide = () => {
+  async function carregarDadosReaisHome() {
+    try {
+      setCarregandoDados(true);
+      setErroDados("");
+
+      const response = await fetch(`${PRODUTOS_URL}?pagina=1&limite=100`, {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok || !data?.sucesso) {
+        throw new Error(data?.mensagem || data?.erro || "Não foi possível carregar os dados da Home.");
+      }
+
+      const listaProdutos = extrairListaProdutos(data);
+      const totalProdutos = extrairTotalProdutos(data, listaProdutos);
+
+      setProdutosBanco(listaProdutos);
+      setTotalProdutosBanco(totalProdutos);
+    } catch (error) {
+      console.error("Erro ao carregar dados reais da Home:", error);
+      setErroDados("Dados reais temporariamente indisponíveis");
+      setProdutosBanco([]);
+      setTotalProdutosBanco(0);
+    } finally {
+      setCarregandoDados(false);
+    }
+  }
+
+  const metricasReais = useMemo(() => {
+    const categorias = new Set(
+      produtosBanco
+        .map(obterCategoriaProduto)
+        .filter(Boolean)
+        .map((categoria) => categoria.toLowerCase())
+    );
+
+    const precosValidos = produtosBanco
+      .map(obterPrecoProduto)
+      .filter((preco) => Number.isFinite(preco) && preco > 0);
+
+    const menorPreco = precosValidos.length ? Math.min(...precosValidos) : 0;
+    const maiorPreco = precosValidos.length ? Math.max(...precosValidos) : 0;
+    const produtosComPreco = precosValidos.length;
+
+    return {
+      totalProdutos: totalProdutosBanco || produtosBanco.length,
+      categoriasAtivas: categorias.size,
+      menorPreco,
+      maiorPreco,
+      produtosComPreco,
+    };
+  }, [produtosBanco, totalProdutosBanco]);
+
+  const statsHome = useMemo(() => {
+    if (carregandoDados) {
+      return [
+        { valor: "...", label: "Produtos catalogados" },
+        { valor: "...", label: "Linhas industriais" },
+        { valor: "...", label: "Faixa inicial" },
+      ];
+    }
+
+    if (erroDados || metricasReais.totalProdutos === 0) {
+      return [
+        { valor: "6", label: "Linhas em destaque" },
+        { valor: "24h", label: "Suporte comercial" },
+        { valor: "100%", label: "Catálogo industrial" },
+      ];
+    }
+
+    return [
+      {
+        valor: formatarNumeroCompacto(metricasReais.totalProdutos),
+        label: "Produtos catalogados",
+      },
+      {
+        valor: String(metricasReais.categoriasAtivas || carouselProdutosFixos.length).padStart(2, "0"),
+        label: "Categorias no banco",
+      },
+      {
+        valor: metricasReais.menorPreco ? formatarMoeda(metricasReais.menorPreco) : formatarNumeroCompacto(metricasReais.produtosComPreco),
+        label: metricasReais.menorPreco ? "Menor preço cadastrado" : "Produtos com preço",
+      },
+    ];
+  }, [carregandoDados, erroDados, metricasReais]);
+
+  function nextSlide() {
+    setCurrentSlide((prev) => (prev === totalSlides - 1 ? 0 : prev + 1));
+  }
+
+  function prevSlide() {
     setCurrentSlide((prev) => (prev === 0 ? totalSlides - 1 : prev - 1));
-  };
+  }
 
   return (
     <>
@@ -121,16 +339,14 @@ export default function Home() {
         >
           <img src="/en1.png" className="gear-big" alt="" />
           <img src="/en2.png" className="gear-small" alt="" />
-
           <img src="/engrenagem.png" className="bg-piece-blur" alt="" />
-
           <img src="/parafuso.png" className="bg-piece-back" alt="" />
 
           <div className="container col-xxl-8 px-4" style={{ paddingTop: "50px" }}>
             <div className="row flex-lg-row-reverse align-items-center g-5">
               <div className="col-10 col-sm-8 col-lg-6">
                 <img
-                  src="porca.png"
+                  src="/porca.png"
                   className="d-block mx-lg-auto img-fluid porca-bd"
                   alt="Peça Industrial"
                   width={700}
@@ -167,24 +383,23 @@ export default function Home() {
                 </p>
 
                 <div className="d-grid gap-2 d-md-flex justify-content-md-start">
-  {/* Botão Confira Agora condicional */}
-  <Link style={{ color: "#ffffff" }}
-    type="button"
-    className="btn btn-outline-secondary btn-lg px-4 btn-custom"
-    href={isFornecedor ? "/encomendasrecebe" : "/encomendas"}
-  >
-    Confira agora!
-  </Link>
+                  <Link
+                    style={{ color: "#ffffff" }}
+                    type="button"
+                    className="btn btn-outline-secondary btn-lg px-4 btn-custom"
+                    href={isFornecedor ? "/encomendasrecebe" : "/encomendas"}
+                  >
+                    Confira agora!
+                  </Link>
 
-  {/* Botão Categorias / Central condicional no link e no texto */}
-  <Link
-    type="button"
-    className="btn btn-outline-secondary btn-lg px-4 btn-sec"
-    href={isFornecedor ? "/logistica" : "/produtos"}
-  >
-    {isFornecedor ? "Central" : "Categorias"}
-  </Link>
-</div>
+                  <Link
+                    type="button"
+                    className="btn btn-outline-secondary btn-lg px-4 btn-sec"
+                    href={isFornecedor ? "/logistica" : "/produtos"}
+                  >
+                    {isFornecedor ? "Central" : "Categorias"}
+                  </Link>
+                </div>
               </div>
 
               <div
@@ -202,39 +417,30 @@ export default function Home() {
                     alignItems: "center",
                   }}
                 >
-                  <div style={statsCardStyle}>
-                    <h1 style={{ color: "#ff8800", marginBottom: "5px" }}>
-                      5000+
-                    </h1>
-                    <p style={{ margin: 0, color: "#a0a0a0" }}>
-                      Fornecedores
-                    </p>
-                  </div>
-
-                  <div style={statsCardStyle}>
-                    <h1 style={{ color: "#ff8800", marginBottom: "5px" }}>
-                      15k+
-                    </h1>
-                    <p style={{ margin: 0, color: "#a0a0a0" }}>
-                      Clientes Ativos
-                    </p>
-                  </div>
-
-                  <div style={statsCardStyle}>
-                    <h1 style={{ color: "#ff8800", marginBottom: "5px" }}>
-                      99.9%
-                    </h1>
-                    <p style={{ margin: 0, color: "#a0a0a0" }}>
-                      Uptime
-                    </p>
-                  </div>
+                  {statsHome.map((item) => (
+                    <div key={item.label} style={statsCardStyle}>
+                      <h1 style={{ color: "#ff8800", marginBottom: "5px" }}>
+                        {item.valor}
+                      </h1>
+                      <p style={{ margin: 0, color: "#a0a0a0" }}>
+                        {item.label}
+                      </p>
+                    </div>
+                  ))}
                 </div>
               </div>
+
+              {erroDados && (
+                <div className="col-12 text-center" style={{ marginTop: "14px" }}>
+                  <small style={{ color: "rgba(255,255,255,.48)" }}>
+                    {erroDados}. Exibindo indicadores institucionais temporários.
+                  </small>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* SERVIÇOS */}
         <section
           className="text-light py-5 py-xl-8"
           style={{
@@ -365,7 +571,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* PRODUTOS */}
         <section
           className="py-5 position-relative"
           style={{
@@ -375,7 +580,7 @@ export default function Home() {
           }}
         >
           <div className="container position-relative">
-            <div className="d-flex justify-content-between align-items-center mb-4">
+            <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
               <div>
                 <span className="badge bg-warning text-dark mb-2 px-3 py-2">
                   Catálogo
@@ -385,6 +590,15 @@ export default function Home() {
                   Nossos Produtos
                 </h2>
               </div>
+
+              <Link
+                href="/produtos"
+                className="btn btn-outline-light fw-bold"
+                style={{ borderRadius: "14px", padding: "10px 16px" }}
+              >
+                Ver todos
+                <i className="bi bi-arrow-right ms-2" />
+              </Link>
             </div>
 
             <div id="carouselProdutos" className="carousel slide">
@@ -407,72 +621,59 @@ export default function Home() {
               </button>
 
               <div className="carousel-inner">
-                <div className={`carousel-item ${currentSlide === 0 ? "active" : ""}`}>
-                  <div className="row g-4">
-                    <div className="col-md-4">
-                      <div className="card produto-card h-100 border-0" style={productCardStyle}>
-                        <img
-                          src="/fixadores.png"
-                          className="card-img-top produto-img"
-                          alt="Fixadores"
-                        />
+                {slidesProdutos.map((slide, index) => (
+                  <div
+                    key={`slide-${index}`}
+                    className={`carousel-item ${currentSlide === index ? "active" : ""}`}
+                  >
+                    <div className="row g-4">
+                      {slide.map((produto) => (
+                        <div className="col-md-4" key={produto.titulo}>
+                          <Link
+                            href="/produtos"
+                            aria-label={`Ver produtos de ${produto.titulo}`}
+                            style={{ textDecoration: "none", color: "inherit" }}
+                          >
+                            <div
+                              className="card produto-card h-100 border-0"
+                              style={productCardStyle}
+                            >
+                              <img
+                                src={produto.imagem}
+                                className="card-img-top produto-img"
+                                alt={produto.titulo}
+                              />
 
-                        <div className="card-body">
-                          <h5 className="card-title text-white">
-                            Fixadores
-                          </h5>
+                              <div className="card-body">
+                                <div className="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                  <h5 className="card-title text-white mb-0">
+                                    {produto.titulo}
+                                  </h5>
 
-                          <p className="card-text" style={{ color: "#b3b3b3" }}>
-                            Parafusos, porcas, arruelas e sistemas de fixação
-                            industrial.
-                          </p>
+                                  <span
+                                    className="badge"
+                                    style={{
+                                      background: "rgba(255,179,0,.12)",
+                                      color: "#ffcf40",
+                                      border: "1px solid rgba(255,179,0,.22)",
+                                      borderRadius: "999px",
+                                    }}
+                                  >
+                                    Ver catálogo
+                                  </span>
+                                </div>
+
+                                <p className="card-text mb-0" style={{ color: "#b3b3b3" }}>
+                                  {produto.descricao}
+                                </p>
+                              </div>
+                            </div>
+                          </Link>
                         </div>
-                      </div>
+                      ))}
                     </div>
-
-                    <div className="col-md-4">
-                      <div className="card produto-card h-100 border-0" style={productCardStyle}>
-                        <img
-                          src="/engrenagens.png"
-                          className="card-img-top produto-img"
-                          alt="Engrenagens"
-                        />
-
-                        <div className="card-body">
-                          <h5 className="card-title text-white">
-                            Engrenagens
-                          </h5>
-
-                          <p className="card-text" style={{ color: "#b3b3b3" }}>
-                            Engrenagens industriais de alta precisão para
-                            máquinas e motores.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="col-md-4">
-                      <div className="card produto-card h-100 border-0" style={productCardStyle}>
-                        <img
-                          src="/rolamentos.png"
-                          className="card-img-top produto-img"
-                          alt="Rolamentos"
-                        />
-
-                        <div className="card-body">
-                          <h5 className="card-title text-white">
-                            Rolamentos
-                          </h5>
-
-                          <p className="card-text" style={{ color: "#b3b3b3" }}>
-                            Rolamentos de esferas e rolos para alta carga e performance.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
                   </div>
-                </div>
+                ))}
               </div>
             </div>
           </div>
