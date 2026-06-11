@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import "./page.css";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -48,7 +49,7 @@ const productCardStyle = {
   overflow: "hidden",
   boxShadow: "none",
   cursor: "pointer",
-  transition: "transform .22s ease, border-color .22s ease, background .22s ease",
+  transition: "border-color .22s ease, background .22s ease",
 };
 
 const statsCardStyle = {
@@ -92,6 +93,185 @@ const carouselProdutosFixos = [
     imagem: "/ferramentass.png",
   },
 ];
+
+const pageMotion = {
+  hidden: {
+    opacity: 0,
+  },
+  show: {
+    opacity: 1,
+    transition: {
+      duration: 0.5,
+      ease: "easeOut",
+      when: "beforeChildren",
+      staggerChildren: 0.08,
+    },
+  },
+};
+
+const staggerContainer = {
+  hidden: {},
+  show: {
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.08,
+    },
+  },
+};
+
+const fadeUp = {
+  hidden: {
+    opacity: 0,
+    y: 28,
+    filter: "blur(8px)",
+  },
+  show: {
+    opacity: 1,
+    y: 0,
+    filter: "blur(0px)",
+    transition: {
+      duration: 0.65,
+      ease: "easeOut",
+    },
+  },
+};
+
+const fadeLeft = {
+  hidden: {
+    opacity: 0,
+    x: -42,
+    filter: "blur(8px)",
+  },
+  show: {
+    opacity: 1,
+    x: 0,
+    filter: "blur(0px)",
+    transition: {
+      duration: 0.75,
+      ease: "easeOut",
+    },
+  },
+};
+
+const fadeRight = {
+  hidden: {
+    opacity: 0,
+    x: 42,
+    scale: 0.98,
+    filter: "blur(8px)",
+  },
+  show: {
+    opacity: 1,
+    x: 0,
+    scale: 1,
+    filter: "blur(0px)",
+    transition: {
+      duration: 0.75,
+      ease: "easeOut",
+    },
+  },
+};
+
+const statCardMotion = {
+  hidden: {
+    opacity: 0,
+    y: 22,
+    scale: 0.96,
+  },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: 0.55,
+      ease: "easeOut",
+    },
+  },
+};
+
+const serviceCardMotion = {
+  hidden: {
+    opacity: 0,
+    y: 35,
+    scale: 0.96,
+    filter: "blur(7px)",
+  },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    filter: "blur(0px)",
+    transition: {
+      duration: 0.6,
+      ease: "easeOut",
+    },
+  },
+};
+
+const carouselSlideMotion = {
+  enter: {
+    opacity: 0,
+    x: 50,
+    filter: "blur(8px)",
+  },
+  center: {
+    opacity: 1,
+    x: 0,
+    filter: "blur(0px)",
+  },
+  exit: {
+    opacity: 0,
+    x: -50,
+    filter: "blur(8px)",
+  },
+};
+
+const productItemMotion = {
+  hidden: {
+    opacity: 0,
+    y: 24,
+    scale: 0.97,
+  },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: 0.48,
+      ease: "easeOut",
+    },
+  },
+};
+
+const floatingPieceMotion = {
+  y: [0, -10, 0],
+  rotate: [0, 1.5, -1.5, 0],
+  transition: {
+    duration: 6,
+    repeat: Infinity,
+    ease: "easeInOut",
+  },
+};
+
+const floatingGearMotion = {
+  y: [0, -8, 0],
+  rotate: [0, 4, -4, 0],
+  transition: {
+    duration: 8,
+    repeat: Infinity,
+    ease: "easeInOut",
+  },
+};
+
+const slowFloatingMotion = {
+  y: [0, 14, 0],
+  scale: [1, 1.03, 1],
+  transition: {
+    duration: 9,
+    repeat: Infinity,
+    ease: "easeInOut",
+  },
+};
 
 function normalizarTipoUsuario(usuario) {
   if (!usuario) return "";
@@ -140,7 +320,7 @@ function aproximarContadorPublico(valor) {
   }
 
   if (numero < 10) {
-    return "10+";
+    return "Menos de 10";
   }
 
   if (numero < 100) {
@@ -236,6 +416,7 @@ export default function Home() {
 
   const slidesProdutos = useMemo(() => dividirEmSlides(carouselProdutosFixos, 3), []);
   const totalSlides = slidesProdutos.length;
+  const slideAtual = slidesProdutos[currentSlide] || [];
 
   useEffect(() => {
     try {
@@ -350,7 +531,10 @@ export default function Home() {
 
   return (
     <>
-      <main
+      <motion.main
+        variants={pageMotion}
+        initial="hidden"
+        animate="show"
         style={{
           minHeight: "100vh",
           background: pageBackground,
@@ -358,34 +542,77 @@ export default function Home() {
           overflow: "hidden",
         }}
       >
-        <div
+        <motion.div
           className="hero-industrial"
+          variants={fadeUp}
           style={{
             background: pageBackground,
             borderBottom: "1px solid rgba(255,255,255,.06)",
           }}
         >
-          <img src="/en1.png" className="gear-big" alt="" />
-          <img src="/en2.png" className="gear-small" alt="" />
-          <img src="/engrenagem.png" className="bg-piece-blur" alt="" />
-          <img src="/parafuso.png" className="bg-piece-back" alt="" />
+          <motion.img
+            src="/en1.png"
+            className="gear-big"
+            alt=""
+            animate={floatingGearMotion}
+          />
+
+          <motion.img
+            src="/en2.png"
+            className="gear-small"
+            alt=""
+            animate={floatingGearMotion}
+            transition={{
+              duration: 7,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 0.4,
+            }}
+          />
+
+          <motion.img
+            src="/engrenagem.png"
+            className="bg-piece-blur"
+            alt=""
+            animate={slowFloatingMotion}
+          />
+
+          <motion.img
+            src="/parafuso.png"
+            className="bg-piece-back"
+            alt=""
+            animate={floatingPieceMotion}
+          />
 
           <div className="container col-xxl-8 px-4" style={{ paddingTop: "50px" }}>
-            <div className="row flex-lg-row-reverse align-items-center g-5">
-              <div className="col-10 col-sm-8 col-lg-6">
-                <img
+            <motion.div
+              className="row flex-lg-row-reverse align-items-center g-5"
+              variants={staggerContainer}
+            >
+              <motion.div className="col-10 col-sm-8 col-lg-6" variants={fadeRight}>
+                <motion.img
                   src="/porca.png"
                   className="d-block mx-lg-auto img-fluid porca-bd"
                   alt="Peça Industrial"
                   width={700}
                   height={500}
                   loading="lazy"
+                  animate={{
+                    y: [0, -12, 0],
+                    rotate: [0, 1.2, 0],
+                  }}
+                  transition={{
+                    duration: 5.5,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
                 />
-              </div>
+              </motion.div>
 
-              <div className="col-lg-6">
-                <h1
+              <motion.div className="col-lg-6" variants={fadeLeft}>
+                <motion.h1
                   className="display-5 fw-bold lh-1 mb-3 titulo"
+                  variants={fadeUp}
                   style={{
                     fontSize: "60px",
                   }}
@@ -401,50 +628,78 @@ export default function Home() {
                     Fornecedora
                   </span>{" "}
                   de Peças Industriais para a sua Empresa
-                </h1>
+                </motion.h1>
 
-                <p className="lead" style={{ fontSize: "25px" }}>
+                <motion.p
+                  className="lead"
+                  variants={fadeUp}
+                  style={{ fontSize: "25px" }}
+                >
                   Fornecemos componentes industriais de alta qualidade,
                   desenvolvidos para garantir segurança, eficiência e máxima
                   durabilidade em todos os tipos de operações e projetos
                   industriais.
-                </p>
+                </motion.p>
 
-                <div className="d-grid gap-2 d-md-flex justify-content-md-start">
-                  <Link
-                    style={{
-                      color: "#ffffff",
-                      userSelect: "none",
-                      WebkitUserSelect: "none",
-                      WebkitUserDrag: "none",
+                <motion.div
+                  className="d-grid gap-2 d-md-flex justify-content-md-start"
+                  variants={fadeUp}
+                >
+                  <motion.div
+                    whileHover={{
+                      y: -3,
+                      scale: 1.03,
                     }}
-                    type="button"
-                    className="btn btn-outline-secondary btn-lg px-4 btn-custom hero-action-btn"
-                    href={isFornecedor ? "/encomendasrecebe" : "/encomendas"}
-                    draggable={false}
-                    onDragStart={impedirArrastarBotao}
-                  >
-                    Confira agora!
-                  </Link>
-
-                  <Link
-                    type="button"
-                    className="btn btn-outline-secondary btn-lg px-4 btn-sec hero-action-btn"
-                    href={isFornecedor ? "/logistica" : "/produtos"}
-                    draggable={false}
-                    onDragStart={impedirArrastarBotao}
-                    style={{
-                      userSelect: "none",
-                      WebkitUserSelect: "none",
-                      WebkitUserDrag: "none",
+                    whileTap={{
+                      scale: 0.97,
                     }}
                   >
-                    {isFornecedor ? "Central" : "Categorias"}
-                  </Link>
-                </div>
-              </div>
+                    <Link
+                      style={{
+                        color: "#ffffff",
+                        userSelect: "none",
+                        WebkitUserSelect: "none",
+                        WebkitUserDrag: "none",
+                      }}
+                      type="button"
+                      className="btn btn-outline-secondary btn-lg px-4 btn-custom hero-action-btn"
+                      href={isFornecedor ? "/encomendasrecebe" : "/encomendas"}
+                      draggable={false}
+                      onDragStart={impedirArrastarBotao}
+                    >
+                      Confira agora!
+                    </Link>
+                  </motion.div>
 
-              <div
+                  <motion.div
+                    whileHover={{
+                      y: -3,
+                      scale: 1.03,
+                    }}
+                    whileTap={{
+                      scale: 0.97,
+                    }}
+                  >
+                    <Link
+                      type="button"
+                      className="btn btn-outline-secondary btn-lg px-4 btn-sec hero-action-btn"
+                      href={isFornecedor ? "/logistica" : "/produtos"}
+                      draggable={false}
+                      onDragStart={impedirArrastarBotao}
+                      style={{
+                        userSelect: "none",
+                        WebkitUserSelect: "none",
+                        WebkitUserDrag: "none",
+                      }}
+                    >
+                      {isFornecedor ? "Central" : "Categorias"}
+                    </Link>
+                  </motion.div>
+                </motion.div>
+              </motion.div>
+
+              <motion.div
+                variants={fadeUp}
                 style={{
                   width: "100%",
                   display: "flex",
@@ -452,73 +707,148 @@ export default function Home() {
                   marginTop: "40px",
                 }}
               >
-                <div
+                <motion.div
                   className="d-flex flex-wrap justify-content-center"
+                  variants={staggerContainer}
                   style={{
                     gap: "24px",
                     alignItems: "center",
                   }}
                 >
                   {statsHome.map((item) => (
-                    <div key={item.label} style={statsCardStyle}>
-                      <h1 style={{ color: "#ff8800", marginBottom: "5px" }}>
+                    <motion.div
+                      key={item.label}
+                      variants={statCardMotion}
+                      whileHover={{
+                        y: -7,
+                        scale: 1.035,
+                        borderColor: "rgba(255,136,0,.28)",
+                      }}
+                      style={statsCardStyle}
+                    >
+                      <motion.h1
+                        key={item.valor}
+                        initial={{
+                          opacity: 0,
+                          y: 8,
+                          scale: 0.98,
+                        }}
+                        animate={{
+                          opacity: 1,
+                          y: 0,
+                          scale: 1,
+                        }}
+                        transition={{
+                          duration: 0.35,
+                          ease: "easeOut",
+                        }}
+                        style={{ color: "#ff8800", marginBottom: "5px" }}
+                      >
                         {item.valor}
-                      </h1>
+                      </motion.h1>
+
                       <p style={{ margin: 0, color: "#a0a0a0" }}>
                         {item.label}
                       </p>
-                    </div>
+                    </motion.div>
                   ))}
-                </div>
-              </div>
+                </motion.div>
+              </motion.div>
 
-              {erroDados && (
-                <div className="col-12 text-center" style={{ marginTop: "14px" }}>
-                  <small style={{ color: "rgba(255,255,255,.48)" }}>
-                    {erroDados}. Exibindo indicadores institucionais temporários.
-                  </small>
-                </div>
-              )}
-            </div>
+              <AnimatePresence>
+                {erroDados && (
+                  <motion.div
+                    className="col-12 text-center"
+                    initial={{
+                      opacity: 0,
+                      y: -8,
+                    }}
+                    animate={{
+                      opacity: 1,
+                      y: 0,
+                    }}
+                    exit={{
+                      opacity: 0,
+                      y: -8,
+                    }}
+                    transition={{
+                      duration: 0.3,
+                    }}
+                    style={{ marginTop: "14px" }}
+                  >
+                    <small style={{ color: "rgba(255,255,255,.48)" }}>
+                      {erroDados}. Exibindo indicadores institucionais temporários.
+                    </small>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
           </div>
-        </div>
+        </motion.div>
 
-        <section
+        <motion.section
           className="text-light py-5 py-xl-8"
+          initial="hidden"
+          whileInView="show"
+          viewport={{
+            once: true,
+            amount: 0.22,
+          }}
+          variants={staggerContainer}
           style={{
             background: "transparent",
           }}
         >
           <div className="container">
-            <div className="row justify-content-md-center">
+            <motion.div className="row justify-content-md-center" variants={fadeUp}>
               <div className="col-12 col-md-10 col-lg-8 col-xl-7">
-                <h3
+                <motion.h3
                   className="fs-6 mb-2 text-center text-uppercase"
+                  variants={fadeUp}
                   style={{ color: "#f5061d" }}
                 >
                   Por que escolher o AtrixSupply?
-                </h3>
+                </motion.h3>
 
-                <h2 className="display-5 mb-5 text-center text-white">
+                <motion.h2
+                  className="display-5 mb-5 text-center text-white"
+                  variants={fadeUp}
+                >
                   Oferecemos peças de qualidade, atendimento especializado e
                   soluções eficientes para você
-                </h2>
+                </motion.h2>
 
-                <hr
+                <motion.hr
                   className="w-50 mx-auto mb-5 mb-xl-9"
+                  variants={fadeUp}
                   style={{ borderColor: "#f5061d", opacity: 0.8 }}
                 />
               </div>
-            </div>
+            </motion.div>
           </div>
 
           <div className="container overflow-hidden">
-            <div className="row gy-4 gy-xl-0">
-              <div className="col-12 col-sm-6 col-xl-3">
-                <div className="card text-light border-0 h-100" style={serviceCardStyle}>
+            <motion.div className="row gy-4 gy-xl-0" variants={staggerContainer}>
+              <motion.div className="col-12 col-sm-6 col-xl-3" variants={serviceCardMotion}>
+                <motion.div
+                  className="card text-light border-0 h-100"
+                  whileHover={{
+                    y: -8,
+                    scale: 1.02,
+                    borderColor: "rgba(245,6,29,.35)",
+                  }}
+                  style={serviceCardStyle}
+                >
                   <div className="card-body text-center p-4 p-xxl-5">
-                    <i
+                    <motion.i
                       className="bi bi-headset mb-4"
+                      whileHover={{
+                        rotate: [-3, 3, -3, 0],
+                        scale: 1.08,
+                      }}
+                      transition={{
+                        duration: 0.45,
+                      }}
                       style={{
                         fontSize: "55px",
                         color: "#f5061d",
@@ -535,14 +865,29 @@ export default function Home() {
                       encontrar as peças ideais com rapidez e total confiança.
                     </p>
                   </div>
-                </div>
-              </div>
+                </motion.div>
+              </motion.div>
 
-              <div className="col-12 col-sm-6 col-xl-3">
-                <div className="card text-light border-0 h-100" style={serviceCardStyle}>
+              <motion.div className="col-12 col-sm-6 col-xl-3" variants={serviceCardMotion}>
+                <motion.div
+                  className="card text-light border-0 h-100"
+                  whileHover={{
+                    y: -8,
+                    scale: 1.02,
+                    borderColor: "rgba(245,6,29,.35)",
+                  }}
+                  style={serviceCardStyle}
+                >
                   <div className="card-body text-center p-4 p-xxl-5">
-                    <i
+                    <motion.i
                       className="bi bi-truck mb-4"
+                      whileHover={{
+                        x: [0, 5, -3, 0],
+                        scale: 1.08,
+                      }}
+                      transition={{
+                        duration: 0.45,
+                      }}
                       style={{
                         fontSize: "55px",
                         color: "#f5061d",
@@ -559,14 +904,30 @@ export default function Home() {
                       com mais velocidade e segurança.
                     </p>
                   </div>
-                </div>
-              </div>
+                </motion.div>
+              </motion.div>
 
-              <div className="col-12 col-sm-6 col-xl-3">
-                <div className="card text-light border-0 h-100" style={serviceCardStyle}>
+              <motion.div className="col-12 col-sm-6 col-xl-3" variants={serviceCardMotion}>
+                <motion.div
+                  className="card text-light border-0 h-100"
+                  whileHover={{
+                    y: -8,
+                    scale: 1.02,
+                    borderColor: "rgba(245,6,29,.35)",
+                  }}
+                  style={serviceCardStyle}
+                >
                   <div className="card-body text-center p-4 p-xxl-5">
-                    <i
+                    <motion.i
                       className="bi bi-gear-wide-connected mb-4"
+                      whileHover={{
+                        rotate: 180,
+                        scale: 1.08,
+                      }}
+                      transition={{
+                        duration: 0.65,
+                        ease: "easeInOut",
+                      }}
                       style={{
                         fontSize: "55px",
                         color: "#f5061d",
@@ -583,14 +944,29 @@ export default function Home() {
                       desempenho e durabilidade.
                     </p>
                   </div>
-                </div>
-              </div>
+                </motion.div>
+              </motion.div>
 
-              <div className="col-12 col-sm-6 col-xl-3">
-                <div className="card text-light border-0 h-100" style={serviceCardStyle}>
+              <motion.div className="col-12 col-sm-6 col-xl-3" variants={serviceCardMotion}>
+                <motion.div
+                  className="card text-light border-0 h-100"
+                  whileHover={{
+                    y: -8,
+                    scale: 1.02,
+                    borderColor: "rgba(245,6,29,.35)",
+                  }}
+                  style={serviceCardStyle}
+                >
                   <div className="card-body text-center p-4 p-xxl-5">
-                    <i
+                    <motion.i
                       className="bi bi-shield-check mb-4"
+                      whileHover={{
+                        scale: 1.1,
+                        y: -3,
+                      }}
+                      transition={{
+                        duration: 0.4,
+                      }}
                       style={{
                         fontSize: "55px",
                         color: "#f5061d",
@@ -607,14 +983,21 @@ export default function Home() {
                       confiáveis e proteção em cada pedido.
                     </p>
                   </div>
-                </div>
-              </div>
-            </div>
+                </motion.div>
+              </motion.div>
+            </motion.div>
           </div>
-        </section>
+        </motion.section>
 
-        <section
+        <motion.section
           className="py-5 position-relative"
+          initial="hidden"
+          whileInView="show"
+          viewport={{
+            once: true,
+            amount: 0.18,
+          }}
+          variants={fadeUp}
           style={{
             background: heroGradient,
             borderTop: "1px solid rgba(255,255,255,.08)",
@@ -622,26 +1005,55 @@ export default function Home() {
           }}
         >
           <div className="container position-relative">
-            <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+            <motion.div
+              className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3"
+              variants={fadeUp}
+            >
               <div>
-                <span className="badge bg-warning text-dark mb-2 px-3 py-2">
+                <motion.span
+                  className="badge bg-warning text-dark mb-2 px-3 py-2"
+                  initial={{
+                    opacity: 0,
+                    y: 10,
+                  }}
+                  whileInView={{
+                    opacity: 1,
+                    y: 0,
+                  }}
+                  viewport={{
+                    once: true,
+                  }}
+                  transition={{
+                    duration: 0.4,
+                  }}
+                >
                   Catálogo
-                </span>
+                </motion.span>
 
                 <h2 className="text-white fw-bold mb-0">
                   Nossos Produtos
                 </h2>
               </div>
 
-              <Link
-                href="/produtos"
-                className="btn btn-outline-light fw-bold"
-                style={{ borderRadius: "14px", padding: "10px 16px" }}
+              <motion.div
+                whileHover={{
+                  y: -3,
+                  scale: 1.03,
+                }}
+                whileTap={{
+                  scale: 0.97,
+                }}
               >
-                Ver todos
-                <i className="bi bi-arrow-right ms-2" />
-              </Link>
-            </div>
+                <Link
+                  href="/produtos"
+                  className="btn btn-outline-light fw-bold"
+                  style={{ borderRadius: "14px", padding: "10px 16px" }}
+                >
+                  Ver todos
+                  <i className="bi bi-arrow-right ms-2" />
+                </Link>
+              </motion.div>
+            </motion.div>
 
             <div id="carouselProdutos" className="carousel slide">
               <button
@@ -663,14 +1075,31 @@ export default function Home() {
               </button>
 
               <div className="carousel-inner">
-                {slidesProdutos.map((slide, index) => (
-                  <div
-                    key={`slide-${index}`}
-                    className={`carousel-item ${currentSlide === index ? "active" : ""}`}
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={`slide-${currentSlide}`}
+                    className="carousel-item active"
+                    variants={carouselSlideMotion}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
+                    transition={{
+                      duration: 0.42,
+                      ease: "easeOut",
+                    }}
                   >
-                    <div className="row g-4">
-                      {slide.map((produto) => (
-                        <div className="col-md-4" key={produto.titulo}>
+                    <motion.div
+                      className="row g-4"
+                      variants={staggerContainer}
+                      initial="hidden"
+                      animate="show"
+                    >
+                      {slideAtual.map((produto) => (
+                        <motion.div
+                          className="col-md-4"
+                          key={produto.titulo}
+                          variants={productItemMotion}
+                        >
                           <Link
                             href={isFornecedor ? "#" : "/produtos"}
                             onClick={(event) => {
@@ -689,18 +1118,41 @@ export default function Home() {
                               WebkitUserDrag: "none",
                             }}
                           >
-                            <div
+                            <motion.div
                               className="card produto-card h-100 border-0"
+                              {...(!isFornecedor
+                                ? {
+                                    whileHover: {
+                                      y: -9,
+                                      scale: 1.025,
+                                      borderColor: "rgba(255,255,255,.20)",
+                                    },
+                                    whileTap: {
+                                      scale: 0.985,
+                                    },
+                                  }
+                                : {})}
                               style={{
                                 ...productCardStyle,
                                 cursor: isFornecedor ? "default" : "pointer",
                                 pointerEvents: isFornecedor ? "none" : "auto",
                               }}
                             >
-                              <img
+                              <motion.img
                                 src={produto.imagem}
                                 className="card-img-top produto-img"
                                 alt={produto.titulo}
+                                whileHover={
+                                  !isFornecedor
+                                    ? {
+                                        scale: 1.04,
+                                      }
+                                    : undefined
+                                }
+                                transition={{
+                                  duration: 0.35,
+                                  ease: "easeOut",
+                                }}
                               />
 
                               <div className="card-body">
@@ -710,8 +1162,11 @@ export default function Home() {
                                   </h5>
 
                                   {!isFornecedor && (
-                                    <span
+                                    <motion.span
                                       className="badge"
+                                      whileHover={{
+                                        scale: 1.04,
+                                      }}
                                       style={{
                                         background: "rgba(255,179,0,.12)",
                                         color: "#ffcf40",
@@ -720,7 +1175,7 @@ export default function Home() {
                                       }}
                                     >
                                       Ver catálogo
-                                    </span>
+                                    </motion.span>
                                   )}
                                 </div>
 
@@ -728,18 +1183,18 @@ export default function Home() {
                                   {produto.descricao}
                                 </p>
                               </div>
-                            </div>
+                            </motion.div>
                           </Link>
-                        </div>
+                        </motion.div>
                       ))}
-                    </div>
-                  </div>
-                ))}
+                    </motion.div>
+                  </motion.div>
+                </AnimatePresence>
               </div>
             </div>
           </div>
-        </section>
-      </main>
+        </motion.section>
+      </motion.main>
     </>
   );
 }
