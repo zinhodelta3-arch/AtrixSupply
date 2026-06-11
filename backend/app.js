@@ -15,6 +15,7 @@ import encomendaRotas from './routes/encomendaRotas.js';
 import orcamentoRotas from './routes/orcamentoRotas.js';
 import suporteRotas from './routes/suporteRotas.js';
 import notificacaoRotas from './routes/notificacaoRotas.js';
+import publicMetricas from './routes/publicMetricasRotas.js'
 import { garantirFluxoEncomendas } from './utils/garantirFluxoEncomendas.js';
 import { iniciarLimpezaNotificacoesAutomaticas } from "./utils/excluirNotificacaoAutomatica.js";
 
@@ -65,6 +66,7 @@ app.use('/api/encomendas', encomendaRotas);
 app.use('/api/orcamentos', orcamentoRotas);
 app.use('/api/suporte', suporteRotas);
 app.use('/api/notificacoes', notificacaoRotas);
+app.use('/api/public', publicMetricas);
 
 
 // Rota raiz com documentação atualizada do ecossistema AtrixSupply

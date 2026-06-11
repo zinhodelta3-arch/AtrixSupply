@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import "./page.css";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
-const PRODUTOS_URL = `${API_URL}/api/produtos`;
+const METRICAS_HOME_PUBLICAS_URL = `${API_URL}/api/public/metricas-home`;
 
 const pageBackground = `
   radial-gradient(circle at top left, rgba(255,136,0,.10), transparent 25%),
@@ -95,7 +95,10 @@ const carouselProdutosFixos = [
 
 function normalizarTipoUsuario(usuario) {
   if (!usuario) return "";
-  if (typeof usuario === "string") return usuario.trim().toLowerCase();
+
+  if (typeof usuario === "string") {
+    return usuario.trim().toLowerCase();
+  }
 
   return String(
     usuario?.tipo ||
@@ -111,76 +114,6 @@ function normalizarTipoUsuario(usuario) {
     .toLowerCase();
 }
 
-function normalizarTexto(valor) {
-  return String(valor || "").trim();
-}
-
-function extrairListaProdutos(data) {
-  if (Array.isArray(data)) return data;
-  if (Array.isArray(data?.dados)) return data.dados;
-  if (Array.isArray(data?.produtos)) return data.produtos;
-  if (Array.isArray(data?.data)) return data.data;
-  if (Array.isArray(data?.dados?.produtos)) return data.dados.produtos;
-  if (Array.isArray(data?.dados?.itens)) return data.dados.itens;
-  if (Array.isArray(data?.dados?.rows)) return data.dados.rows;
-
-  return [];
-}
-
-function extrairTotalProdutos(data, listaProdutos) {
-  const possiveisTotais = [
-    data?.paginacao?.total,
-    data?.dados?.total,
-    data?.total,
-    data?.meta?.total,
-    data?.dados?.paginacao?.total,
-  ];
-
-  const totalEncontrado = possiveisTotais.find((valor) => Number(valor) > 0);
-
-  return Number(totalEncontrado || listaProdutos.length || 0);
-}
-
-function obterCategoriaProduto(produto) {
-  return normalizarTexto(
-    produto?.categoria ||
-      produto?.nome_categoria ||
-      produto?.tipo ||
-      produto?.linha ||
-      produto?.grupo ||
-      produto?.categoria_produto
-  );
-}
-
-function obterPrecoProduto(produto) {
-  const valor = produto?.preco ?? produto?.valor ?? produto?.preco_unitario ?? produto?.price;
-  const numero = Number(String(valor || "").replace(",", "."));
-
-  return Number.isFinite(numero) && numero > 0 ? numero : null;
-}
-
-function formatarNumeroCompacto(valor) {
-  const numero = Number(valor || 0);
-
-  if (numero >= 1000) {
-    return numero.toLocaleString("pt-BR", {
-      notation: "compact",
-      maximumFractionDigits: 1,
-    });
-  }
-
-  return numero.toLocaleString("pt-BR");
-}
-
-function formatarMoeda(valor) {
-  const numero = Number(valor || 0);
-
-  return numero.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
-}
-
 function dividirEmSlides(lista, tamanho = 3) {
   const slides = [];
 
@@ -191,11 +124,113 @@ function dividirEmSlides(lista, tamanho = 3) {
   return slides;
 }
 
+async function lerJsonComSeguranca(response) {
+  try {
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
+function aproximarContadorPublico(valor) {
+  const numero = Number(valor || 0);
+
+  if (!Number.isFinite(numero) || numero <= 0) {
+    return "0";
+  }
+
+  if (numero < 10) {
+    return "10+";
+  }
+
+  if (numero < 100) {
+    return `${Math.floor(numero / 10) * 10}+`;
+  }
+
+  if (numero < 1000) {
+    return `${Math.floor(numero / 50) * 50}+`;
+  }
+
+  if (numero < 10000) {
+    return `${Math.floor(numero / 100) * 100}+`;
+  }
+
+  return `${Math.floor(numero / 1000) * 1000}+`;
+}
+
+function normalizarValorMetricaPublica(valor) {
+  if (valor === null || valor === undefined || valor === "") {
+    return "0";
+  }
+
+  if (typeof valor === "number") {
+    return aproximarContadorPublico(valor);
+  }
+
+  const texto = String(valor).trim();
+
+  if (!texto) {
+    return "0";
+  }
+
+  const pareceNumeroExato = /^\d+([.,]\d+)?$/.test(texto);
+
+  if (pareceNumeroExato) {
+    return aproximarContadorPublico(Number(texto.replace(",", ".")));
+  }
+
+  return texto;
+}
+
+function extrairMetricasPublicas(data) {
+  const dados = data?.dados || data?.data || data?.metricas || data || {};
+
+  return {
+    produtosCatalogados: normalizarValorMetricaPublica(
+      dados?.produtosCatalogados ??
+        dados?.produtos_catalogados ??
+        dados?.totalProdutos ??
+        dados?.total_produtos ??
+        dados?.produtos
+    ),
+    usuariosCadastrados: normalizarValorMetricaPublica(
+      dados?.usuariosCadastrados ??
+        dados?.usuarios_cadastrados ??
+        dados?.totalUsuarios ??
+        dados?.total_usuarios ??
+        dados?.usuarios
+    ),
+    pedidosFeitos: normalizarValorMetricaPublica(
+      dados?.pedidosFeitos ??
+        dados?.pedidos_feitos ??
+        dados?.totalPedidos ??
+        dados?.total_pedidos ??
+        dados?.pedidos ??
+        dados?.encomendas
+    ),
+  };
+}
+
+function metricasPublicasValidas(metricas) {
+  return Boolean(
+    metricas &&
+      typeof metricas === "object" &&
+      metricas.produtosCatalogados !== undefined &&
+      metricas.usuariosCadastrados !== undefined &&
+      metricas.pedidosFeitos !== undefined
+  );
+}
+
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isFornecedor, setIsFornecedor] = useState(false);
-  const [produtosBanco, setProdutosBanco] = useState([]);
-  const [totalProdutosBanco, setTotalProdutosBanco] = useState(0);
+
+  const [metricasHome, setMetricasHome] = useState({
+    produtosCatalogados: "0",
+    usuariosCadastrados: "0",
+    pedidosFeitos: "0",
+  });
+
   const [carregandoDados, setCarregandoDados] = useState(true);
   const [erroDados, setErroDados] = useState("");
 
@@ -206,89 +241,78 @@ export default function Home() {
     try {
       const usuarioStorage = localStorage.getItem("usuario");
 
-      if (usuarioStorage) {
-        const userParsed = JSON.parse(usuarioStorage);
-        const tipo = normalizarTipoUsuario(userParsed);
+      if (!usuarioStorage) {
+        setIsFornecedor(false);
+        return;
+      }
 
-        if (tipo === "fornecedor" || tipo === "fornecedores" || tipo === "supplier") {
-          setIsFornecedor(true);
-        }
+      const userParsed = JSON.parse(usuarioStorage);
+      const tipo = normalizarTipoUsuario(userParsed);
+
+      if (tipo === "fornecedor" || tipo === "fornecedores" || tipo === "supplier") {
+        setIsFornecedor(true);
       }
     } catch (error) {
       console.error("Erro ao verificar tipo de usuário na Home:", error);
+      setIsFornecedor(false);
     }
   }, []);
 
   useEffect(() => {
-    carregarDadosReaisHome();
+    carregarMetricasPublicasHome();
   }, []);
 
-  async function carregarDadosReaisHome() {
+  async function carregarMetricasPublicasHome() {
     try {
       setCarregandoDados(true);
       setErroDados("");
 
-      const response = await fetch(`${PRODUTOS_URL}?pagina=1&limite=100`, {
+      const response = await fetch(METRICAS_HOME_PUBLICAS_URL, {
         method: "GET",
         cache: "no-store",
       });
 
-      const data = await response.json().catch(() => null);
+      const data = await lerJsonComSeguranca(response);
 
-      if (!response.ok || !data?.sucesso) {
-        throw new Error(data?.mensagem || data?.erro || "Não foi possível carregar os dados da Home.");
+      if (!response.ok || data?.sucesso === false) {
+        throw new Error(
+          data?.mensagem ||
+            data?.erro ||
+            "Não foi possível carregar as métricas públicas da Home."
+        );
       }
 
-      const listaProdutos = extrairListaProdutos(data);
-      const totalProdutos = extrairTotalProdutos(data, listaProdutos);
+      const metricasExtraidas = extrairMetricasPublicas(data);
 
-      setProdutosBanco(listaProdutos);
-      setTotalProdutosBanco(totalProdutos);
+      if (!metricasPublicasValidas(metricasExtraidas)) {
+        throw new Error("Formato inválido recebido da API pública de métricas.");
+      }
+
+      setMetricasHome(metricasExtraidas);
     } catch (error) {
-      console.error("Erro ao carregar dados reais da Home:", error);
-      setErroDados("Dados reais temporariamente indisponíveis");
-      setProdutosBanco([]);
-      setTotalProdutosBanco(0);
+      console.error("Erro ao carregar métricas públicas da Home:", error);
+
+      setErroDados("Dados públicos temporariamente indisponíveis");
+      setMetricasHome({
+        produtosCatalogados: "0",
+        usuariosCadastrados: "0",
+        pedidosFeitos: "0",
+      });
     } finally {
       setCarregandoDados(false);
     }
   }
 
-  const metricasReais = useMemo(() => {
-    const categorias = new Set(
-      produtosBanco
-        .map(obterCategoriaProduto)
-        .filter(Boolean)
-        .map((categoria) => categoria.toLowerCase())
-    );
-
-    const precosValidos = produtosBanco
-      .map(obterPrecoProduto)
-      .filter((preco) => Number.isFinite(preco) && preco > 0);
-
-    const menorPreco = precosValidos.length ? Math.min(...precosValidos) : 0;
-    const maiorPreco = precosValidos.length ? Math.max(...precosValidos) : 0;
-    const produtosComPreco = precosValidos.length;
-
-    return {
-      totalProdutos: totalProdutosBanco || produtosBanco.length,
-      categoriasAtivas: categorias.size,
-      menorPreco,
-      maiorPreco,
-      produtosComPreco,
-    };
-  }, [produtosBanco, totalProdutosBanco]);
-
   const statsHome = useMemo(() => {
     if (carregandoDados) {
       return [
         { valor: "...", label: "Produtos catalogados" },
-        { valor: "...", label: "Linhas industriais" },
-        { valor: "...", label: "Faixa inicial" },
+        { valor: "...", label: "Usuários cadastrados" },
+        { valor: "...", label: "Pedidos feitos" },
       ];
     }
 
-    if (erroDados || metricasReais.totalProdutos === 0) {
+    if (erroDados) {
       return [
         { valor: "6", label: "Linhas em destaque" },
         { valor: "24h", label: "Suporte comercial" },
@@ -298,19 +322,19 @@ export default function Home() {
 
     return [
       {
-        valor: formatarNumeroCompacto(metricasReais.totalProdutos),
+        valor: metricasHome.produtosCatalogados,
         label: "Produtos catalogados",
       },
       {
-        valor: String(metricasReais.categoriasAtivas || carouselProdutosFixos.length).padStart(2, "0"),
-        label: "Categorias no banco",
+        valor: metricasHome.usuariosCadastrados,
+        label: "Usuários cadastrados",
       },
       {
-        valor: metricasReais.menorPreco ? formatarMoeda(metricasReais.menorPreco) : formatarNumeroCompacto(metricasReais.produtosComPreco),
-        label: metricasReais.menorPreco ? "Menor preço cadastrado" : "Produtos com preço",
+        valor: metricasHome.pedidosFeitos,
+        label: "Pedidos feitos",
       },
     ];
-  }, [carregandoDados, erroDados, metricasReais]);
+  }, [carregandoDados, erroDados, metricasHome]);
 
   function nextSlide() {
     setCurrentSlide((prev) => (prev === totalSlides - 1 ? 0 : prev + 1));
@@ -648,7 +672,12 @@ export default function Home() {
                       {slide.map((produto) => (
                         <div className="col-md-4" key={produto.titulo}>
                           <Link
-                            href="/produtos"
+                            href={isFornecedor ? "#" : "/produtos"}
+                            onClick={(event) => {
+                              if (isFornecedor) {
+                                event.preventDefault();
+                              }
+                            }}
                             aria-label={`Ver produtos de ${produto.titulo}`}
                             draggable={false}
                             onDragStart={impedirArrastarBotao}
@@ -662,7 +691,11 @@ export default function Home() {
                           >
                             <div
                               className="card produto-card h-100 border-0"
-                              style={productCardStyle}
+                              style={{
+                                ...productCardStyle,
+                                cursor: isFornecedor ? "default" : "pointer",
+                                pointerEvents: isFornecedor ? "none" : "auto",
+                              }}
                             >
                               <img
                                 src={produto.imagem}
@@ -676,17 +709,19 @@ export default function Home() {
                                     {produto.titulo}
                                   </h5>
 
-                                  <span
-                                    className="badge"
-                                    style={{
-                                      background: "rgba(255,179,0,.12)",
-                                      color: "#ffcf40",
-                                      border: "1px solid rgba(255,179,0,.22)",
-                                      borderRadius: "999px",
-                                    }}
-                                  >
-                                    Ver catálogo
-                                  </span>
+                                  {!isFornecedor && (
+                                    <span
+                                      className="badge"
+                                      style={{
+                                        background: "rgba(255,179,0,.12)",
+                                        color: "#ffcf40",
+                                        border: "1px solid rgba(255,179,0,.22)",
+                                        borderRadius: "999px",
+                                      }}
+                                    >
+                                      Ver catálogo
+                                    </span>
+                                  )}
                                 </div>
 
                                 <p className="card-text mb-0" style={{ color: "#b3b3b3" }}>
