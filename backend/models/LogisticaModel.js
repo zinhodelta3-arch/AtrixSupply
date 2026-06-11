@@ -189,6 +189,62 @@ class LogisticaModel {
         }
     }
 
+    static async contarEncomendasVinculadas(id_logistica) {
+        const connection = await getConnection();
+
+        try {
+            const [rows] = await connection.query(
+                `
+                    SELECT COUNT(*) AS total
+                    FROM encomendas
+                    WHERE id_logistica = ?
+                    AND status NOT IN ('entregue', 'finalizado', 'cancelado')
+                `,
+                [id_logistica]
+            );
+
+            return Number(rows[0]?.total || 0);
+        } catch (error) {
+            console.error('Erro ao contar encomendas vinculadas à logística:', error);
+            throw error;
+        } finally {
+            connection.release();
+        }
+    }
+
+    static async buscarEncomendaAtivaPorLogistica(id_logistica, ignorarIdEncomenda = null) {
+        const connection = await getConnection();
+
+        try {
+            const params = [id_logistica];
+            let filtroIgnorar = '';
+
+            if (ignorarIdEncomenda) {
+                filtroIgnorar = 'AND id_encomenda <> ?';
+                params.push(ignorarIdEncomenda);
+            }
+
+            const [rows] = await connection.query(
+                `
+                    SELECT id_encomenda, id_user, status
+                    FROM encomendas
+                    WHERE id_logistica = ?
+                    ${filtroIgnorar}
+                    AND status NOT IN ('entregue', 'finalizado', 'cancelado')
+                    LIMIT 1
+                `,
+                params
+            );
+
+            return rows[0] || null;
+        } catch (error) {
+            console.error('Erro ao buscar encomenda ativa por logística:', error);
+            throw error;
+        } finally {
+            connection.release();
+        }
+    }
+
     // Criar nova logistica
     static async criar(dadosLogistica) {
         try {

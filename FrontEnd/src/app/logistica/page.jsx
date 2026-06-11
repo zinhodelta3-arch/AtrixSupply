@@ -19,6 +19,8 @@ const veiculosValidos = [
   "não selecionado",
 ];
 
+const disponibilidadesValidas = ["disponivel", "ocupado", "manutencao"];
+
 const pageBackground = `
   radial-gradient(circle at top left, rgba(255,136,0,.10), transparent 25%),
   radial-gradient(circle at bottom right, rgba(192,1,42,.16), transparent 30%),
@@ -261,13 +263,6 @@ function obterFotoUsuario(usuario) {
   return resolverUrlImagemUsuario(obterFotoBrutaUsuario(usuario));
 }
 
-function aplicarFallbackImagemUsuario(event) {
-  if (!event?.currentTarget) return;
-
-  event.currentTarget.onerror = null;
-  event.currentTarget.src = FOTO_USUARIO_FALLBACK;
-}
-
 function formatarPerfilLogistica(tipoUsuario) {
   if (tipoUsuario === "admin" || tipoUsuario === "administrador") {
     return "Administrador logístico";
@@ -306,6 +301,16 @@ function getLabelDisponibilidade(disponibilidade) {
   }
 }
 
+function logisticaEstaBloqueada(item) {
+  return item?.disponibilidade === "ocupado" || Boolean(item?.destino);
+}
+
+function normalizarTextoExibicao(valor) {
+  return String(valor || "")
+    .replaceAll("_", " ")
+    .trim();
+}
+
 export default function LogisticaFornecedor() {
   const router = useRouter();
 
@@ -337,7 +342,6 @@ export default function LogisticaFornecedor() {
     nome_logistica: "",
     veiculo: "não selecionado",
     disponibilidade: "disponivel",
-    destino: "",
   });
 
   useEffect(() => {
@@ -430,7 +434,6 @@ export default function LogisticaFornecedor() {
       nome_logistica: "",
       veiculo: "não selecionado",
       disponibilidade: "disponivel",
-      destino: "",
     });
 
     setEditandoId(null);
@@ -464,7 +467,6 @@ export default function LogisticaFornecedor() {
       nome_logistica: item.nome_logistica || "",
       veiculo: item.veiculo || "não selecionado",
       disponibilidade: item.disponibilidade || "disponivel",
-      destino: item.destino || "",
     });
 
     setFormErro(null);
@@ -476,7 +478,7 @@ export default function LogisticaFornecedor() {
     if (!item.destino) {
       setFeedback({
         tipo: "warning",
-        texto: "Essa logística ainda não possui destino cadastrado.",
+        texto: "Essa logística ainda não possui destino definido. O destino será preenchido quando ela for atribuída a uma encomenda.",
       });
       return;
     }
@@ -487,6 +489,15 @@ export default function LogisticaFornecedor() {
 
   async function atualizarDisponibilidadeRapida(item, novaDisponibilidade) {
     if (item.disponibilidade === novaDisponibilidade) return;
+
+    if (logisticaEstaBloqueada(item) && novaDisponibilidade === "disponivel") {
+      setFeedback({
+        tipo: "warning",
+        texto:
+          "Essa logística está vinculada a uma encomenda ativa e não pode voltar para Disponível.",
+      });
+      return;
+    }
 
     try {
       setStatusAtualizandoId(item.id_logistica);
@@ -505,9 +516,7 @@ export default function LogisticaFornecedor() {
 
       setFeedback({
         tipo: "success",
-        texto:
-          data?.mensagem ||
-          "Status da logística atualizado com sucesso.",
+        texto: data?.mensagem || "Status da logística atualizado com sucesso.",
       });
 
       await carregarLogisticas();
@@ -538,7 +547,6 @@ export default function LogisticaFornecedor() {
         return;
       }
 
-
       const idDonoLogado = obterIdUsuarioLogado();
 
       if (!idDonoLogado) {
@@ -551,14 +559,12 @@ export default function LogisticaFornecedor() {
         nome_logistica: formData.nome_logistica.trim(),
         veiculo: formData.veiculo,
         disponibilidade: formData.disponibilidade,
-        destino: formData.destino.trim() || null,
       };
 
       const bodyAtualizacao = {
         nome_logistica: formData.nome_logistica.trim(),
         veiculo: formData.veiculo,
         disponibilidade: formData.disponibilidade,
-        destino: formData.destino.trim() || null,
       };
 
       const response = await fetch(
@@ -593,7 +599,16 @@ export default function LogisticaFornecedor() {
     }
   }
 
-  async function excluirLogistica(id_logistica) {
+  async function excluirLogistica(item) {
+    if (logisticaEstaBloqueada(item)) {
+      setFeedback({
+        tipo: "warning",
+        texto:
+          "Essa logística está atribuída a uma encomenda ativa e não pode ser excluída.",
+      });
+      return;
+    }
+
     const confirmar = window.confirm("Tem certeza que deseja excluir esta logística?");
 
     if (!confirmar) return;
@@ -602,7 +617,7 @@ export default function LogisticaFornecedor() {
       setErroLista(null);
       setFeedback(null);
 
-      const response = await fetch(`${LOGISTICA_URL}/${id_logistica}`, {
+      const response = await fetch(`${LOGISTICA_URL}/${item.id_logistica}`, {
         method: "DELETE",
         headers: montarHeaders(),
       });
@@ -617,7 +632,11 @@ export default function LogisticaFornecedor() {
       await carregarLogisticas();
     } catch (error) {
       console.error("Erro ao excluir logística:", error);
-      setErroLista(error.message || "Não foi possível excluir a logística");
+
+      setFeedback({
+        tipo: "danger",
+        texto: error.message || "Não foi possível excluir a logística",
+      });
     }
   }
 
@@ -744,11 +763,10 @@ export default function LogisticaFornecedor() {
                     color: "rgba(255,255,255,.72)",
                   }}
                 >
-                  Controle de veículos, disponibilidade, destinos e ações rápidas
+                  Controle de veículos, disponibilidade, destinos automáticos e ações rápidas
                 </p>
               </div>
             </div>
-
           </div>
         </div>
       </section>
@@ -945,7 +963,7 @@ export default function LogisticaFornecedor() {
                       color: "rgba(255,255,255,.55)",
                     }}
                   >
-                    Visualize veículos, destinos, disponibilidade e ações.
+                    O destino é preenchido automaticamente pelo endereço do comprador quando a logística é atribuída.
                   </p>
                 </div>
 
@@ -1104,6 +1122,7 @@ export default function LogisticaFornecedor() {
                     {logisticas.map((item) => {
                       const cor = getCorDisponibilidade(item.disponibilidade);
                       const atualizando = statusAtualizandoId === item.id_logistica;
+                      const bloqueada = logisticaEstaBloqueada(item);
 
                       return (
                         <article
@@ -1119,7 +1138,7 @@ export default function LogisticaFornecedor() {
                           }}
                         >
                           <div
-                            className="d-flex gap-2"
+                            className="d-flex gap-3"
                             style={{
                               position: "absolute",
                               top: "18px",
@@ -1144,7 +1163,13 @@ export default function LogisticaFornecedor() {
 
                             <button
                               type="button"
-                              onClick={() => excluirLogistica(item.id_logistica)}
+                              onClick={() => excluirLogistica(item)}
+                              disabled={bloqueada}
+                              title={
+                                bloqueada
+                                  ? "Logística vinculada a uma encomenda ativa"
+                                  : "Excluir logística"
+                              }
                               className="btn"
                               style={{
                                 width: "42px",
@@ -1152,7 +1177,8 @@ export default function LogisticaFornecedor() {
                                 borderRadius: "14px",
                                 background: "rgba(255,255,255,.04)",
                                 border: "1px solid rgba(255,255,255,.05)",
-                                color: "#ff758f",
+                                color: bloqueada ? "rgba(255,255,255,.25)" : "#ff758f",
+                                cursor: bloqueada ? "not-allowed" : "pointer",
                               }}
                             >
                               <i className="bi bi-trash3-fill" />
@@ -1191,7 +1217,7 @@ export default function LogisticaFornecedor() {
                                   }}
                                 >
                                   <i className="bi bi-geo-alt me-2" />
-                                  {item.destino || "Destino não informado"}
+                                  {item.destino || "Destino automático ainda não definido"}
                                 </span>
 
                                 <span
@@ -1200,8 +1226,24 @@ export default function LogisticaFornecedor() {
                                   }}
                                 >
                                   <i className="bi bi-truck me-2" />
-                                  {item.veiculo || "não selecionado"}
+                                  {normalizarTextoExibicao(item.veiculo || "não selecionado")}
                                 </span>
+
+                                {bloqueada && (
+                                  <span
+                                    className="badge align-self-start"
+                                    style={{
+                                      background: "rgba(255,179,0,.12)",
+                                      color: "#ffe082",
+                                      border: "1px solid rgba(255,179,0,.22)",
+                                      borderRadius: "999px",
+                                      padding: "8px 12px",
+                                    }}
+                                  >
+                                    <i className="bi bi-lock-fill me-1" />
+                                    Vinculada / bloqueada
+                                  </span>
+                                )}
                               </div>
                             </div>
 
@@ -1265,7 +1307,7 @@ export default function LogisticaFornecedor() {
                                 Ações rápidas
                               </p>
 
-                              <div className="d-flex flex-column gap-2">
+                              <div className="d-flex flex-column gap-2 ml-2">
                                 <button
                                   type="button"
                                   onClick={() => abrirRota(item)}
@@ -1278,6 +1320,7 @@ export default function LogisticaFornecedor() {
                                     borderRadius: "14px",
                                     padding: "10px 12px",
                                     fontWeight: "700",
+                                    cursor: item.destino ? "pointer" : "not-allowed",
                                   }}
                                 >
                                   <i className="bi bi-map me-2" />
@@ -1329,7 +1372,11 @@ export default function LogisticaFornecedor() {
                                         cursor: atualizando ? "not-allowed" : "pointer",
                                       }}
                                     >
-                                      <option value="disponivel" style={{ color: "#ffffff" }}>
+                                      <option
+                                        value="disponivel"
+                                        disabled={bloqueada}
+                                        style={{ color: "#ffffff" }}
+                                      >
                                         Disponível
                                       </option>
 
@@ -1356,33 +1403,7 @@ export default function LogisticaFornecedor() {
                               </div>
                             </div>
 
-                            <div className="col-lg-2 d-flex justify-content-lg-end">
-                              <div style={{ textAlign: "right" }}>
-                                <p
-                                  style={{
-                                    color: "rgba(255,255,255,.5)",
-                                    marginBottom: "8px",
-                                    fontSize: ".78rem",
-                                    textTransform: "uppercase",
-                                  }}
-                                >
-                                  Perfil
-                                </p>
-
-                                <span
-                                  className="badge"
-                                  style={{
-                                    background: "rgba(255,255,255,.06)",
-                                    color: "rgba(255,255,255,.75)",
-                                    border: "1px solid rgba(255,255,255,.08)",
-                                    borderRadius: "999px",
-                                    padding: "8px 10px",
-                                  }}
-                                >
-                                  Minha logística
-                                </span>
-                              </div>
-                            </div>
+                      
                           </div>
                         </article>
                       );
@@ -1396,20 +1417,22 @@ export default function LogisticaFornecedor() {
                           borderRadius: "28px",
                           background: "rgba(255,255,255,.02)",
                           border: "1px solid rgba(255,255,255,.06)",
+                          textAlign: "center",
                         }}
                       >
                         <i
                           className="bi bi-truck"
                           style={{
-                            fontSize: "4rem",
                             color: "#ffcf40",
-                            marginBottom: "18px",
+                            fontSize: "2.5rem",
+                            marginBottom: "16px",
                           }}
                         />
 
                         <h3
                           style={{
-                            fontWeight: "700",
+                            color: "#ffe082",
+                            fontWeight: "800",
                           }}
                         >
                           Nenhuma logística encontrada
@@ -1616,35 +1639,31 @@ export default function LogisticaFornecedor() {
                       }
                       style={inputStyle}
                     >
-                      <option value="disponivel" style={{ color: "#111" }}>
-                        Disponível
-                      </option>
-
-                      <option value="ocupado" style={{ color: "#111" }}>
-                        Ocupado
-                      </option>
-
-                      <option value="manutencao" style={{ color: "#111" }}>
-                        Manutenção
-                      </option>
+                      {disponibilidadesValidas.map((disponibilidade) => (
+                        <option
+                          key={disponibilidade}
+                          value={disponibilidade}
+                          style={{ color: "#111" }}
+                        >
+                          {getLabelDisponibilidade(disponibilidade)}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
                   <div className="col-12">
-                    <label className="form-label small text-white-50">
-                      Destino
-                    </label>
-
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={formData.destino}
-                      onChange={(event) =>
-                        atualizarCampo("destino", event.target.value)
-                      }
-                      placeholder="Ex: São Paulo, SP"
-                      style={inputStyle}
-                    />
+                    <div
+                      className="alert mb-0"
+                      style={{
+                        background: "rgba(255,179,0,.10)",
+                        border: "1px solid rgba(255,179,0,.22)",
+                        color: "#ffe082",
+                        borderRadius: "16px",
+                      }}
+                    >
+                      <i className="bi bi-info-circle me-2" />
+                      O destino será definido automaticamente pelo endereço do comprador quando esta logística for atribuída a uma encomenda.
+                    </div>
                   </div>
                 </div>
 

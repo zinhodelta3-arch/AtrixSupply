@@ -398,6 +398,7 @@ class EncomendaController {
             }
 
             const encomendaExistente = await EncomendaModel.buscarPorId(id_encomenda);
+
             if (!encomendaExistente) {
                 return res.status(404).json({
                     sucesso: false,
@@ -428,6 +429,7 @@ class EncomendaController {
             }
 
             const logisticaExistente = await LogisticaModel.buscarPorId(id_logistica);
+
             if (!logisticaExistente) {
                 return res.status(404).json({
                     sucesso: false,
@@ -444,6 +446,40 @@ class EncomendaController {
                     sucesso: false,
                     erro: 'Acesso negado',
                     mensagem: 'Fornecedor só pode usar logística cadastrada por ele'
+                });
+            }
+
+            const encomendaAtivaComEssaLogistica =
+                await LogisticaModel.buscarEncomendaAtivaPorLogistica(
+                    id_logistica,
+                    id_encomenda
+                );
+
+            if (encomendaAtivaComEssaLogistica) {
+                return res.status(409).json({
+                    sucesso: false,
+                    erro: 'Logística ocupada',
+                    mensagem: 'Esta logística já está vinculada a uma encomenda ativa'
+                });
+            }
+
+            const comprador = await UsuarioModel.buscarPorId(encomendaExistente.id_user);
+
+            if (!comprador) {
+                return res.status(404).json({
+                    sucesso: false,
+                    erro: 'Comprador não encontrado',
+                    mensagem: 'Não foi possível localizar o comprador da encomenda'
+                });
+            }
+
+            const destinoComprador = String(comprador.endereco || '').trim();
+
+            if (!destinoComprador) {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'Endereço ausente',
+                    mensagem: 'O comprador desta encomenda não possui endereço cadastrado'
                 });
             }
 
@@ -465,21 +501,29 @@ class EncomendaController {
                 dataEntregaFinal = date.toISOString().split('T')[0];
             }
 
-            const dadosAtualizacao = {
+            const dadosAtualizacaoEncomenda = {
                 id_logistica: Number(id_logistica),
                 status: 'em_transporte',
                 data_entrega: dataEntregaFinal
             };
 
-            const resultado = await EncomendaModel.atualizar(id_encomenda, dadosAtualizacao);
-            await LogisticaModel.atualizar(id_logistica, { disponibilidade: 'ocupado' });
+            const resultado = await EncomendaModel.atualizar(
+                id_encomenda,
+                dadosAtualizacaoEncomenda
+            );
+
+            await LogisticaModel.atualizar(id_logistica, {
+                disponibilidade: 'ocupado',
+                destino: destinoComprador
+            });
 
             res.status(200).json({
                 sucesso: true,
-                mensagem: 'Logística definida e encomenda enviada para transporte',
+                mensagem: 'Logística definida, destino ajustado pelo endereço do comprador e encomenda enviada para transporte',
                 dados: {
                     linhasAfetadas: resultado || 1,
-                    data_entrega: dataEntregaFinal
+                    data_entrega: dataEntregaFinal,
+                    destino: destinoComprador
                 }
             });
         } catch (error) {

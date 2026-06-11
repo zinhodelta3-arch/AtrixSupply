@@ -35,6 +35,11 @@ function normalizarDisponibilidade(disponibilidade) {
         : null;
 }
 
+async function logisticaEstaVinculada(id_logistica) {
+    const totalVinculadas = await LogisticaModel.contarEncomendasVinculadas(id_logistica);
+    return Number(totalVinculadas) > 0;
+}
+
 // Controller para operações de logística
 class LogisticaController {
 
@@ -351,6 +356,7 @@ class LogisticaController {
                 });
             }
 
+            const vinculada = await logisticaEstaVinculada(id_logistica);
             const dadosAtualizacao = {};
 
             if (nome_logistica !== undefined) {
@@ -398,10 +404,26 @@ class LogisticaController {
                     });
                 }
 
+                if (vinculada && disponibilidadeNormalizada === 'disponivel') {
+                    return res.status(409).json({
+                        sucesso: false,
+                        erro: 'Logística vinculada',
+                        mensagem: 'Não é possível alterar uma logística vinculada a uma encomenda ativa para Disponível'
+                    });
+                }
+
                 dadosAtualizacao.disponibilidade = disponibilidadeNormalizada;
             }
 
             if (destino !== undefined) {
+                if (vinculada) {
+                    return res.status(409).json({
+                        sucesso: false,
+                        erro: 'Destino bloqueado',
+                        mensagem: 'O destino de uma logística vinculada é definido automaticamente pelo endereço do comprador'
+                    });
+                }
+
                 if (destino !== null && typeof destino !== 'string') {
                     return res.status(400).json({
                         sucesso: false,
@@ -463,12 +485,13 @@ class LogisticaController {
                 });
             }
 
-            const encomendasVinculadas = await LogisticaModel.contarEncomendasVinculadas(id_logistica);
-            if (encomendasVinculadas > 0) {
-                return res.status(400).json({
+            const vinculada = await logisticaEstaVinculada(id_logistica);
+
+            if (vinculada) {
+                return res.status(409).json({
                     sucesso: false,
                     erro: 'Logística vinculada',
-                    mensagem: 'Não é possível excluir logística vinculada a encomenda ativa'
+                    mensagem: 'Não é possível excluir logística vinculada a uma encomenda ativa'
                 });
             }
 
