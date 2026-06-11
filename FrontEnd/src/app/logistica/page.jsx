@@ -1286,15 +1286,15 @@ export default function LogisticaFornecedor() {
                                         cursor: atualizando ? "not-allowed" : "pointer",
                                       }}
                                     >
-                                      <option value="disponivel" style={{ color: "#111" }}>
+                                      <option value="disponivel" style={{ color: "#ffffff" }}>
                                         Disponível
                                       </option>
 
-                                      <option value="ocupado" style={{ color: "#111" }}>
+                                      <option value="ocupado" style={{ color: "#ffffff" }}>
                                         Ocupado
                                       </option>
 
-                                      <option value="manutencao" style={{ color: "#111" }}>
+                                      <option value="manutencao" style={{ color: "#ffffff" }}>
                                         Manutenção
                                       </option>
                                     </select>
