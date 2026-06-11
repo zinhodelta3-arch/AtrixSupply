@@ -1,8 +1,8 @@
 import Link from "next/link";
 
 export default function Footer() {
-  const termosPdf = "/docs/Termos_de_Servico_ATRIX_SUPPLY_texto.pdf";
-  const privacidadePdf = "/docs/Termos_de_Privacidade.pdf";
+  const termosPdf = "/docs/Termos_de_Servico_ATRIX_SUPPLY.pdf";
+  const privacidadePdf = "/docs/Termos_de_Privacidade_ATRIX_SUPPLY.pdf";
 
   return (
     <footer className="footer-custom text-white">

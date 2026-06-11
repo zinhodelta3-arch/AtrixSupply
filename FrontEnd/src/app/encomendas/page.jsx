@@ -1248,9 +1248,7 @@ export default function Encomendas() {
                                 {formatarEstadoOrcamento(orcamento.estado)}
                               </span>
 
-                              <span className="text-secondary small">
-                                #{orcamento.id_orcamento}
-                              </span>
+                              
                             </div>
 
                             <h5 className="fw-bold mb-2">{orcamento.nome_orcamento}</h5>

@@ -6,7 +6,8 @@ import { useState, useEffect, useRef } from "react";
 import * as THREE from "three";
 import Link from "next/link";
 
-const TERMOS_SERVICO_URL = "/docs/Termos_de_Servico_ATRIX_SUPPLY_texto.pdf";
+const TERMOS_SERVICO_URL = "/docs/Termos_de_Servico_ATRIX_SUPPLY.pdf";
+const TERMOS_PRIVACIDADE_URL = "/docs/Termos_de_Privacidade_ATRIX_SUPPLY.pdf";
 
 export default function Cadastro() {
   const mountRef = useRef(null);
@@ -50,7 +51,7 @@ export default function Cadastro() {
     setSucesso("");
 
     if (!aceitouTermos) {
-      setErro("Você precisa ler e aceitar os Termos de Serviço para continuar o cadastro.");
+      setErro("Você precisa ler e aceitar os Termos de Serviço e Termos de Privacidade para efetuar o cadastro.");
       return;
     }
 
@@ -733,6 +734,19 @@ export default function Cadastro() {
                 }}
               >
                 Termos de Serviço
+              </Link> e {" "}
+              <Link
+                href={TERMOS_PRIVACIDADE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  color: "#ffb300",
+                  fontWeight: "bold",
+                  textDecoration: "underline",
+                  textUnderlineOffset: "3px",
+                }}
+              >
+                Termos de Privacidade
               </Link>
               . Ao marcar esta opção, você confirma que leu, compreendeu e aceita
               as regras de uso da plataforma ATRIX Supply.
