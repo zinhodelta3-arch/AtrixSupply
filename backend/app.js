@@ -16,6 +16,7 @@ import orcamentoRotas from './routes/orcamentoRotas.js';
 import suporteRotas from './routes/suporteRotas.js';
 import notificacaoRotas from './routes/notificacaoRotas.js';
 import { garantirFluxoEncomendas } from './utils/garantirFluxoEncomendas.js';
+import { iniciarLimpezaNotificacoesAutomaticas } from "./utils/excluirNotificacaoAutomatica.js";
 
 // Importar middlewares
 import { logMiddleware } from './middlewares/logMiddleware.js';
@@ -121,7 +122,8 @@ app.use(errorMiddleware);
 
 // Iniciar servidor
 async function iniciarServidor() {
-    await garantirFluxoEncomendas();
+    await garantirFluxoEncomendas(); 
+     iniciarLimpezaNotificacoesAutomaticas();
 
     app.listen(PORT, () => {
         console.log(`Acesse: http://localhost:${PORT}`);
