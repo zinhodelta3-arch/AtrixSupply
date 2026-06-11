@@ -5,11 +5,7 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import {
-  FALLBACK_PROFILE_IMAGE,
-  resolveImageUrl,
-  useImageFallback,
-} from "@/utils/imageUrl";
+import { resolveImageUrl } from "@/utils/imageUrl";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -349,12 +345,30 @@ function pegarIniciais(nome) {
   return `${partes[0][0]}${partes[partes.length - 1][0]}`.toUpperCase();
 }
 
+function obterFotoBrutaPerfil(usuario) {
+  return (
+    usuario?.foto ||
+    usuario?.foto_user ||
+    usuario?.foto_perfil ||
+    usuario?.imagem ||
+    usuario?.avatar ||
+    usuario?.profile_image ||
+    usuario?.dados?.foto ||
+    usuario?.dados?.foto_user ||
+    usuario?.dados?.foto_perfil ||
+    usuario?.dados?.imagem ||
+    usuario?.dados?.avatar ||
+    ""
+  );
+}
+
 export default function Perfil() {
   const router = useRouter();
 
   const [perfil, setPerfil] = useState(null);
   const [idUsuarioLogado, setIdUsuarioLogado] = useState("");
   const [rotaUsuariosAtiva, setRotaUsuariosAtiva] = useState(null);
+  const [fotoPerfilQuebrou, setFotoPerfilQuebrou] = useState(false);
 
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState(null);
@@ -383,6 +397,10 @@ export default function Perfil() {
   useEffect(() => {
     carregarPerfil();
   }, []);
+
+  useEffect(() => {
+    setFotoPerfilQuebrou(false);
+  }, [perfil?.foto, perfil?.foto_user, perfil?.foto_perfil, perfil?.imagem, perfil?.avatar]);
 
   async function carregarPerfil() {
     try {
@@ -559,7 +577,9 @@ export default function Perfil() {
 
   const tipoCor = getCorTipo(perfil?.tipo);
   const iniciais = pegarIniciais(perfil?.nome_user);
-  const fotoPerfil = resolveImageUrl(perfil?.foto, FALLBACK_PROFILE_IMAGE);
+  const fotoBrutaPerfil = obterFotoBrutaPerfil(perfil);
+  const fotoPerfil = fotoBrutaPerfil ? resolveImageUrl(fotoBrutaPerfil, "") : "";
+  const exibirFotoPerfil = Boolean(fotoPerfil && !fotoPerfilQuebrou);
 
   const resumoConta = useMemo(() => {
     if (!perfil) return [];
@@ -813,16 +833,37 @@ export default function Perfil() {
                     boxShadow: "none",
                   }}
                 >
-                  <img
-                    src={fotoPerfil}
-                    alt="Perfil"
-                    onError={(event) => useImageFallback(event, FALLBACK_PROFILE_IMAGE)}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                    }}
-                  />
+                  {exibirFotoPerfil ? (
+                    <img
+                      src={fotoPerfil}
+                      alt="Perfil"
+                      onError={() => setFotoPerfilQuebrou(true)}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  ) : (
+                    <div
+                      className="d-flex justify-content-center align-items-center w-100 h-100"
+                      style={{
+                        background:
+                          "linear-gradient(145deg, rgba(255,255,255,.045), rgba(255,255,255,.018))",
+                        color: "#ffcf40",
+                      }}
+                    >
+                      <i
+                        className="bi bi-person-circle"
+                        aria-label="Ícone de perfil"
+                        style={{
+                          fontSize: "5.4rem",
+                          lineHeight: 1,
+                          opacity: 0.92,
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div
