@@ -9,6 +9,26 @@ import Link from "next/link";
 const TERMOS_SERVICO_URL = "/docs/Termos_de_Servico_ATRIX_SUPPLY.pdf";
 const TERMOS_PRIVACIDADE_URL = "/docs/Termos_de_Privacidade_ATRIX_SUPPLY.pdf";
 
+function manterApenasNumeros(valor) {
+  return String(valor || "").replace(/\D/g, "");
+}
+
+function formatarCNPJ(valor) {
+  const numeros = manterApenasNumeros(valor).slice(0, 14);
+
+  return numeros
+    .replace(/^(\d{2})(\d)/, "$1.$2")
+    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d)/, ".$1/$2")
+    .replace(/(\d{4})(\d)/, "$1-$2");
+}
+
+function formatarCEP(valor) {
+  const numeros = manterApenasNumeros(valor).slice(0, 8);
+
+  return numeros.replace(/^(\d{5})(\d)/, "$1-$2");
+}
+
 export default function Cadastro() {
   const mountRef = useRef(null);
   const router = useRouter();
@@ -38,9 +58,19 @@ export default function Cadastro() {
   function handleChange(event) {
     const { name, value } = event.target;
 
+    let valorFormatado = value;
+
+    if (name === "cnpj") {
+      valorFormatado = formatarCNPJ(value);
+    }
+
+    if (name === "cep") {
+      valorFormatado = formatarCEP(value);
+    }
+
     setFormData((dadosAtuais) => ({
       ...dadosAtuais,
-      [name]: value,
+      [name]: valorFormatado,
     }));
   }
 
@@ -65,18 +95,31 @@ export default function Cadastro() {
       return;
     }
 
+    const cnpjLimpo = manterApenasNumeros(formData.cnpj);
+    const cepLimpo = manterApenasNumeros(formData.cep);
+
+    if (cnpjLimpo.length !== 14) {
+      setErro("Informe um CNPJ válido com 14 dígitos.");
+      return;
+    }
+
+    if (cepLimpo.length !== 8) {
+      setErro("Informe um CEP válido com 8 dígitos.");
+      return;
+    }
+
     try {
       setCarregando(true);
 
       const dadosParaEnviar = {
-        nome_user: formData.nome_user,
-        email: formData.email,
-        cnpj: formData.cnpj,
-        empresa: formData.empresa,
-        cargo: formData.cargo,
+        nome_user: formData.nome_user.trim(),
+        email: formData.email.trim().toLowerCase(),
+        cnpj: cnpjLimpo,
+        empresa: formData.empresa.trim(),
+        cargo: formData.cargo.trim(),
         tipo: formData.tipo,
-        cep: formData.cep,
-        endereco: formData.endereco,
+        cep: cepLimpo,
+        endereco: formData.endereco.trim(),
         senha: formData.senha,
       };
 
@@ -557,9 +600,12 @@ export default function Cadastro() {
               <input
                 name="cnpj"
                 type="text"
+                inputMode="numeric"
+                autoComplete="off"
                 placeholder="00.000.000/0000-00"
                 value={formData.cnpj}
                 onChange={handleChange}
+                maxLength={18}
                 style={inputStyle}
                 required
               />
@@ -621,9 +667,12 @@ export default function Cadastro() {
               <input
                 name="cep"
                 type="text"
+                inputMode="numeric"
+                autoComplete="postal-code"
                 placeholder="00000-000"
                 value={formData.cep}
                 onChange={handleChange}
+                maxLength={9}
                 style={inputStyle}
                 required
               />

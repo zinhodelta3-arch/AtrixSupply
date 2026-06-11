@@ -177,6 +177,26 @@ function obterIniciais(nome) {
     .toUpperCase();
 }
 
+function manterApenasNumeros(valor) {
+  return String(valor || "").replace(/\D/g, "");
+}
+
+function formatarCNPJInput(valor) {
+  const numeros = manterApenasNumeros(valor).slice(0, 14);
+
+  return numeros
+    .replace(/^(\d{2})(\d)/, "$1.$2")
+    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d)/, ".$1/$2")
+    .replace(/(\d{4})(\d)/, "$1-$2");
+}
+
+function formatarCEPInput(valor) {
+  const numeros = manterApenasNumeros(valor).slice(0, 8);
+
+  return numeros.replace(/^(\d{5})(\d)/, "$1-$2");
+}
+
 
 function obterFotoBrutaUsuario(usuario) {
   return (
@@ -280,7 +300,7 @@ function getTipoBadgeStyle(tipo) {
 }
 
 function formatarDocumento(valor) {
-  const limpo = String(valor || "").replace(/\D/g, "");
+  const limpo = manterApenasNumeros(valor);
 
   if (limpo.length !== 14) {
     return valor || "Não informado";
@@ -400,9 +420,19 @@ export default function Usuarios() {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
+    let valorFormatado = value;
+
+    if (name === "cnpj") {
+      valorFormatado = formatarCNPJInput(value);
+    }
+
+    if (name === "cep") {
+      valorFormatado = formatarCEPInput(value);
+    }
+
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: valorFormatado,
     }));
   };
 
@@ -429,10 +459,10 @@ export default function Usuarios() {
     setFormData({
       nome_user: user.nome_user || "",
       email: user.email || "",
-      cnpj: user.cnpj || "",
+      cnpj: formatarCNPJInput(user.cnpj || ""),
       empresa: user.empresa || "",
       cargo: user.cargo || "",
-      cep: user.cep || "",
+      cep: formatarCEPInput(user.cep || ""),
       endereco: user.endereco || "",
       senha: "",
       confirmarSenha: "",
@@ -461,10 +491,15 @@ export default function Usuarios() {
     if (!formData.endereco.trim()) return "O endereço é obrigatório.";
     if (!formData.tipo.trim()) return "Selecione o tipo do usuário.";
 
-    const cnpjLimpo = formData.cnpj.replace(/\D/g, "");
+    const cnpjLimpo = manterApenasNumeros(formData.cnpj);
+    const cepLimpo = manterApenasNumeros(formData.cep);
 
     if (cnpjLimpo.length !== 14) {
       return "O CNPJ deve conter exatamente 14 números.";
+    }
+
+    if (cepLimpo.length !== 8) {
+      return "O CEP deve conter exatamente 8 números.";
     }
 
     if (!formData.senha.trim()) return "A senha é obrigatória.";
@@ -486,10 +521,15 @@ export default function Usuarios() {
     if (!formData.endereco.trim()) return "O endereço é obrigatório.";
     if (!formData.tipo.trim()) return "Selecione o tipo do usuário.";
 
-    const cnpjLimpo = formData.cnpj.replace(/\D/g, "");
+    const cnpjLimpo = manterApenasNumeros(formData.cnpj);
+    const cepLimpo = manterApenasNumeros(formData.cep);
 
     if (cnpjLimpo.length !== 14) {
       return "O CNPJ deve conter exatamente 14 números.";
+    }
+
+    if (cepLimpo.length !== 8) {
+      return "O CEP deve conter exatamente 8 números.";
     }
 
     return null;
@@ -515,7 +555,8 @@ export default function Usuarios() {
       return;
     }
 
-    const cnpjLimpo = formData.cnpj.replace(/\D/g, "");
+    const cnpjLimpo = manterApenasNumeros(formData.cnpj);
+    const cepLimpo = manterApenasNumeros(formData.cep);
 
     setProcessandoForm(true);
 
@@ -532,7 +573,7 @@ export default function Usuarios() {
           cnpj: cnpjLimpo,
           empresa: formData.empresa.trim(),
           cargo: formData.cargo.trim(),
-          cep: formData.cep.trim(),
+          cep: cepLimpo,
           endereco: formData.endereco.trim(),
           senha: formData.senha,
           tipo: formData.tipo,
@@ -585,7 +626,8 @@ export default function Usuarios() {
     }
 
     const token = obterTokenAdmin();
-    const cnpjLimpo = formData.cnpj.replace(/\D/g, "");
+    const cnpjLimpo = manterApenasNumeros(formData.cnpj);
+    const cepLimpo = manterApenasNumeros(formData.cep);
 
     setProcessandoForm(true);
 
@@ -602,7 +644,7 @@ export default function Usuarios() {
           cnpj: cnpjLimpo,
           empresa: formData.empresa.trim(),
           cargo: formData.cargo.trim(),
-          cep: formData.cep.trim(),
+          cep: cepLimpo,
           endereco: formData.endereco.trim(),
           tipo: formData.tipo,
         }),
@@ -715,7 +757,10 @@ export default function Usuarios() {
       {
         name: "cnpj",
         label: "CNPJ",
-        placeholder: "Apenas números, 14 dígitos",
+        placeholder: "00.000.000/0000-00",
+        inputMode: "numeric",
+        maxLength: 18,
+        autoComplete: "off",
       },
       {
         name: "empresa",
@@ -731,6 +776,9 @@ export default function Usuarios() {
         name: "cep",
         label: "CEP",
         placeholder: "00000-000",
+        inputMode: "numeric",
+        maxLength: 9,
+        autoComplete: "postal-code",
       },
       {
         name: "endereco",
@@ -866,6 +914,9 @@ export default function Usuarios() {
                   value={formData[field.name]}
                   onChange={handleChange}
                   type={field.type || "text"}
+                  inputMode={field.inputMode}
+                  maxLength={field.maxLength}
+                  autoComplete={field.autoComplete}
                   className="form-control"
                   placeholder={field.placeholder}
                   required
