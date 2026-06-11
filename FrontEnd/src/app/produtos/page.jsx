@@ -8,12 +8,11 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 
 import "./produtos.css";
 import CardProduto from "@/components/CardProduto";
-import { color } from "chart.js/helpers";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
 const PRODUTOS_URL = `${API_URL}/api/produtos`;
 
-const produtosPorPagina = 12;
+const PRODUTOS_POR_PAGINA = 12;
 
 const categorias = [
   { value: "todas", label: "Todas" },
@@ -76,11 +75,90 @@ function getMensagemErro(data) {
   return data?.mensagem || data?.erro || "Não foi possível carregar os produtos.";
 }
 
+function normalizarRespostaProdutos(data, paginaSolicitada) {
+  const fonte = data?.dados ?? data ?? {};
+
+  let lista = [];
+
+  if (Array.isArray(fonte)) {
+    lista = fonte;
+  } else if (Array.isArray(fonte?.produtos)) {
+    lista = fonte.produtos;
+  } else if (Array.isArray(fonte?.itens)) {
+    lista = fonte.itens;
+  } else if (Array.isArray(fonte?.items)) {
+    lista = fonte.items;
+  } else if (Array.isArray(data?.produtos)) {
+    lista = data.produtos;
+  }
+
+  const paginacaoFonte = data?.paginacao || fonte?.paginacao || {};
+
+  const pagina =
+    Number(
+      paginacaoFonte?.paginaAtual ??
+        paginacaoFonte?.pagina ??
+        fonte?.paginaAtual ??
+        fonte?.pagina ??
+        data?.paginaAtual ??
+        data?.pagina ??
+        paginaSolicitada
+    ) || paginaSolicitada;
+
+  const total =
+    Number(
+      paginacaoFonte?.total ??
+        paginacaoFonte?.totalItens ??
+        paginacaoFonte?.totalProdutos ??
+        fonte?.total ??
+        fonte?.totalItens ??
+        fonte?.totalProdutos ??
+        data?.total ??
+        data?.totalItens ??
+        data?.totalProdutos ??
+        lista.length
+    ) || lista.length;
+
+  const limite =
+    Number(
+      paginacaoFonte?.limite ??
+        fonte?.limite ??
+        data?.limite ??
+        PRODUTOS_POR_PAGINA
+    ) || PRODUTOS_POR_PAGINA;
+
+  const totalPaginas =
+    Number(
+      paginacaoFonte?.totalPaginas ??
+        paginacaoFonte?.total_paginas ??
+        fonte?.totalPaginas ??
+        fonte?.total_paginas ??
+        data?.totalPaginas ??
+        data?.total_paginas
+    ) || Math.max(1, Math.ceil(total / PRODUTOS_POR_PAGINA));
+
+  return {
+    lista,
+    paginacao: {
+      pagina,
+      limite,
+      total,
+      totalPaginas,
+    },
+  };
+}
+
 export default function Produtos() {
   const router = useRouter();
 
   const [produtos, setProdutos] = useState([]);
   const [paginaAtual, setPaginaAtual] = useState(1);
+  const [paginacaoApi, setPaginacaoApi] = useState({
+    pagina: 1,
+    limite: PRODUTOS_POR_PAGINA,
+    total: 0,
+    totalPaginas: 1,
+  });
 
   const [busca, setBusca] = useState("");
   const [categoriaSelecionada, setCategoriaSelecionada] = useState("todas");
@@ -142,38 +220,52 @@ export default function Produtos() {
         setCarregandoProdutos(true);
         setErro("");
 
-        const response = await fetch(PRODUTOS_URL, {
+        const params = new URLSearchParams({
+          pagina: String(paginaAtual),
+          limite: String(PRODUTOS_POR_PAGINA),
+        });
+
+        const response = await fetch(`${PRODUTOS_URL}?${params.toString()}`, {
           method: "GET",
           cache: "no-store",
         });
 
         const data = await response.json().catch(() => null);
 
-        if (!response.ok || !data?.sucesso) {
+        if (!response.ok || data?.sucesso === false) {
           throw new Error(getMensagemErro(data));
         }
 
-        const lista = Array.isArray(data?.dados) ? data.dados : [];
+        const { lista, paginacao } = normalizarRespostaProdutos(data, paginaAtual);
 
         setProdutos(lista);
+        setPaginacaoApi(paginacao);
 
         const maiorPreco = lista.reduce((maior, produto) => {
           const preco = Number(produto?.preco || 0);
           return preco > maior ? preco : maior;
         }, 0);
 
-        setPrecoMaximo(Math.ceil(maiorPreco));
+        setPrecoMaximo((valorAtual) =>
+          valorAtual && valorAtual > 0 ? valorAtual : Math.ceil(maiorPreco)
+        );
       } catch (error) {
         console.error("Erro ao carregar produtos:", error);
         setErro(error.message || "Não foi possível carregar os produtos.");
         setProdutos([]);
+        setPaginacaoApi({
+          pagina: 1,
+          limite: PRODUTOS_POR_PAGINA,
+          total: 0,
+          totalPaginas: 1,
+        });
       } finally {
         setCarregandoProdutos(false);
       }
     }
 
     carregarProdutos();
-  }, [acessoPermitido]);
+  }, [acessoPermitido, paginaAtual]);
 
   const maiorPrecoDisponivel = useMemo(() => {
     return produtos.reduce((maior, produto) => {
@@ -212,21 +304,47 @@ export default function Produtos() {
     });
   }, [produtos, busca, categoriaSelecionada, precoMaximo, somenteEstoque]);
 
-  const totalPaginas = Math.max(
-    1,
-    Math.ceil(produtosFiltrados.length / produtosPorPagina)
-  );
+  const existeFiltroAtivo = useMemo(() => {
+    const maiorPrecoArredondado = Math.ceil(maiorPrecoDisponivel || 0);
+
+    return (
+      Boolean(busca.trim()) ||
+      categoriaSelecionada !== "todas" ||
+      Boolean(somenteEstoque) ||
+      (Number(precoMaximo || 0) > 0 &&
+        maiorPrecoArredondado > 0 &&
+        Number(precoMaximo) < maiorPrecoArredondado)
+    );
+  }, [busca, categoriaSelecionada, somenteEstoque, precoMaximo, maiorPrecoDisponivel]);
+
+  const usandoPaginacaoApi =
+    Number(paginacaoApi?.totalPaginas || 1) > 1 ||
+    Number(paginacaoApi?.total || 0) > produtos.length;
+
+  const totalPaginas = existeFiltroAtivo
+    ? Math.max(1, Math.ceil(produtosFiltrados.length / PRODUTOS_POR_PAGINA))
+    : Math.max(1, Number(paginacaoApi?.totalPaginas || 1));
 
   const produtosAtuais = useMemo(() => {
-    const ultimoProduto = paginaAtual * produtosPorPagina;
-    const primeiroProduto = ultimoProduto - produtosPorPagina;
+    if (usandoPaginacaoApi && !existeFiltroAtivo) {
+      return produtosFiltrados;
+    }
+
+    const ultimoProduto = paginaAtual * PRODUTOS_POR_PAGINA;
+    const primeiroProduto = ultimoProduto - PRODUTOS_POR_PAGINA;
 
     return produtosFiltrados.slice(primeiroProduto, ultimoProduto);
-  }, [produtosFiltrados, paginaAtual]);
+  }, [produtosFiltrados, paginaAtual, usandoPaginacaoApi, existeFiltroAtivo]);
 
   useEffect(() => {
     setPaginaAtual(1);
   }, [busca, categoriaSelecionada, precoMaximo, somenteEstoque]);
+
+  useEffect(() => {
+    if (!carregandoProdutos && paginaAtual > totalPaginas) {
+      setPaginaAtual(totalPaginas);
+    }
+  }, [carregandoProdutos, paginaAtual, totalPaginas]);
 
   function limparFiltros() {
     setBusca("");
@@ -450,7 +568,11 @@ export default function Produtos() {
                   </span>
 
                   <h3 className="fw-bold mt-2 mb-0">
-                    {String(produtosFiltrados.length).padStart(2, "0")}
+                    {String(
+                      existeFiltroAtivo
+                        ? produtosFiltrados.length
+                        : paginacaoApi?.total || produtosFiltrados.length
+                    ).padStart(2, "0")}
                   </h3>
                 </div>
               </aside>
