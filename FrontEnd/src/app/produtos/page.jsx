@@ -137,6 +137,15 @@ function normalizarRespostaProdutos(data, paginaSolicitada) {
         data?.total_paginas
     ) || Math.max(1, Math.ceil(total / PRODUTOS_POR_PAGINA));
 
+  const maiorPreco =
+    Number(
+      data?.meta?.maiorPreco ??
+        data?.maiorPreco ??
+        fonte?.maiorPreco ??
+        fonte?.meta?.maiorPreco ??
+        0
+    ) || 0;
+
   return {
     lista,
     paginacao: {
@@ -145,6 +154,7 @@ function normalizarRespostaProdutos(data, paginaSolicitada) {
       total,
       totalPaginas,
     },
+    maiorPreco,
   };
 }
 
@@ -163,6 +173,8 @@ export default function Produtos() {
   const [busca, setBusca] = useState("");
   const [categoriaSelecionada, setCategoriaSelecionada] = useState("todas");
   const [precoMaximo, setPrecoMaximo] = useState(0);
+  const [maiorPrecoCatalogo, setMaiorPrecoCatalogo] = useState(0);
+  const [precoAlteradoPeloUsuario, setPrecoAlteradoPeloUsuario] = useState(false);
   const [somenteEstoque, setSomenteEstoque] = useState(false);
 
   const [validandoAcesso, setValidandoAcesso] = useState(true);
@@ -225,6 +237,32 @@ export default function Produtos() {
           limite: String(PRODUTOS_POR_PAGINA),
         });
 
+        const buscaLimpa = busca.trim();
+        const categoriaNormalizada = normalizarCategoria(categoriaSelecionada);
+        const precoMaximoNumerico = Number(precoMaximo || 0);
+        const maiorPrecoNumerico = Number(maiorPrecoCatalogo || 0);
+
+        if (buscaLimpa) {
+          params.set("busca", buscaLimpa);
+        }
+
+        if (categoriaNormalizada && categoriaNormalizada !== "todas") {
+          params.set("categoria", categoriaNormalizada);
+        }
+
+        if (
+          precoAlteradoPeloUsuario &&
+          precoMaximoNumerico > 0 &&
+          maiorPrecoNumerico > 0 &&
+          precoMaximoNumerico < maiorPrecoNumerico
+        ) {
+          params.set("precoMaximo", String(precoMaximoNumerico));
+        }
+
+        if (somenteEstoque) {
+          params.set("somenteEstoque", "true");
+        }
+
         const response = await fetch(`${PRODUTOS_URL}?${params.toString()}`, {
           method: "GET",
           cache: "no-store",
@@ -236,19 +274,21 @@ export default function Produtos() {
           throw new Error(getMensagemErro(data));
         }
 
-        const { lista, paginacao } = normalizarRespostaProdutos(data, paginaAtual);
+        const { lista, paginacao, maiorPreco } = normalizarRespostaProdutos(
+          data,
+          paginaAtual
+        );
 
         setProdutos(lista);
         setPaginacaoApi(paginacao);
 
-        const maiorPreco = lista.reduce((maior, produto) => {
-          const preco = Number(produto?.preco || 0);
-          return preco > maior ? preco : maior;
-        }, 0);
+        if (maiorPreco > 0) {
+          setMaiorPrecoCatalogo(maiorPreco);
 
-        setPrecoMaximo((valorAtual) =>
-          valorAtual && valorAtual > 0 ? valorAtual : Math.ceil(maiorPreco)
-        );
+          if (!precoAlteradoPeloUsuario) {
+            setPrecoMaximo(Math.ceil(maiorPreco));
+          }
+        }
       } catch (error) {
         console.error("Erro ao carregar produtos:", error);
         setErro(error.message || "Não foi possível carregar os produtos.");
@@ -265,79 +305,64 @@ export default function Produtos() {
     }
 
     carregarProdutos();
-  }, [acessoPermitido, paginaAtual]);
+  }, [
+    acessoPermitido,
+    paginaAtual,
+    busca,
+    categoriaSelecionada,
+    precoMaximo,
+    precoAlteradoPeloUsuario,
+    somenteEstoque,
+    maiorPrecoCatalogo,
+  ]);
 
   const maiorPrecoDisponivel = useMemo(() => {
+    if (Number(maiorPrecoCatalogo || 0) > 0) {
+      return Number(maiorPrecoCatalogo);
+    }
+
     return produtos.reduce((maior, produto) => {
       const preco = Number(produto?.preco || 0);
       return preco > maior ? preco : maior;
     }, 0);
-  }, [produtos]);
+  }, [maiorPrecoCatalogo, produtos]);
 
   const produtosFiltrados = useMemo(() => {
-    return produtos.filter((produto) => {
-      const nomeProduto = String(
-        produto?.nome_produto ||
-          produto?.nome ||
-          ""
-      ).toLowerCase();
-
-      const termoBusca = busca.trim().toLowerCase();
-
-      const categoriaProduto = normalizarCategoria(produto?.categoria);
-      const categoriaFiltro = normalizarCategoria(categoriaSelecionada);
-
-      const precoProduto = Number(produto?.preco || 0);
-      const estoqueProduto = Number(produto?.estoque || 0);
-
-      const buscaMatch = !termoBusca || nomeProduto.includes(termoBusca);
-
-      const categoriaMatch =
-        categoriaFiltro === "todas" || categoriaProduto === categoriaFiltro;
-
-      const precoMatch =
-        !precoMaximo || precoMaximo <= 0 || precoProduto <= Number(precoMaximo);
-
-      const estoqueMatch = !somenteEstoque || estoqueProduto > 0;
-
-      return buscaMatch && categoriaMatch && precoMatch && estoqueMatch;
-    });
-  }, [produtos, busca, categoriaSelecionada, precoMaximo, somenteEstoque]);
+    // A filtragem real agora acontece no backend.
+    // O frontend só renderiza a página retornada pela API.
+    return produtos;
+  }, [produtos]);
 
   const existeFiltroAtivo = useMemo(() => {
     const maiorPrecoArredondado = Math.ceil(maiorPrecoDisponivel || 0);
+    const precoMaximoNumerico = Number(precoMaximo || 0);
 
     return (
       Boolean(busca.trim()) ||
       categoriaSelecionada !== "todas" ||
       Boolean(somenteEstoque) ||
-      (Number(precoMaximo || 0) > 0 &&
+      (precoAlteradoPeloUsuario &&
+        precoMaximoNumerico > 0 &&
         maiorPrecoArredondado > 0 &&
-        Number(precoMaximo) < maiorPrecoArredondado)
+        precoMaximoNumerico < maiorPrecoArredondado)
     );
-  }, [busca, categoriaSelecionada, somenteEstoque, precoMaximo, maiorPrecoDisponivel]);
+  }, [
+    busca,
+    categoriaSelecionada,
+    somenteEstoque,
+    precoMaximo,
+    precoAlteradoPeloUsuario,
+    maiorPrecoDisponivel,
+  ]);
 
-  const usandoPaginacaoApi =
-    Number(paginacaoApi?.totalPaginas || 1) > 1 ||
-    Number(paginacaoApi?.total || 0) > produtos.length;
-
-  const totalPaginas = existeFiltroAtivo
-    ? Math.max(1, Math.ceil(produtosFiltrados.length / PRODUTOS_POR_PAGINA))
-    : Math.max(1, Number(paginacaoApi?.totalPaginas || 1));
+  const totalPaginas = Math.max(1, Number(paginacaoApi?.totalPaginas || 1));
 
   const produtosAtuais = useMemo(() => {
-    if (usandoPaginacaoApi && !existeFiltroAtivo) {
-      return produtosFiltrados;
-    }
-
-    const ultimoProduto = paginaAtual * PRODUTOS_POR_PAGINA;
-    const primeiroProduto = ultimoProduto - PRODUTOS_POR_PAGINA;
-
-    return produtosFiltrados.slice(primeiroProduto, ultimoProduto);
-  }, [produtosFiltrados, paginaAtual, usandoPaginacaoApi, existeFiltroAtivo]);
+    return produtosFiltrados;
+  }, [produtosFiltrados]);
 
   useEffect(() => {
-    setPaginaAtual(1);
+    setPaginaAtual((paginaAnterior) => (paginaAnterior === 1 ? paginaAnterior : 1));
   }, [busca, categoriaSelecionada, precoMaximo, somenteEstoque]);
 
   useEffect(() => {
@@ -349,7 +374,8 @@ export default function Produtos() {
   function limparFiltros() {
     setBusca("");
     setCategoriaSelecionada("todas");
-    setPrecoMaximo(Math.ceil(maiorPrecoDisponivel));
+    setPrecoAlteradoPeloUsuario(false);
+    setPrecoMaximo(Math.ceil(maiorPrecoDisponivel || maiorPrecoCatalogo || 0));
     setSomenteEstoque(false);
     setPaginaAtual(1);
   }
@@ -510,7 +536,10 @@ export default function Produtos() {
                     min="0"
                     max={Math.ceil(maiorPrecoDisponivel || 0)}
                     value={precoMaximo || 0}
-                    onChange={(event) => setPrecoMaximo(Number(event.target.value))}
+                    onChange={(event) => {
+                      setPrecoAlteradoPeloUsuario(true);
+                      setPrecoMaximo(Number(event.target.value));
+                    }}
                   />
                 </div>
 
@@ -569,9 +598,7 @@ export default function Produtos() {
 
                   <h3 className="fw-bold mt-2 mb-0">
                     {String(
-                      existeFiltroAtivo
-                        ? produtosFiltrados.length
-                        : paginacaoApi?.total || produtosFiltrados.length
+                      paginacaoApi?.total ?? produtosFiltrados.length
                     ).padStart(2, "0")}
                   </h3>
                 </div>
@@ -648,7 +675,7 @@ export default function Produtos() {
                   ))}
               </div>
 
-              {!carregandoProdutos && !erro && produtosFiltrados.length > 0 && (
+              {!carregandoProdutos && !erro && Number(paginacaoApi?.total || 0) > 0 && (
                 <nav className="mt-5">
                   <ul className="pagination justify-content-center flex-wrap gap-2">
                     <li className={`page-item ${paginaAtual === 1 ? "disabled" : ""}`}>

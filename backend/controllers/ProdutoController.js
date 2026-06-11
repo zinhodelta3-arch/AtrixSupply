@@ -6,52 +6,137 @@ import { removerArquivoAntigo } from '../middlewares/uploadMiddleware.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Controller para operações com produtos
-class ProdutoController {
+const LIMITE_PADRAO_PRODUTOS = 12;
 
-    // GET /produtos - Listar todos os produtos (com paginação)
-    static async listarTodos(req, res) {
-        try {
-           
-            let pagina = parseInt(req.query.pagina) || 1;
-            let limite = parseInt(req.query.limite) || 10;
+const CATEGORIAS_VALIDAS = [
+    'geral',
+    'automacao_industrial',
+    'eletrica_industrial',
+    'ferramentas_industriais',
+    'fixacao_industrial',
+    'instrumentacao_e_medicao',
+    'lubrificacao_e_manutencao',
+    'maquinas_industriais',
+    'motores_e_acionamentos',
+    'pecas_mecanicas',
+    'pneumatica_e_hidraulica',
+    'seguranca_industrial_(epi)',
+    'solda_e_metalurgia'
+];
 
-            if (pagina <= 0) {
-                return res.status(400).json({
+function normalizarCategoria(categoria) {
+    return String(categoria || '')
+        .toLowerCase()
+        .trim()
+        .split(' ')
+        .join('_');
+}
+
+function normalizarBooleano(valor) {
+    return valor === true || valor === 'true' || valor === '1' || valor === 1;
+}
+
+function parsePaginacao(req) {
+    const pagina = parseInt(req.query.pagina) || 1;
+    const limite = parseInt(req.query.limite) || LIMITE_PADRAO_PRODUTOS;
+    const limiteMaximo = parseInt(process.env.PAGINACAO_LIMITE_MAXIMO) || 100;
+
+    if (pagina <= 0) {
+        return {
+            erro: {
+                status: 400,
+                resposta: {
                     sucesso: false,
                     erro: 'Página inválida',
                     mensagem: 'A página deve ser um número maior que zero'
-                });
+                }
             }
-            if (limite <= 0) {
-                return res.status(400).json({
-                    sucesso: false,
-                    erro: 'Limite inválido',
-                    mensagem: 'O limite deve ser um número maior que zero'
-                });
-            }
+        };
+    }
 
-            const limiteMaximo = parseInt(process.env.PAGINACAO_LIMITE_MAXIMO) || 100;
-            if (limite > limiteMaximo) {
-                return res.status(400).json({
+    if (limite <= 0 || limite > limiteMaximo) {
+        return {
+            erro: {
+                status: 400,
+                resposta: {
                     sucesso: false,
                     erro: 'Limite inválido',
                     mensagem: `O limite deve ser um número entre 1 e ${limiteMaximo}`
+                }
+            }
+        };
+    }
+
+    return {
+        pagina,
+        limite,
+        offset: (pagina - 1) * limite
+    };
+}
+
+// Controller para operações com produtos
+class ProdutoController {
+    // GET /produtos - Listar todos os produtos com filtros + paginação real no banco
+    static async listarTodos(req, res) {
+        try {
+            const paginacaoEntrada = parsePaginacao(req);
+
+            if (paginacaoEntrada.erro) {
+                return res
+                    .status(paginacaoEntrada.erro.status)
+                    .json(paginacaoEntrada.erro.resposta);
+            }
+
+            const { limite, offset } = paginacaoEntrada;
+
+            const busca = String(req.query.busca || '').trim();
+            const categoria = normalizarCategoria(req.query.categoria || '');
+            const precoMaximo = req.query.precoMaximo ?? req.query.preco_maximo ?? null;
+            const somenteEstoque = normalizarBooleano(
+                req.query.somenteEstoque ?? req.query.somente_estoque
+            );
+
+            if (
+                categoria &&
+                categoria !== 'todas' &&
+                !CATEGORIAS_VALIDAS.includes(categoria)
+            ) {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'Categoria inexistente',
+                    mensagem: 'Categoria não encontrada'
                 });
             }
 
-            const offset = (pagina - 1) * limite;
-
-            const resultado = await ProdutoModel.listarTodos(limite, offset); 
+            const resultado = await ProdutoModel.listarComFiltros({
+                limite,
+                offset,
+                busca,
+                categoria,
+                precoMaximo,
+                somenteEstoque
+            });
 
             res.status(200).json({
                 sucesso: true,
                 dados: resultado.produtos,
                 paginacao: {
-                    pagina: resultado.pagina, 
-                    limite: resultado.limite, 
-                    total: resultado.total,   
-                    totalPaginas: resultado.totalPaginas 
+                    pagina: resultado.pagina,
+                    limite: resultado.limite,
+                    total: resultado.total,
+                    totalPaginas: resultado.totalPaginas
+                },
+                filtros: {
+                    busca,
+                    categoria: categoria || 'todas',
+                    precoMaximo:
+                        precoMaximo === null || precoMaximo === ''
+                            ? null
+                            : Number(precoMaximo),
+                    somenteEstoque
+                },
+                meta: {
+                    maiorPreco: resultado.maiorPreco
                 }
             });
         } catch (error) {
@@ -64,83 +149,61 @@ class ProdutoController {
         }
     }
 
-    // GET /produtos/:categoria - Listar todos os produtos da categoria (com paginação)
+    // GET /produtos/categoria/:categoria - Listar produtos da categoria com paginação
     static async buscarPorCategoria(req, res) {
         try {
-            
-            const categoria = req.params.categoria || 'geral';
-            let categoriaValidada = categoria.toLowerCase().trim().split(' ').join('_'); 
-            let pagina = parseInt(req.query.pagina) || 1;
-            let limite = parseInt(req.query.limite) || 10;
-            const defaultCategorias = [
-                'geral', 
-                'automacao_industrial', 
-                'eletrica_industrial', 
-                'fixacao_industrial', 
-                'instrumentacao_e_medicao',
-                'lubrificacao_e_manutencao',
-                'maquinas_industriais',
-                'motores_e_acionamentos',
-                'pecas_mecanicas',
-                'pneumatica_e_hidraulica',
-                'seguranca_industrial_(epi)',
-                'solda_e_metalurgia'
-            ];
-            
-            if (!categoriaValidada || categoriaValidada === ''){
-                return res.status(400).json({
-                    sucesso: false,
-                    erro: "categoria obrigatória",
-                    mensagem: "A categoria é obrigatória para essa operação"
-                })
-            } else if(!defaultCategorias.includes(categoriaValidada)){
-                return res.status(400).json({
-                    sucesso: false,
-                    erro: "categoria inexistente",
-                    mensagem: "Categoria não encontrada"
-                })
-            }
+            const categoriaValidada = normalizarCategoria(req.params.categoria || '');
 
-            if (pagina <= 0) {
+            if (!categoriaValidada) {
                 return res.status(400).json({
                     sucesso: false,
-                    erro: 'Página inválida',
-                    mensagem: 'A página deve ser um número maior que zero'
-                });
-            }
-            if (limite <= 0) {
-                return res.status(400).json({
-                    sucesso: false,
-                    erro: 'Limite inválido',
-                    mensagem: 'O limite deve ser um número maior que zero'
+                    erro: 'Categoria obrigatória',
+                    mensagem: 'A categoria é obrigatória para essa operação'
                 });
             }
 
-            const limiteMaximo = parseInt(process.env.PAGINACAO_LIMITE_MAXIMO) || 100;
-            if (limite > limiteMaximo) {
+            if (
+                categoriaValidada !== 'todas' &&
+                !CATEGORIAS_VALIDAS.includes(categoriaValidada)
+            ) {
                 return res.status(400).json({
                     sucesso: false,
-                    erro: 'Limite inválido',
-                    mensagem: `O limite deve ser um número entre 1 e ${limiteMaximo}`
+                    erro: 'Categoria inexistente',
+                    mensagem: 'Categoria não encontrada'
                 });
             }
 
-            const offset = (pagina - 1) * limite;
+            const paginacaoEntrada = parsePaginacao(req);
 
-            const resultado = await ProdutoModel.buscarPorCategoria(categoriaValidada, limite, offset); 
+            if (paginacaoEntrada.erro) {
+                return res
+                    .status(paginacaoEntrada.erro.status)
+                    .json(paginacaoEntrada.erro.resposta);
+            }
+
+            const { limite, offset } = paginacaoEntrada;
+
+            const resultado = await ProdutoModel.buscarPorCategoria(
+                categoriaValidada,
+                limite,
+                offset
+            );
 
             res.status(200).json({
                 sucesso: true,
                 dados: resultado.produtos,
                 paginacao: {
-                    pagina: resultado.pagina, 
-                    limite: resultado.limite, 
-                    total: resultado.total,   
-                    totalPaginas: resultado.totalPaginas 
+                    pagina: resultado.pagina,
+                    limite: resultado.limite,
+                    total: resultado.total,
+                    totalPaginas: resultado.totalPaginas
+                },
+                meta: {
+                    maiorPreco: resultado.maiorPreco
                 }
             });
         } catch (error) {
-            console.error('Erro ao listar produtos:', error);
+            console.error('Erro ao listar produtos por categoria:', error);
             res.status(500).json({
                 sucesso: false,
                 erro: 'Erro interno do servidor',
@@ -149,54 +212,50 @@ class ProdutoController {
         }
     }
 
-        // GET /produtos/:nome - Listar todos os produtos da nome (com paginação)
+    // GET /produtos/nome/:nome_produto - Listar produtos por nome com paginação
     static async buscarPorNome(req, res) {
         try {
-            
-            let nome_produto = req.params.nome_produto || '*';
-            let pagina = parseInt(req.query.pagina) || 1;
-            let limite = parseInt(req.query.limite) || 10;
+            const nome_produto = String(req.params.nome_produto || '').trim();
 
-            if (pagina <= 0) {
+            if (!nome_produto) {
                 return res.status(400).json({
                     sucesso: false,
-                    erro: 'Página inválida',
-                    mensagem: 'A página deve ser um número maior que zero'
-                });
-            }
-            if (limite <= 0) {
-                return res.status(400).json({
-                    sucesso: false,
-                    erro: 'Limite inválido',
-                    mensagem: 'O limite deve ser um número maior que zero'
+                    erro: 'Nome obrigatório',
+                    mensagem: 'O nome do produto é obrigatório para essa operação'
                 });
             }
 
-            const limiteMaximo = parseInt(process.env.PAGINACAO_LIMITE_MAXIMO) || 100;
-            if (limite > limiteMaximo) {
-                return res.status(400).json({
-                    sucesso: false,
-                    erro: 'Limite inválido',
-                    mensagem: `O limite deve ser um número entre 1 e ${limiteMaximo}`
-                });
+            const paginacaoEntrada = parsePaginacao(req);
+
+            if (paginacaoEntrada.erro) {
+                return res
+                    .status(paginacaoEntrada.erro.status)
+                    .json(paginacaoEntrada.erro.resposta);
             }
 
-            const offset = (pagina - 1) * limite;
+            const { limite, offset } = paginacaoEntrada;
 
-            const resultado = await ProdutoModel.buscarPorNome(nome_produto, limite, offset); 
+            const resultado = await ProdutoModel.buscarPorNome(
+                nome_produto,
+                limite,
+                offset
+            );
 
             res.status(200).json({
                 sucesso: true,
                 dados: resultado.produtos,
                 paginacao: {
-                    pagina: resultado.pagina, 
-                    limite: resultado.limite, 
-                    total: resultado.total,   
-                    totalPaginas: resultado.totalPaginas 
+                    pagina: resultado.pagina,
+                    limite: resultado.limite,
+                    total: resultado.total,
+                    totalPaginas: resultado.totalPaginas
+                },
+                meta: {
+                    maiorPreco: resultado.maiorPreco
                 }
             });
         } catch (error) {
-            console.error('Erro ao listar produtos:', error);
+            console.error('Erro ao listar produtos por nome:', error);
             res.status(500).json({
                 sucesso: false,
                 erro: 'Erro interno do servidor',
@@ -205,14 +264,11 @@ class ProdutoController {
         }
     }
 
-
-
     // GET /produtos/:id - Buscar produto por ID
     static async buscarPorId(req, res) {
         try {
             const { id_produto } = req.params;
 
-            // Validação básica do ID
             if (!id_produto || isNaN(id_produto)) {
                 return res.status(400).json({
                     sucesso: false,
@@ -248,27 +304,11 @@ class ProdutoController {
     // POST /produtos - Criar novo produto
     static async criar(req, res) {
         try {
-            const { nome_produto, descricao, preco, categoria, estoque, fornecedor  } = req.body;
-            let categoriaValidada = String(categoria || 'geral').toLowerCase().trim().split(' ').join('_');
-            const defaultCategorias = [
-                'geral', 
-                'automacao_industrial', 
-                'eletrica_industrial', 
-                'fixacao_industrial', 
-                'instrumentacao_e_medicao',
-                'lubrificacao_e_manutencao',
-                'maquinas_industriais',
-                'motores_e_acionamentos',
-                'pecas_mecanicas',
-                'pneumatica_e_hidraulica',
-                'seguranca_industrial_(epi)',
-                'solda_e_metalurgia'
-            ];
+            const { nome_produto, descricao, preco, categoria, estoque, fornecedor } = req.body;
+            const categoriaValidada = normalizarCategoria(categoria || 'geral');
 
-            // Validações manuais - coletar todos os erros
             const erros = [];
 
-            // Validar nome
             if (!nome_produto || nome_produto.trim() === '') {
                 erros.push({
                     campo: 'nome',
@@ -290,7 +330,6 @@ class ProdutoController {
                 }
             }
 
-            // Validar preço
             if (!preco || isNaN(preco) || preco <= 0) {
                 erros.push({
                     campo: 'preco',
@@ -298,46 +337,36 @@ class ProdutoController {
                 });
             }
 
-            if (!categoriaValidada || categoriaValidada === ''){
+            if (!categoriaValidada || categoriaValidada === '') {
                 return res.status(400).json({
                     sucesso: false,
-                    erro: "categoria obrigatória",
-                    mensagem: "A categoria é obrigatória para essa operação"
-                })
-            } else if(!defaultCategorias.includes(categoriaValidada)){
-                return res.status(400).json({
-                    sucesso: false,
-                    erro: "categoria inexistente",
-                    mensagem: "Categoria não encontrada"
-                })
+                    erro: 'categoria obrigatória',
+                    mensagem: 'A categoria é obrigatória para essa operação'
+                });
             }
 
-            //validar estoque
-            if (!estoque || isNaN(estoque) || estoque < 0){
+            if (!CATEGORIAS_VALIDAS.includes(categoriaValidada)) {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'categoria inexistente',
+                    mensagem: 'Categoria não encontrada'
+                });
+            }
+
+            if (estoque === undefined || estoque === null || isNaN(estoque) || Number(estoque) < 0) {
                 erros.push({
                     campo: 'estoque',
-                    mensagem: 'Estoque deve ser um número positivo'
-                })
+                    mensagem: 'Estoque deve ser um número maior ou igual a zero'
+                });
             }
 
-            //validar imagem
-            // if (!imagem || imagem.trim() === ''){
-            //     erros.push({
-            //         campo: 'imagem',
-            //         mensagem: 'Imagem é obrigatória'
-            //     })
-            // }
-
-            //validar fornecedor
-            if (!fornecedor || fornecedor.trim() === ''){
+            if (!fornecedor || fornecedor.trim() === '') {
                 erros.push({
                     campo: 'fornecedor',
                     mensagem: 'Fornecedor é obrigatório'
-                })
+                });
             }
 
-
-            // Se houver erros, retornar todos de uma vez
             if (erros.length > 0) {
                 return res.status(400).json({
                     sucesso: false,
@@ -346,19 +375,15 @@ class ProdutoController {
                 });
             }
 
-            // Preparar dados do produto
-            //nome_produto, descricao, preco, categoria, estoque, imagem, fornecedor
             const dadosProduto = {
                 nome_produto: nome_produto.trim(),
                 descricao: descricao ? descricao.trim() : null,
                 preco: parseFloat(preco),
                 categoria: categoriaValidada,
                 estoque: parseInt(estoque),
-   //             imagem: imagem.trim(),
                 fornecedor: fornecedor.trim()
             };
 
-            // Adicionar imagem se foi enviada
             if (req.file) {
                 dadosProduto.imagem = req.file.filename;
             }
@@ -388,25 +413,10 @@ class ProdutoController {
         try {
             const { id_produto } = req.params;
             const { nome_produto, descricao, preco, categoria, estoque, fornecedor } = req.body;
-            let categoriaValidada = categoria !== undefined
-                ? String(categoria).toLowerCase().trim().split(' ').join('_')
-                : undefined;
-            const defaultCategorias = [
-                'geral', 
-                'automacao_industrial', 
-                'eletrica_industrial', 
-                'fixacao_industrial', 
-                'instrumentacao_e_medicao',
-                'lubrificacao_e_manutencao',
-                'maquinas_industriais',
-                'motores_e_acionamentos',
-                'pecas_mecanicas',
-                'pneumatica_e_hidraulica',
-                'seguranca_industrial_(epi)',
-                'solda_e_metalurgia'
-            ];
 
-            // Validação do ID
+            const categoriaValidada =
+                categoria !== undefined ? normalizarCategoria(categoria) : undefined;
+
             if (!id_produto || isNaN(id_produto)) {
                 return res.status(400).json({
                     sucesso: false,
@@ -415,8 +425,8 @@ class ProdutoController {
                 });
             }
 
-            // Verificar se o produto existe
             const produtoExistente = await ProdutoModel.buscarPorId(id_produto);
+
             if (!produtoExistente) {
                 return res.status(404).json({
                     sucesso: false,
@@ -425,7 +435,6 @@ class ProdutoController {
                 });
             }
 
-            // Preparar dados para atualização
             const dadosAtualizacao = {};
 
             if (nome_produto !== undefined) {
@@ -436,6 +445,7 @@ class ProdutoController {
                         mensagem: 'O nome não pode estar vazio'
                     });
                 }
+
                 dadosAtualizacao.nome_produto = nome_produto.trim();
             }
 
@@ -447,34 +457,34 @@ class ProdutoController {
                         mensagem: 'O preço deve ser um número maior que zero'
                     });
                 }
+
                 dadosAtualizacao.preco = parseFloat(preco);
             }
 
             if (descricao !== undefined) {
-                dadosAtualizacao.descricao = descricao ? descricao.trim() : 'Ainda sem descrição';
+                dadosAtualizacao.descricao = descricao
+                    ? descricao.trim()
+                    : 'Ainda sem descrição';
             }
 
-        
-            //nome_produto, descricao, preco, categoria, estoque, imagem, fornecedor
-
-            if (categoria !== undefined){
-                if (categoriaValidada !== undefined){
-                    if (!categoriaValidada || categoriaValidada === ''){
-                        return res.status(400).json({
-                            sucesso: false,
-                            erro: "categoria obrigatória",
-                            mensagem: "A categoria é obrigatória para essa operação"
-                        })
-                    } else if(!defaultCategorias.includes(categoriaValidada)){
-                        return res.status(400).json({
-                            sucesso: false,
-                            erro: "categoria inexistente",
-                            mensagem: "Categoria não encontrada"
-                        })
-                    }
-                    dadosAtualizacao.categoria = categoriaValidada || 'geral';
-
+            if (categoria !== undefined) {
+                if (!categoriaValidada || categoriaValidada === '') {
+                    return res.status(400).json({
+                        sucesso: false,
+                        erro: 'categoria obrigatória',
+                        mensagem: 'A categoria é obrigatória para essa operação'
+                    });
                 }
+
+                if (!CATEGORIAS_VALIDAS.includes(categoriaValidada)) {
+                    return res.status(400).json({
+                        sucesso: false,
+                        erro: 'categoria inexistente',
+                        mensagem: 'Categoria não encontrada'
+                    });
+                }
+
+                dadosAtualizacao.categoria = categoriaValidada || 'geral';
             }
 
             if (estoque !== undefined) {
@@ -485,15 +495,15 @@ class ProdutoController {
                         mensagem: 'O estoque deve ser um número maior ou igual que zero'
                     });
                 }
+
                 dadosAtualizacao.estoque = parseInt(estoque);
             }
 
-            // Adicionar nova imagem se foi enviada
             if (req.file) {
-                // Remover imagem antiga se existir
                 if (produtoExistente.imagem) {
                     await removerArquivoAntigo(produtoExistente.imagem, 'imagem');
                 }
+
                 dadosAtualizacao.imagem = req.file.filename;
             }
 
@@ -501,14 +511,14 @@ class ProdutoController {
                 if (fornecedor.trim() === '') {
                     return res.status(400).json({
                         sucesso: false,
-                        erro: 'Fornecedeor inválido',
+                        erro: 'Fornecedor inválido',
                         mensagem: 'O fornecedor não pode estar vazio'
                     });
                 }
+
                 dadosAtualizacao.fornecedor = fornecedor.trim();
             }
 
-            // Verificar se há dados para atualizar
             if (Object.keys(dadosAtualizacao).length === 0) {
                 return res.status(400).json({
                     sucesso: false,
@@ -523,7 +533,7 @@ class ProdutoController {
                 sucesso: true,
                 mensagem: 'Produto atualizado com sucesso',
                 dados: {
-                    linhasAfetadas: resultado.affectedRows || 1
+                    linhasAfetadas: resultado || 1
                 }
             });
         } catch (error) {
@@ -541,7 +551,6 @@ class ProdutoController {
         try {
             const { id_produto } = req.params;
 
-            // Validação do ID
             if (!id_produto || isNaN(id_produto)) {
                 return res.status(400).json({
                     sucesso: false,
@@ -550,8 +559,8 @@ class ProdutoController {
                 });
             }
 
-            // Verificar se o produto existe
             const produtoExistente = await ProdutoModel.buscarPorId(id_produto);
+
             if (!produtoExistente) {
                 return res.status(404).json({
                     sucesso: false,
@@ -560,7 +569,6 @@ class ProdutoController {
                 });
             }
 
-            // Remover imagem do produto se existir
             if (produtoExistente.imagem) {
                 await removerArquivoAntigo(produtoExistente.imagem, 'imagem');
             }
@@ -589,7 +597,6 @@ class ProdutoController {
         try {
             const { produto_id } = req.body;
 
-            // Validações básicas
             if (!produto_id || isNaN(produto_id)) {
                 return res.status(400).json({
                     sucesso: false,
@@ -606,8 +613,8 @@ class ProdutoController {
                 });
             }
 
-            // Verificar se o produto existe
             const produtoExistente = await ProdutoModel.buscarPorId(produto_id);
+
             if (!produtoExistente) {
                 return res.status(404).json({
                     sucesso: false,
@@ -616,13 +623,13 @@ class ProdutoController {
                 });
             }
 
-            // Remover imagem antiga se existir
             if (produtoExistente.imagem) {
                 await removerArquivoAntigo(produtoExistente.imagem, 'imagem');
             }
 
-            // Atualizar produto com a nova imagem
-            await ProdutoModel.atualizar(produto_id, { imagem: req.file.filename });
+            await ProdutoModel.atualizar(produto_id, {
+                imagem: req.file.filename
+            });
 
             res.status(200).json({
                 sucesso: true,
@@ -644,4 +651,3 @@ class ProdutoController {
 }
 
 export default ProdutoController;
-

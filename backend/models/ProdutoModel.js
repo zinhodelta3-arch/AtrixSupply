@@ -3,35 +3,113 @@ import { create, read, update, deleteRecord, getConnection } from '../config/dat
 // Model para operações com produtos
 class ProdutoModel {
 
-    // Listar todos os produtos (com paginação)
+    // Listar todos os produtos sem filtros, mantendo compatibilidade com o controller antigo
     static async listarTodos(limite, offset) {
+        return await ProdutoModel.listarComFiltros({
+            limite,
+            offset,
+        });
+    }
+
+    // Listar produtos com filtros + paginação real no banco
+    static async listarComFiltros({
+        limite = 12,
+        offset = 0,
+        busca = "",
+        categoria = "",
+        precoMaximo = null,
+        somenteEstoque = false,
+    } = {}) {
+        const connection = await getConnection();
+
         try {
+            const where = [];
+            const params = [];
 
-            const connection = await getConnection();
-            try {
-                const sql = 'SELECT * FROM produtos ORDER BY id_produto DESC LIMIT ? OFFSET ?';
+            const limiteSeguro = Number(limite) > 0 ? Number(limite) : 12;
+            const offsetSeguro = Number(offset) >= 0 ? Number(offset) : 0;
 
-                const [produtos] = await connection.query(sql, [limite, offset]);
-
-                const [totalResult] = await connection.execute('SELECT COUNT(*) as total FROM produtos');
-                const total = totalResult[0].total;
-
-                const paginaAtual = (offset / limite) + 1;
-                const totalPaginas = Math.ceil(total / limite);
-
-                return {
-                    produtos,
-                    total,
-                    pagina: paginaAtual,
-                    limite,
-                    totalPaginas
-                };
-            } finally {
-                connection.release();
+            if (busca && String(busca).trim()) {
+                where.push("nome_produto LIKE ?");
+                params.push(`%${String(busca).trim()}%`);
             }
+
+            if (
+                categoria &&
+                String(categoria).trim() &&
+                String(categoria).trim().toLowerCase() !== "todas"
+            ) {
+                where.push("categoria = ?");
+                params.push(String(categoria).trim());
+            }
+
+            if (
+                precoMaximo !== null &&
+                precoMaximo !== undefined &&
+                precoMaximo !== "" &&
+                Number(precoMaximo) > 0
+            ) {
+                where.push("preco <= ?");
+                params.push(Number(precoMaximo));
+            }
+
+            if (
+                somenteEstoque === true ||
+                somenteEstoque === "true" ||
+                somenteEstoque === "1" ||
+                somenteEstoque === 1
+            ) {
+                where.push("estoque > 0");
+            }
+
+            const whereSql = where.length > 0 ? `WHERE ${where.join(" AND ")}` : "";
+
+            const sqlProdutos = `
+                SELECT *
+                FROM produtos
+                ${whereSql}
+                ORDER BY id_produto DESC
+                LIMIT ? OFFSET ?;
+            `;
+
+            const [produtos] = await connection.execute(sqlProdutos, [
+                ...params,
+                limiteSeguro,
+                offsetSeguro,
+            ]);
+
+            const sqlTotal = `
+                SELECT COUNT(*) AS total
+                FROM produtos
+                ${whereSql};
+            `;
+
+            const [totalResult] = await connection.execute(sqlTotal, params);
+            const total = Number(totalResult[0]?.total || 0);
+
+            const [maiorPrecoResult] = await connection.execute(`
+                SELECT MAX(preco) AS maiorPreco
+                FROM produtos;
+            `);
+
+            const maiorPreco = Number(maiorPrecoResult[0]?.maiorPreco || 0);
+
+            const paginaAtual = Math.floor(offsetSeguro / limiteSeguro) + 1;
+            const totalPaginas = Math.max(1, Math.ceil(total / limiteSeguro));
+
+            return {
+                produtos,
+                total,
+                pagina: paginaAtual,
+                limite: limiteSeguro,
+                totalPaginas,
+                maiorPreco,
+            };
         } catch (error) {
-            console.error('Erro ao listar produtos:', error);
+            console.error('Erro ao listar produtos com filtros:', error);
             throw error;
+        } finally {
+            connection.release();
         }
     }
 
@@ -77,70 +155,21 @@ class ProdutoModel {
     }
 
     // Buscar produtos por categoria
-
     static async buscarPorCategoria(categoria, limite, offset) {
-         try {
-
-            const connection = await getConnection();
-            try {
-                const sql = 'SELECT * FROM produtos WHERE categoria LIKE ? ORDER BY id_produto DESC LIMIT ? OFFSET ?;';
-
-                const [produtos] = await connection.query(sql, [categoria, limite, offset]);
-
-                const [totalResult] = await connection.query('SELECT COUNT(*) as total FROM produtos WHERE categoria LIKE ?', [categoria]);
-                const total = totalResult[0].total;
-
-                const paginaAtual = (offset / limite) + 1;
-                const totalPaginas = Math.ceil(total / limite);
-
-                return {
-                    produtos,
-                    total,
-                    pagina: paginaAtual,
-                    limite,
-                    totalPaginas
-                };
-            } finally {
-                connection.release();
-            }
-        } catch (error) {
-            console.error('Erro ao listar produtos:', error);
-            throw error;
-        }
+        return await ProdutoModel.listarComFiltros({
+            limite,
+            offset,
+            categoria,
+        });
     }
 
-
+    // Buscar produtos por nome
     static async buscarPorNome(nome_produto, limite, offset) {
-         try {
-
-            const connection = await getConnection();
-            try {
-                const sql = 'SELECT * FROM produtos WHERE nome_produto LIKE ? ORDER BY id_produto DESC LIMIT ? OFFSET ?;';
-
-                const nome = `%${nome_produto}%`;
-
-                const [produtos] = await connection.query(sql, [nome, limite, offset]);
-
-                const [totalResult] = await connection.query('SELECT COUNT(*) as total FROM produtos WHERE nome_produto LIKE ?;', [nome]);
-                const total = totalResult[0].total;
-
-                const paginaAtual = (offset / limite) + 1;
-                const totalPaginas = Math.ceil(total / limite);
-
-                return {
-                    produtos,
-                    total,
-                    pagina: paginaAtual,
-                    limite,
-                    totalPaginas
-                };
-            } finally {
-                connection.release();
-            }
-        } catch (error) {
-            console.error('Erro ao listar produtos:', error);
-            throw error;
-        }
+        return await ProdutoModel.listarComFiltros({
+            limite,
+            offset,
+            busca: nome_produto,
+        });
     }
 }
 

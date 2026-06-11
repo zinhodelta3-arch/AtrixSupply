@@ -5,13 +5,26 @@ import { uploadImagens, handleUploadError } from '../middlewares/uploadMiddlewar
 
 const router = express.Router();
 
-// Rotas públicas
+// ==========================================================
+// ROTAS PÚBLICAS
+// ==========================================================
+
+// Lista geral com suporte a paginação e filtros por query:
+// GET /api/produtos?pagina=1&limite=12&busca=motor&categoria=motores_e_acionamentos
 router.get('/', ProdutoController.listarTodos);
+
+// Rotas antigas mantidas por compatibilidade
 router.get('/categoria/:categoria', ProdutoController.buscarPorCategoria);
 router.get('/nome/:nome_produto', ProdutoController.buscarPorNome);
+
+// Buscar produto por ID
+// Importante: essa rota dinâmica precisa ficar depois de /categoria e /nome
 router.get('/:id_produto', ProdutoController.buscarPorId);
 
-// Rotas protegidas
+// ==========================================================
+// ROTAS PROTEGIDAS
+// ==========================================================
+
 router.post(
   '/',
   authMiddleware,
@@ -36,11 +49,33 @@ router.put(
   ProdutoController.atualizar
 );
 
-router.delete('/:id_produto', authMiddleware, ProdutoController.excluir);
+router.delete(
+  '/:id_produto',
+  authMiddleware,
+  ProdutoController.excluir
+);
+
+// ==========================================================
+// ROTAS OPTIONS PARA CORS
+// ==========================================================
 
 router.options('/', (req, res) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.status(200).send();
+});
+
+router.options('/categoria/:categoria', (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.status(200).send();
+});
+
+router.options('/nome/:nome_produto', (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.status(200).send();
 });
