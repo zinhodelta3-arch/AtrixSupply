@@ -7,5 +7,6 @@ const router = express.Router();
 router.get('/', authMiddleware, NotificacaoController.listarMinhas);
 router.put('/lidas', authMiddleware, NotificacaoController.marcarTodasLidas);
 router.put('/:id_notificacao/lida', authMiddleware, NotificacaoController.marcarLida);
+router.delete('/:id_notificacao', authMiddleware, NotificacaoController.excluirNotificacao)
 
 export default router;

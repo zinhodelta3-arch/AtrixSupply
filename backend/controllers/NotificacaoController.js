@@ -109,6 +109,50 @@ class NotificacaoController {
             });
         }
     }
+
+
+     // DELETE /notificacao/:id - Excluir notificacao
+    static async excluirNotificacao(req, res) {
+        try {
+            const { id_notificacao } = req.params;
+            
+            if (!id_notificacao || isNaN(id_notificacao)) {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: 'ID inválido',
+                    mensagem: 'O ID deve ser um número válido'
+                });
+            }
+
+            const notificacaoExistente = await NotificacaoModel.buscarPorId(id_notificacao);
+            if (!notificacaoExistente) {
+                return res.status(404).json({
+                    sucesso: false,
+                    erro: 'Notificação não encontrado',
+                    mensagem: `Notificação com ID ${id_notificacao} não foi encontrado`
+                });
+            }
+
+            const resultado = await NotificacaoModel.excluir(id_notificacao);
+            
+            res.status(200).json({
+                sucesso: true,
+                mensagem: 'Notificação excluído com sucesso',
+                dados: {
+                    linhasAfetadas: resultado || 1
+                }
+            });
+        } catch (error) {
+            console.error('Erro ao excluir notificação:', error);
+            res.status(500).json({
+                sucesso: false,
+                erro: 'Erro interno do servidor',
+                mensagem: 'Não foi possível excluir a notificação'
+            });
+        }
+    }
+
+
 }
 
 export default NotificacaoController;

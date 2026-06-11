@@ -1,4 +1,4 @@
-import { create, read, update, getConnection } from '../config/database.js';
+import { create, read, update, deleteRecord , getConnection } from '../config/database.js';
 
 class NotificacaoModel {
     static async listarPorUsuario(id_user, pagina = 1, limite = 10) {
@@ -70,6 +70,19 @@ class NotificacaoModel {
     static async marcarTodasComoLidas(id_user) {
         return update('notificacoes', { lida: 1 }, 'id_user = ?', [id_user]);
     }
+
+   
+        static async excluir(id_notificacao) {
+        try {
+            return await deleteRecord('notificacoes', 'id_notificacao= ?', [id_notificacao]);
+        } catch (error) {
+            console.error('Erro ao excluir notificacao:', error);
+            throw error;
+        }
+    }
+
+
+
 }
 
 export default NotificacaoModel;
