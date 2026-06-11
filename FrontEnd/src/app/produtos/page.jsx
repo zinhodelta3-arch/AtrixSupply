@@ -227,6 +227,8 @@ export default function Produtos() {
   useEffect(() => {
     if (!acessoPermitido) return;
 
+    const controller = new AbortController();
+
     async function carregarProdutos() {
       try {
         setCarregandoProdutos(true);
@@ -240,7 +242,6 @@ export default function Produtos() {
         const buscaLimpa = busca.trim();
         const categoriaNormalizada = normalizarCategoria(categoriaSelecionada);
         const precoMaximoNumerico = Number(precoMaximo || 0);
-        const maiorPrecoNumerico = Number(maiorPrecoCatalogo || 0);
 
         if (buscaLimpa) {
           params.set("busca", buscaLimpa);
@@ -250,12 +251,7 @@ export default function Produtos() {
           params.set("categoria", categoriaNormalizada);
         }
 
-        if (
-          precoAlteradoPeloUsuario &&
-          precoMaximoNumerico > 0 &&
-          maiorPrecoNumerico > 0 &&
-          precoMaximoNumerico < maiorPrecoNumerico
-        ) {
+        if (precoAlteradoPeloUsuario && precoMaximoNumerico > 0) {
           params.set("precoMaximo", String(precoMaximoNumerico));
         }
 
@@ -266,6 +262,7 @@ export default function Produtos() {
         const response = await fetch(`${PRODUTOS_URL}?${params.toString()}`, {
           method: "GET",
           cache: "no-store",
+          signal: controller.signal,
         });
 
         const data = await response.json().catch(() => null);
@@ -290,6 +287,8 @@ export default function Produtos() {
           }
         }
       } catch (error) {
+        if (error?.name === "AbortError") return;
+
         console.error("Erro ao carregar produtos:", error);
         setErro(error.message || "Não foi possível carregar os produtos.");
         setProdutos([]);
@@ -300,11 +299,17 @@ export default function Produtos() {
           totalPaginas: 1,
         });
       } finally {
-        setCarregandoProdutos(false);
+        if (!controller.signal.aborted) {
+          setCarregandoProdutos(false);
+        }
       }
     }
 
     carregarProdutos();
+
+    return () => {
+      controller.abort();
+    };
   }, [
     acessoPermitido,
     paginaAtual,
@@ -313,7 +318,6 @@ export default function Produtos() {
     precoMaximo,
     precoAlteradoPeloUsuario,
     somenteEstoque,
-    maiorPrecoCatalogo,
   ]);
 
   const maiorPrecoDisponivel = useMemo(() => {
@@ -328,8 +332,8 @@ export default function Produtos() {
   }, [maiorPrecoCatalogo, produtos]);
 
   const produtosFiltrados = useMemo(() => {
-    // A filtragem real agora acontece no backend.
-    // O frontend só renderiza a página retornada pela API.
+    // A filtragem real acontece no backend.
+    // Aqui apenas renderizamos a página que a API já retornou.
     return produtos;
   }, [produtos]);
 
@@ -362,14 +366,40 @@ export default function Produtos() {
   }, [produtosFiltrados]);
 
   useEffect(() => {
-    setPaginaAtual((paginaAnterior) => (paginaAnterior === 1 ? paginaAnterior : 1));
-  }, [busca, categoriaSelecionada, precoMaximo, somenteEstoque]);
-
-  useEffect(() => {
     if (!carregandoProdutos && paginaAtual > totalPaginas) {
       setPaginaAtual(totalPaginas);
     }
   }, [carregandoProdutos, paginaAtual, totalPaginas]);
+
+  function alterarBusca(valor) {
+    setPaginaAtual(1);
+    setBusca(valor);
+  }
+
+  function alterarCategoria(valor) {
+    setPaginaAtual(1);
+    setCategoriaSelecionada(valor);
+  }
+
+  function alterarPrecoMaximo(valor) {
+    setPaginaAtual(1);
+    setPrecoAlteradoPeloUsuario(true);
+    setPrecoMaximo(Number(valor));
+  }
+
+  function alterarSomenteEstoque(valor) {
+    setPaginaAtual(1);
+    setSomenteEstoque(valor);
+  }
+
+  function alterarPagina(novaPagina) {
+    const paginaSegura = Math.min(Math.max(Number(novaPagina) || 1, 1), totalPaginas);
+    setPaginaAtual(paginaSegura);
+
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }
 
   function limparFiltros() {
     setBusca("");
@@ -488,7 +518,7 @@ export default function Produtos() {
                     className="form-control"
                     placeholder="Digite o nome..."
                     value={busca}
-                    onChange={(event) => setBusca(event.target.value)}
+                    onChange={(event) => alterarBusca(event.target.value)}
                     style={inputStyle}
                     
                   />
@@ -502,7 +532,7 @@ export default function Produtos() {
                   <select
                     className="form-select"
                     value={categoriaSelecionada}
-                    onChange={(event) => setCategoriaSelecionada(event.target.value)}
+                    onChange={(event) => alterarCategoria(event.target.value)}
                     style={inputStyle}
                   >
                     {categorias.map((categoria) => (
@@ -536,10 +566,7 @@ export default function Produtos() {
                     min="0"
                     max={Math.ceil(maiorPrecoDisponivel || 0)}
                     value={precoMaximo || 0}
-                    onChange={(event) => {
-                      setPrecoAlteradoPeloUsuario(true);
-                      setPrecoMaximo(Number(event.target.value));
-                    }}
+                    onChange={(event) => alterarPrecoMaximo(event.target.value)}
                   />
                 </div>
 
@@ -554,7 +581,7 @@ export default function Produtos() {
                       type="checkbox"
                       id="estoque"
                       checked={somenteEstoque}
-                      onChange={(event) => setSomenteEstoque(event.target.checked)}
+                      onChange={(event) => alterarSomenteEstoque(event.target.checked)}
                     />
 
                     <label
@@ -681,9 +708,7 @@ export default function Produtos() {
                     <li className={`page-item ${paginaAtual === 1 ? "disabled" : ""}`}>
                       <button
                         className="page-link paginacao-btn"
-                        onClick={() =>
-                          setPaginaAtual((prev) => Math.max(prev - 1, 1))
-                        }
+                        onClick={() => alterarPagina(paginaAtual - 1)}
                       >
                         Anterior
                       </button>
@@ -704,7 +729,7 @@ export default function Produtos() {
                                 ? "page-link paginacao-btn-active"
                                 : "page-link paginacao-btn"
                             }
-                            onClick={() => setPaginaAtual(numeroPagina)}
+                            onClick={() => alterarPagina(numeroPagina)}
                           >
                             {numeroPagina}
                           </button>
@@ -719,11 +744,7 @@ export default function Produtos() {
                     >
                       <button
                         className="page-link paginacao-btn"
-                        onClick={() =>
-                          setPaginaAtual((prev) =>
-                            Math.min(prev + 1, totalPaginas)
-                          )
-                        }
+                        onClick={() => alterarPagina(paginaAtual + 1)}
                       >
                         Próximo
                       </button>
