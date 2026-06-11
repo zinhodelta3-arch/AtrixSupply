@@ -185,6 +185,21 @@ function obterNomeUsuario(usuario) {
   );
 }
 
+function obterIniciaisUsuario(nome) {
+  const partes = String(nome || "")
+    .trim()
+    .split(" ")
+    .filter(Boolean);
+
+  if (partes.length === 0) return "US";
+
+  if (partes.length === 1) {
+    return partes[0].slice(0, 2).toUpperCase();
+  }
+
+  return `${partes[0][0]}${partes[partes.length - 1][0]}`.toUpperCase();
+}
+
 function obterFotoBrutaUsuario(usuario) {
   return (
     usuario?.foto ||
@@ -213,7 +228,7 @@ function resolverUrlImagemUsuario(imagem) {
     .replace(/\\/g, "/");
 
   if (!valorOriginal) {
-    return FOTO_USUARIO_FALLBACK;
+    return "";
   }
 
   if (
@@ -296,6 +311,7 @@ export default function LogisticaFornecedor() {
 
   const [validandoAcesso, setValidandoAcesso] = useState(true);
   const [usuarioLogado, setUsuarioLogado] = useState(null);
+  const [fotoUsuarioQuebrou, setFotoUsuarioQuebrou] = useState(false);
 
   const [logisticas, setLogisticas] = useState([]);
   const [pesquisa, setPesquisa] = useState("");
@@ -327,6 +343,10 @@ export default function LogisticaFornecedor() {
   useEffect(() => {
     import("bootstrap/dist/js/bootstrap.bundle.min.js");
   }, []);
+
+  useEffect(() => {
+    setFotoUsuarioQuebrou(false);
+  }, [usuarioLogado]);
 
   useEffect(() => {
     const usuario = obterUsuarioAutenticado();
@@ -633,6 +653,8 @@ export default function LogisticaFornecedor() {
 
   const nomeUsuarioPainel = obterNomeUsuario(usuarioLogado);
   const fotoUsuarioPainel = obterFotoUsuario(usuarioLogado);
+  const iniciaisUsuarioPainel = obterIniciaisUsuario(nomeUsuarioPainel);
+  const exibirFotoUsuarioPainel = Boolean(fotoUsuarioPainel && !fotoUsuarioQuebrou);
   const perfilUsuarioPainel = formatarPerfilLogistica(obterTipoUsuario(usuarioLogado));
 
   if (validandoAcesso) {
@@ -753,16 +775,37 @@ export default function LogisticaFornecedor() {
                     border: "2px solid rgba(255,255,255,.08)",
                   }}
                 >
-                  <img
-                    src={fotoUsuarioPainel}
-                    alt={`Foto de ${nomeUsuarioPainel}`}
-                    onError={aplicarFallbackImagemUsuario}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                    }}
-                  />
+                  {exibirFotoUsuarioPainel ? (
+                    <img
+                      src={fotoUsuarioPainel}
+                      alt={`Foto de ${nomeUsuarioPainel}`}
+                      onError={() => setFotoUsuarioQuebrou(true)}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  ) : (
+                    <span
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background:
+                          "linear-gradient(135deg, rgba(148,5,51,.72), rgba(192,1,42,.58), rgba(255,136,0,.38))",
+                        color: "#ffcf40",
+                        fontWeight: "900",
+                        fontSize: "2.35rem",
+                        letterSpacing: "1px",
+                        textShadow: "0 0 18px rgba(255,179,0,.25)",
+                      }}
+                    >
+                      {iniciaisUsuarioPainel}
+                    </span>
+                  )}
                 </div>
 
                 <h3
