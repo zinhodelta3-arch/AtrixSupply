@@ -234,10 +234,10 @@ export default function Produtos() {
         setCarregandoProdutos(true);
         setErro("");
 
-        const params = new URLSearchParams({
-          pagina: String(paginaAtual),
-          limite: String(PRODUTOS_POR_PAGINA),
-        });
+        const params = new URLSearchParams();
+
+        params.set("pagina", String(paginaAtual));
+        params.set("limite", String(PRODUTOS_POR_PAGINA));
 
         const buscaLimpa = busca.trim();
         const categoriaNormalizada = normalizarCategoria(categoriaSelecionada);
@@ -259,7 +259,9 @@ export default function Produtos() {
           params.set("somenteEstoque", "true");
         }
 
-        const response = await fetch(`${PRODUTOS_URL}?${params.toString()}`, {
+        const url = `${PRODUTOS_URL}?${params.toString()}`;
+
+        const response = await fetch(url, {
           method: "GET",
           cache: "no-store",
           signal: controller.signal,
@@ -276,7 +278,7 @@ export default function Produtos() {
           paginaAtual
         );
 
-        setProdutos(lista);
+        setProdutos(Array.isArray(lista) ? lista : []);
         setPaginacaoApi(paginacao);
 
         if (maiorPreco > 0) {
@@ -332,8 +334,8 @@ export default function Produtos() {
   }, [maiorPrecoCatalogo, produtos]);
 
   const produtosFiltrados = useMemo(() => {
-    // A filtragem real acontece no backend.
-    // Aqui apenas renderizamos a página que a API já retornou.
+    // O backend já devolve a lista filtrada e paginada.
+    // Não filtre aqui, senão o filtro volta a considerar só a página atual.
     return produtos;
   }, [produtos]);
 
