@@ -593,6 +593,42 @@ export default function Encomendas() {
         `,
       }}
     >
+      <style jsx global>{`
+        .encomenda-placeholder-input::placeholder {
+          color: rgba(255, 255, 255, 0.58) !important;
+          opacity: 1 !important;
+        }
+
+        .encomenda-placeholder-input::-webkit-input-placeholder {
+          color: rgba(255, 255, 255, 0.58) !important;
+          opacity: 1 !important;
+        }
+
+        .encomenda-placeholder-input::-moz-placeholder {
+          color: rgba(255, 255, 255, 0.58) !important;
+          opacity: 1 !important;
+        }
+
+        .encomenda-placeholder-input:-ms-input-placeholder {
+          color: rgba(255, 255, 255, 0.58) !important;
+          opacity: 1 !important;
+        }
+
+        .encomenda-placeholder-input:focus {
+          background: #1c1c1c !important;
+          color: #ffffff !important;
+          border-color: rgba(255, 179, 0, 0.82) !important;
+          box-shadow: 0 0 0 0.2rem rgba(255, 179, 0, 0.12) !important;
+          outline: none !important;
+        }
+
+        .encomenda-placeholder-input:disabled,
+        .encomenda-placeholder-input[readonly] {
+          background: rgba(255, 255, 255, 0.05) !important;
+          color: rgba(255, 255, 255, 0.62) !important;
+        }
+      `}</style>
+
       <section
         className="py-5 text-white"
         style={{
@@ -634,7 +670,7 @@ export default function Encomendas() {
 
                 <input
                   type="text"
-                  className="form-control mb-4"
+                  className="form-control mb-4 encomenda-placeholder-input"
                   placeholder="Digite o nome da peça"
                   value={busca}
                   onChange={handleBuscaChange}
@@ -1054,7 +1090,7 @@ export default function Encomendas() {
                 <label className="form-label text-secondary">Peça ou conjunto</label>
                 <input
                   type="text"
-                  className="form-control"
+                  className="form-control encomenda-placeholder-input"
                   placeholder="Ex: Correia industrial"
                   value={formEncomenda.pecas}
                   onChange={(event) => atualizarCampoEncomenda("pecas", event.target.value)}
@@ -1065,7 +1101,7 @@ export default function Encomendas() {
               <div className="mb-4">
                 <label className="form-label text-secondary">Descrição</label>
                 <textarea
-                  className="form-control"
+                  className="form-control encomenda-placeholder-input"
                   rows={5}
                   placeholder="Informe medidas, quantidade, urgência ou observações importantes."
                   value={formEncomenda.descricao}

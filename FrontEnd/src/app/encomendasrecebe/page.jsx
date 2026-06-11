@@ -21,6 +21,13 @@ const inputStyle = {
   padding: "12px 14px",
 };
 
+function selectComPlaceholderStyle(valorSelecionado) {
+  return {
+    ...inputStyle,
+    color: valorSelecionado ? "white" : "rgba(255,255,255,.55)",
+  };
+}
+
 const gradientButtonStyle = {
   background: "linear-gradient(to right, #940533, #ff8800)",
   border: "none",
@@ -782,6 +789,46 @@ export default function PainelFornecedor() {
         color: "white",
       }}
     >
+      <style jsx global>{`
+        .encomendarecebe-input::placeholder,
+        .fornecedor-input::placeholder {
+          color: rgba(255, 255, 255, 0.52) !important;
+          opacity: 1 !important;
+        }
+
+        .encomendarecebe-input::-webkit-input-placeholder,
+        .fornecedor-input::-webkit-input-placeholder {
+          color: rgba(255, 255, 255, 0.52) !important;
+          opacity: 1 !important;
+        }
+
+        .encomendarecebe-input:-ms-input-placeholder,
+        .fornecedor-input:-ms-input-placeholder {
+          color: rgba(255, 255, 255, 0.52) !important;
+          opacity: 1 !important;
+        }
+
+        .encomendarecebe-input::-ms-input-placeholder,
+        .fornecedor-input::-ms-input-placeholder {
+          color: rgba(255, 255, 255, 0.52) !important;
+          opacity: 1 !important;
+        }
+
+        .encomendarecebe-input:focus,
+        .fornecedor-input:focus,
+        .encomendarecebe-select:focus {
+          background: #202020 !important;
+          border-color: rgba(255, 179, 0, 0.65) !important;
+          color: #ffffff !important;
+          box-shadow: 0 0 0 0.2rem rgba(255, 136, 0, 0.10) !important;
+        }
+
+        .encomendarecebe-select option {
+          color: #111111;
+          background: #ffffff;
+        }
+      `}</style>
+
       <section
         className="py-5 text-white"
         style={{
@@ -824,7 +871,7 @@ export default function PainelFornecedor() {
                 <div className="mb-4">
                   <input
                     type="text"
-                    className="form-control fornecedor-input"
+                    className="form-control fornecedor-input encomendarecebe-input"
                     placeholder="Digite o nome da peça"
                     value={busca}
                     onChange={handleBuscaChange}
@@ -1311,10 +1358,10 @@ export default function PainelFornecedor() {
                       </label>
 
                       <select
-                        className="form-select"
+                        className="form-select encomendarecebe-select"
                         value={logisticaSelecionadaId}
                         onChange={(event) => setLogisticaSelecionadaId(event.target.value)}
-                        style={inputStyle}
+                        style={selectComPlaceholderStyle(logisticaSelecionadaId)}
                       >
                         <option value="" style={{ color: "#111" }}>
                           Selecione uma logística
@@ -1454,7 +1501,7 @@ export default function PainelFornecedor() {
 
                     <input
                       type="text"
-                      className="form-control"
+                      className="form-control encomendarecebe-input"
                       placeholder="Ex: Plano econômico"
                       value={formOrcamento.nome_orcamento}
                       onChange={(event) =>
@@ -1471,7 +1518,7 @@ export default function PainelFornecedor() {
 
                     <input
                       type="text"
-                      className="form-control"
+                      className="form-control encomendarecebe-input"
                       placeholder="Ex: Premium"
                       value={formOrcamento.tipo_orcamento}
                       onChange={(event) =>
@@ -1490,7 +1537,7 @@ export default function PainelFornecedor() {
                       type="number"
                       min="0"
                       step="0.01"
-                      className="form-control"
+                      className="form-control encomendarecebe-input"
                       placeholder="Ex: 1250"
                       value={formOrcamento.estimacao}
                       onChange={(event) =>
@@ -1506,7 +1553,7 @@ export default function PainelFornecedor() {
                     </label>
 
                     <select
-                      className="form-select"
+                      className="form-select encomendarecebe-select"
                       value={formOrcamento.estado}
                       onChange={(event) =>
                         atualizarCampoOrcamento("estado", event.target.value)
