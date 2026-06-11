@@ -283,11 +283,35 @@ function normalizarTipoUsuario(usuario) {
   return String(
     usuario?.tipo ||
       usuario?.tipo_user ||
+      usuario?.tipo_usuario ||
+      usuario?.tipoUser ||
       usuario?.role ||
+      usuario?.cargo ||
+      usuario?.perfil ||
       usuario?.nivel ||
+      usuario?.nivel_acesso ||
       usuario?.dados?.tipo ||
       usuario?.dados?.tipo_user ||
+      usuario?.dados?.tipo_usuario ||
+      usuario?.dados?.tipoUser ||
+      usuario?.dados?.role ||
+      usuario?.dados?.cargo ||
+      usuario?.dados?.perfil ||
+      usuario?.dados?.nivel ||
+      usuario?.dados?.nivel_acesso ||
       usuario?.usuario?.tipo ||
+      usuario?.usuario?.tipo_user ||
+      usuario?.usuario?.tipo_usuario ||
+      usuario?.usuario?.tipoUser ||
+      usuario?.usuario?.role ||
+      usuario?.usuario?.cargo ||
+      usuario?.usuario?.perfil ||
+      usuario?.usuario?.nivel ||
+      usuario?.usuario?.nivel_acesso ||
+      usuario?.dados?.usuario?.tipo ||
+      usuario?.dados?.usuario?.tipo_user ||
+      usuario?.dados?.usuario?.tipo_usuario ||
+      usuario?.dados?.usuario?.tipoUser ||
       ""
   )
     .trim()
@@ -404,6 +428,7 @@ function metricasPublicasValidas(metricas) {
 export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isFornecedor, setIsFornecedor] = useState(false);
+  const [tipoUsuarioCarregado, setTipoUsuarioCarregado] = useState(false);
 
   const [metricasHome, setMetricasHome] = useState({
     produtosCatalogados: "0",
@@ -430,12 +455,15 @@ export default function Home() {
       const userParsed = JSON.parse(usuarioStorage);
       const tipo = normalizarTipoUsuario(userParsed);
 
-      if (tipo === "fornecedor" || tipo === "fornecedores" || tipo === "supplier") {
-        setIsFornecedor(true);
-      }
+      setIsFornecedor(
+        tipo.includes("fornecedor") ||
+          tipo.includes("supplier")
+      );
     } catch (error) {
       console.error("Erro ao verificar tipo de usuário na Home:", error);
       setIsFornecedor(false);
+    } finally {
+      setTipoUsuarioCarregado(true);
     }
   }, []);
 
@@ -1035,24 +1063,26 @@ export default function Home() {
                 </h2>
               </div>
 
-              <motion.div
-                whileHover={{
-                  y: -3,
-                  scale: 1.03,
-                }}
-                whileTap={{
-                  scale: 0.97,
-                }}
-              >
-                <Link
-                  href="/produtos"
-                  className="btn btn-outline-light fw-bold"
-                  style={{ borderRadius: "14px", padding: "10px 16px" }}
+              {tipoUsuarioCarregado && !isFornecedor && (
+                <motion.div
+                  whileHover={{
+                    y: -3,
+                    scale: 1.03,
+                  }}
+                  whileTap={{
+                    scale: 0.97,
+                  }}
                 >
-                  Ver todos
-                  <i className="bi bi-arrow-right ms-2" />
-                </Link>
-              </motion.div>
+                  <Link
+                    href="/produtos"
+                    className="btn btn-outline-light fw-bold"
+                    style={{ borderRadius: "14px", padding: "10px 16px" }}
+                  >
+                    Ver todos
+                    <i className="bi bi-arrow-right ms-2" />
+                  </Link>
+                </motion.div>
+              )}
             </motion.div>
 
             <div id="carouselProdutos" className="carousel slide">
