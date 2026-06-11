@@ -41,6 +41,7 @@ export default function NotificacoesPage() {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
   const [atualizando, setAtualizando] = useState(false);
+  const [excluindoId, setExcluindoId] = useState(null);
 
   useEffect(() => {
     carregarNotificacoes();
@@ -103,6 +104,40 @@ export default function NotificacoesPage() {
       setErro("Não foi possível marcar as notificações como lidas.");
     } finally {
       setAtualizando(false);
+    }
+  }
+
+  async function excluirNotificacao(notificacao) {
+    const token = obterToken();
+    const idNotificacao = notificacao?.id_notificacao;
+
+    if (!token || !idNotificacao) return;
+
+    try {
+      setExcluindoId(idNotificacao);
+      setErro("");
+
+      const response = await fetch(`${NOTIFICACOES_URL}/${idNotificacao}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok || data?.sucesso === false) {
+        throw new Error(data?.mensagem || "Não foi possível excluir a notificação.");
+      }
+
+      setNotificacoes((atuais) =>
+        atuais.filter((item) => item.id_notificacao !== idNotificacao)
+      );
+
+      window.dispatchEvent(new Event("storage"));
+    } catch (error) {
+      console.error("Erro ao excluir notificação:", error);
+      setErro(error.message || "Não foi possível excluir a notificação.");
+    } finally {
+      setExcluindoId(null);
     }
   }
 
@@ -218,9 +253,41 @@ export default function NotificacoesPage() {
                     </p>
                   </div>
 
-                  <small style={{ color: "rgba(255,255,255,.58)" }}>
-                    {formatarData(notificacao.data_criacao)}
-                  </small>
+                  <div className="d-flex align-items-center gap-2">
+                    <small style={{ color: "rgba(255,255,255,.58)" }}>
+                      {formatarData(notificacao.data_criacao)}
+                    </small>
+
+                    <button
+                      type="button"
+                      onClick={() => excluirNotificacao(notificacao)}
+                      disabled={excluindoId === notificacao.id_notificacao}
+                      title="Excluir notificação"
+                      aria-label="Excluir notificação"
+                      style={{
+                        width: "38px",
+                        height: "38px",
+                        borderRadius: "12px",
+                        border: "1px solid rgba(245,6,29,.22)",
+                        background: "rgba(245,6,29,.10)",
+                        color: "#ff758f",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor:
+                          excluindoId === notificacao.id_notificacao
+                            ? "not-allowed"
+                            : "pointer",
+                        opacity: excluindoId === notificacao.id_notificacao ? 0.65 : 1,
+                      }}
+                    >
+                      {excluindoId === notificacao.id_notificacao ? (
+                        <span className="spinner-border spinner-border-sm" />
+                      ) : (
+                        <i className="bi bi-trash3" />
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 {notificacao.mensagem_original && (
