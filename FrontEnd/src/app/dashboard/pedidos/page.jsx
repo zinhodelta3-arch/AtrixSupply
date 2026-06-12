@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { motion } from "motion/react";
+import AlertCard from "@/components/AlertCard";
 import "../algo.css";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -164,6 +166,24 @@ const paginationBtnStyle = {
   fontWeight: "800",
   boxShadow: "none",
 };
+
+
+const pageMotionProps = {
+  initial: { opacity: 0, y: 14 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.42, ease: "easeOut" },
+};
+
+function getSequencedMotion(index = 0, deslocamento = 14) {
+  const delay = Math.min(Number(index) || 0, 14) * 0.045;
+
+  return {
+    initial: { opacity: 0, y: deslocamento },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.32, ease: "easeOut", delay },
+  };
+}
+
 
 function getAuthToken() {
   if (typeof window === "undefined") return "";
@@ -660,7 +680,7 @@ export default function Pedidos() {
   ];
 
   return (
-    <main
+    <motion.main {...pageMotionProps}
       className="container-fluid py-4 px-3 px-lg-4"
       style={{
         background: pageBackground,
@@ -723,11 +743,11 @@ export default function Pedidos() {
       </div>
 
       <div className="row g-4 mb-4">
-        {metricasCards.map((card) => {
+        {metricasCards.map((card, index) => {
           const ativo = cardHoverAtivo === card.titulo;
 
           return (
-            <div className="col-12 col-md-6 col-xl-3" key={card.titulo}>
+            <motion.div className="col-12 col-md-6 col-xl-3" key={card.titulo} {...getSequencedMotion(index, 16)}>
               <div
                 className="p-4 h-100"
                 style={metricCardStyle(card.cor, ativo)}
@@ -777,25 +797,21 @@ export default function Pedidos() {
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           );
         })}
       </div>
 
       {(feedback || erroLista) && (
-        <div
-          className="alert border-0 mb-4"
-          style={{
-            background: feedback ? "rgba(34,197,94,0.10)" : "rgba(245,6,29,0.10)",
-            color: feedback ? "#5cff95" : "#ff758f",
-            borderRadius: "18px",
-          }}
-        >
-          {feedback || erroLista}
-        </div>
+        <AlertCard
+          variant={feedback ? "success" : "danger"}
+          title={feedback ? "Sucesso" : "Erro"}
+          message={feedback || erroLista}
+          className="mb-4"
+        />
       )}
 
-      <section className="p-3 p-lg-4" style={cardStyle}>
+      <motion.section className="p-3 p-lg-4" style={cardStyle}>
         <div className="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
           <div>
             <h4
@@ -956,7 +972,7 @@ export default function Pedidos() {
             style={dashboardTableStyle}
           >
             <thead>
-              <tr>
+              <motion.tr>
                 <th style={dashboardTableHeadCellStyle}>Cliente</th>
                 <th style={dashboardTableHeadCellStyle}>Produto</th>
                 <th style={dashboardTableHeadCellStyle}>Nº do pedido</th>
@@ -966,12 +982,12 @@ export default function Pedidos() {
                 <th style={{ ...dashboardTableHeadCellStyle, textAlign: "right" }}>
                   Ações
                 </th>
-              </tr>
+              </motion.tr>
             </thead>
 
             <tbody>
               {carregando ? (
-                <tr>
+                <motion.tr>
                   <td
                     colSpan="7"
                     className="text-center"
@@ -981,12 +997,17 @@ export default function Pedidos() {
                       color: "rgba(255,255,255,.65)",
                     }}
                   >
-                    <span className="spinner-border spinner-border-sm text-warning me-2" />
-                    Carregando pedidos...
+                    <AlertCard
+                      variant="neutral"
+                      icon={<span className="spinner-border spinner-border-sm" aria-hidden="true" />}
+                      title="Carregando pedidos..."
+                      centered
+                      style={{ boxShadow: "none" }}
+                    />
                   </td>
-                </tr>
+                </motion.tr>
               ) : pedidos.length === 0 ? (
-                <tr>
+                <motion.tr>
                   <td
                     colSpan="7"
                     className="text-center"
@@ -995,33 +1016,23 @@ export default function Pedidos() {
                       padding: "42px 18px",
                     }}
                   >
-                    <i
-                      className="bi bi-bag-x d-block mb-3"
-                      style={{
-                        color: "#ffcf40",
-                        fontSize: "2.4rem",
-                      }}
+                    <AlertCard
+                      variant="empty"
+                      icon="bi-bag-x"
+                      title="Nenhum pedido encontrado"
+                      message="Tente mudar os filtros ou cadastre um novo pedido."
+                      centered
+                      style={{ boxShadow: "none" }}
                     />
-
-                    <h5 className="fw-bold mb-1">Nenhum pedido encontrado</h5>
-
-                    <p
-                      className="mb-0"
-                      style={{
-                        color: "rgba(255,255,255,.52)",
-                      }}
-                    >
-                      Tente mudar os filtros ou cadastre um novo pedido.
-                    </p>
                   </td>
-                </tr>
+                </motion.tr>
               ) : (
-                pedidos.map((pedido) => {
+                pedidos.map((pedido, index) => {
                   const nomeCliente = getNomeCliente(pedido);
                   const statusDotColor = getStatusDotColor(pedido.status);
 
                   return (
-                    <tr key={pedido.id_pedido}>
+                    <motion.tr key={pedido.id_pedido} {...getSequencedMotion(index)}>
                       <td style={dashboardTableCellStyle}>
                         <div className="d-flex align-items-center">
                           <div
@@ -1174,7 +1185,7 @@ export default function Pedidos() {
                           </button>
                         </div>
                       </td>
-                    </tr>
+                    </motion.tr>
                   );
                 })
               )}
@@ -1252,7 +1263,7 @@ export default function Pedidos() {
             </div>
           </div>
         )}
-      </section>
+      </motion.section>
 
       <div className="modal fade" id="pedidoCreateModal" tabIndex="-1" aria-hidden="true">
         <div className="modal-dialog modal-dialog-centered modal-lg">
@@ -1322,16 +1333,12 @@ export default function Pedidos() {
             <form onSubmit={handleCriarPedido}>
               <div className="modal-body" style={{ padding: "28px 32px 10px" }}>
                 {formCriarErro && (
-                  <div
-                    className="alert border-0 mb-4"
-                    style={{
-                      background: "rgba(245,6,29,0.14)",
-                      color: "#fecaca",
-                      borderRadius: "16px",
-                    }}
-                  >
-                    {formCriarErro}
-                  </div>
+                  <AlertCard
+                    variant="danger"
+                    title="Erro"
+                    message={formCriarErro}
+                    className="mb-4"
+                  />
                 )}
 
                 <div className="row g-3">
@@ -1496,16 +1503,12 @@ export default function Pedidos() {
             <form onSubmit={handleAtualizarPedido}>
               <div className="modal-body" style={{ padding: "28px 32px 10px" }}>
                 {formEditarErro && (
-                  <div
-                    className="alert border-0 mb-4"
-                    style={{
-                      background: "rgba(245,6,29,0.14)",
-                      color: "#fecaca",
-                      borderRadius: "16px",
-                    }}
-                  >
-                    {formEditarErro}
-                  </div>
+                  <AlertCard
+                    variant="danger"
+                    title="Erro"
+                    message={formEditarErro}
+                    className="mb-4"
+                  />
                 )}
 
                 <div className="row g-3">
@@ -1622,6 +1625,6 @@ export default function Pedidos() {
           </div>
         </div>
       </div>
-    </main>
+    </motion.main>
   );
 }

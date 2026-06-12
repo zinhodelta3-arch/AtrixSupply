@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { motion } from "motion/react";
 
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "./pedidos.css";
 
 import { useRouter } from "next/navigation";
+import AlertCard from "@/components/AlertCard";
 import { FALLBACK_IMAGE, resolveImageUrl, useImageFallback } from "@/utils/imageUrl";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -82,6 +84,42 @@ const statusOptions = [
   { value: "entregue", label: "Entregue" },
   { value: "cancelado", label: "Cancelado" },
 ];
+
+const pageMotion = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  transition: { duration: 0.38, ease: "easeOut" },
+};
+
+const heroContentMotion = {
+  initial: { opacity: 0, y: 18 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.5, ease: "easeOut" },
+};
+
+const sidebarMotion = {
+  initial: { opacity: 0, x: -18 },
+  animate: { opacity: 1, x: 0 },
+  transition: { duration: 0.45, ease: "easeOut", delay: 0.08 },
+};
+
+const contentMotion = {
+  initial: { opacity: 0, y: 16 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.45, ease: "easeOut", delay: 0.12 },
+};
+
+function getPedidoCardMotion(index) {
+  return {
+    initial: { opacity: 0, y: 22, scale: 0.985 },
+    animate: { opacity: 1, y: 0, scale: 1 },
+    transition: {
+      duration: 0.42,
+      ease: "easeOut",
+      delay: Math.min(Number(index) || 0, 8) * 0.075,
+    },
+  };
+}
 
 function obterToken() {
   if (typeof window === "undefined") return "";
@@ -655,26 +693,35 @@ export default function Pedidos() {
 
   if (verificandoAcesso) {
     return (
-      <main
+      <motion.main
         className="d-flex justify-content-center align-items-center text-white"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.35, ease: "easeOut" }}
         style={{
           background: pageBackground,
           minHeight: "100vh",
         }}
       >
-        <div className="text-center">
+        <motion.div
+          className="text-center"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut", delay: 0.08 }}
+        >
           <div className="spinner-border text-warning mb-3" />
           <h4 className="fw-bold">Verificando acesso...</h4>
           <p className="text-secondary mb-0">
             Apenas usuários comuns podem acessar seus pedidos.
           </p>
-        </div>
-      </main>
+        </motion.div>
+      </motion.main>
     );
   }
 
   return (
-    <main
+    <motion.main
+      {...pageMotion}
       style={{
         background: pageBackground,
         minHeight: "100vh",
@@ -689,7 +736,7 @@ export default function Pedidos() {
           boxShadow: "0 25px 80px rgba(192,1,42,.18)",
         }}
       >
-        <div className="container py-4">
+        <motion.div className="container py-4" {...heroContentMotion}>
           <span className="badge bg-warning text-dark mb-3 px-3 py-2">
             Área do Cliente
           </span>
@@ -700,15 +747,16 @@ export default function Pedidos() {
             Acompanhe seus pedidos, entregas e informações das suas compras em
             tempo real.
           </p>
-        </div>
+        </motion.div>
       </section>
 
       <section className="py-5">
         <div className="container-fluid px-4">
           <div className="row g-4">
             <div className="col-lg-3">
-              <aside
+              <motion.aside
                 className="position-sticky p-4 rounded-4"
+                {...sidebarMotion}
                 style={{
                   top: "20px",
                   ...panelStyle,
@@ -874,47 +922,36 @@ export default function Pedidos() {
                 >
                   Comprar produtos
                 </button>
-              </aside>
+              </motion.aside>
             </div>
 
-            <div className="col-lg-9">
+            <motion.div className="col-lg-9" {...contentMotion}>
               {erroLista && (
-                <div className="alert alert-danger rounded-4">
-                  {erroLista}
-                </div>
+                <AlertCard
+                  variant="danger"
+                  title="Erro"
+                  message={erroLista}
+                  className="mb-3"
+                />
               )}
 
               {carregando ? (
-                <div
-                  className="d-flex flex-column justify-content-center align-items-center"
-                  style={{
-                    height: "320px",
-                    borderRadius: "28px",
-                    border: "1px solid rgba(255,255,255,.06)",
-                    background: "rgba(255,255,255,.03)",
-                  }}
-                >
-                  <div className="spinner-border text-warning mb-3" />
-
-                  <h4 className="text-white fw-bold">
-                    Carregando pedidos...
-                  </h4>
-
-                  <p
-                    className="mb-0"
-                    style={{
-                      color: "rgba(255,255,255,.58)",
-                    }}
-                  >
-                    Buscando suas compras atualizadas.
-                  </p>
-                </div>
+                <AlertCard
+                  variant="neutral"
+                  icon={<span className="spinner-border spinner-border-sm" aria-hidden="true" />}
+                  title="Carregando pedidos..."
+                  message="Buscando suas compras atualizadas."
+                  centered
+                  style={{ minHeight: "320px" }}
+                />
               ) : (
                 <div className="row g-4">
-                  {pedidosAtuais.map((pedido) => (
+                  {pedidosAtuais.map((pedido, index) => (
                     <div className="col-12" key={pedido.id_pedido}>
-                      <article
+                      <motion.article
                         className="card border-0 overflow-hidden"
+                        {...getPedidoCardMotion(index)}
+                        whileHover={{ y: -4, transition: { duration: 0.2, ease: "easeOut" } }}
                         style={cardStyle}
                       >
                         <div className="row g-0">
@@ -1114,47 +1151,20 @@ export default function Pedidos() {
                             </div>
                           </div>
                         </div>
-                      </article>
+                      </motion.article>
                     </div>
                   ))}
 
                   {pedidosFiltrados.length === 0 && (
                     <div className="col-12">
-                      <div
-                        className="d-flex flex-column justify-content-center align-items-center"
-                        style={{
-                          height: "300px",
-                          borderRadius: "28px",
-                          border: "1px solid rgba(255,255,255,.06)",
-                          background: "rgba(255,255,255,.03)",
-                        }}
-                      >
-                        <i
-                          className="bi bi-bag-x"
-                          style={{
-                            fontSize: "4rem",
-                            color: "#ffcf40",
-                            marginBottom: "18px",
-                          }}
-                        />
-
-                        <h3
-                          style={{
-                            color: "white",
-                            fontWeight: "700",
-                          }}
-                        >
-                          Nenhum pedido encontrado
-                        </h3>
-
-                        <p
-                          style={{
-                            color: "rgba(255,255,255,.55)",
-                          }}
-                        >
-                          Tente pesquisar por outro nome ou status.
-                        </p>
-                      </div>
+                      <AlertCard
+                        variant="empty"
+                        icon="bi-bag-x"
+                        title="Nenhum pedido encontrado"
+                        message="Tente pesquisar por outro nome ou status."
+                        centered
+                        style={{ minHeight: "300px" }}
+                      />
                     </div>
                   )}
 
@@ -1223,7 +1233,7 @@ export default function Pedidos() {
                   )}
                 </div>
               )}
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -1761,6 +1771,6 @@ export default function Pedidos() {
           </div>
         </div>
       </div>
-    </main>
+    </motion.main>
   );
 }

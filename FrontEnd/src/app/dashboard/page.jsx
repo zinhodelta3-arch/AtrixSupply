@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import AlertCard from "@/components/AlertCard";
+import { AnimatePresence, motion } from "motion/react";
 
 import {
   Chart as ChartJS,
@@ -212,6 +214,97 @@ const meses = [
   "Nov",
   "Dez",
 ];
+
+const pageMotion = {
+  hidden: {
+    opacity: 0,
+  },
+  visible: {
+    opacity: 1,
+    transition: {
+      duration: 0.42,
+      ease: "easeOut",
+      when: "beforeChildren",
+      staggerChildren: 0.055,
+    },
+  },
+};
+
+const fadeUpMotion = {
+  hidden: {
+    opacity: 0,
+    y: 18,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.42,
+      ease: "easeOut",
+    },
+  },
+};
+
+const cardMotion = {
+  hidden: {
+    opacity: 0,
+    y: 22,
+    scale: 0.985,
+  },
+  visible: (index = 0) => ({
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: 0.42,
+      ease: "easeOut",
+      delay: Math.min(Number(index) || 0, 12) * 0.055,
+    },
+  }),
+};
+
+const tableRowMotion = {
+  hidden: {
+    opacity: 0,
+    y: 10,
+  },
+  visible: (index = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.32,
+      ease: "easeOut",
+      delay: Math.min(Number(index) || 0, 10) * 0.045,
+    },
+  }),
+};
+
+const alertMotion = {
+  hidden: {
+    opacity: 0,
+    y: -8,
+    scale: 0.99,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: 0.28,
+      ease: "easeOut",
+    },
+  },
+  exit: {
+    opacity: 0,
+    y: -8,
+    scale: 0.99,
+    transition: {
+      duration: 0.18,
+      ease: "easeIn",
+    },
+  },
+};
+
 
 function obterToken() {
   if (typeof window === "undefined") return "";
@@ -893,37 +986,47 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <main
+      <motion.main
         className="d-flex justify-content-center align-items-center"
+        initial="hidden"
+        animate="visible"
+        variants={pageMotion}
         style={{
           minHeight: "100vh",
           background: pageBackground,
           color: "#ffb300",
         }}
       >
-        <div className="text-center">
-          <div className="spinner-border text-warning mb-3" />
+        <motion.div className="text-center" variants={fadeUpMotion}>
+          <motion.div
+            className="spinner-border text-warning mb-3"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          />
 
           <h4 className="fw-bold">Carregando dashboard...</h4>
 
           <p className="mb-0" style={{ color: "rgba(255,255,255,.55)" }}>
             Buscando pedidos, usuários e produtos na API.
           </p>
-        </div>
-      </main>
+        </motion.div>
+      </motion.main>
     );
   }
 
   return (
-    <main
+    <motion.main
       className="container-fluid py-4 px-3 px-lg-4"
+      initial="hidden"
+      animate="visible"
+      variants={pageMotion}
       style={{
         background: pageBackground,
         minHeight: "100vh",
         color: "white",
       }}
     >
-      <div className="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-5">
+      <motion.div className="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-5" variants={fadeUpMotion}>
         <div>
           <span
             className="badge mb-3"
@@ -989,45 +1092,62 @@ export default function Dashboard() {
             Gerenciar produtos
           </Link>
         </div>
-      </div>
+      </motion.div>
 
-      {erro && (
-        <div
-          className="alert alert-danger mb-4"
-          style={{
-            borderRadius: "18px",
-            border: "none",
-          }}
+      <AnimatePresence mode="wait">
+        {erro && (
+          <motion.div
+            variants={alertMotion}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+          >
+        <AlertCard
+          variant="danger"
+          title="Erro"
+          message={erro}
+          className="mb-4"
+        />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {avisos.length > 0 && (
+          <motion.div
+            variants={alertMotion}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+          >
+        <AlertCard
+          variant="warning"
+          title="Aviso"
+          className="mb-4"
         >
-          {erro}
-        </div>
-      )}
-
-      {avisos.length > 0 && (
-        <div
-          className="alert alert-warning mb-4"
-          style={{
-            borderRadius: "18px",
-            border: "none",
-          }}
-        >
-          <strong>Aviso:</strong> alguns dados não foram carregados.
-
+          <p className="mb-0">Alguns dados não foram carregados.</p>
           <ul className="mb-0 mt-2">
             {avisos.map((aviso, index) => (
               <li key={index}>{aviso}</li>
             ))}
           </ul>
-        </div>
-      )}
+        </AlertCard>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      <div className="row g-4 mb-4">
-        {metricasCards.map((card) => {
+      <motion.div className="row g-4 mb-4" variants={fadeUpMotion}>
+        {metricasCards.map((card, index) => {
           const ativo = cardHoverAtivo === card.titulo;
 
           return (
-            <div className="col-12 col-md-6 col-xl-3" key={card.titulo}>
-              <div
+            <motion.div
+              className="col-12 col-md-6 col-xl-3"
+              key={card.titulo}
+              custom={index}
+              variants={cardMotion}
+            >
+              <motion.div
                 className="p-4 h-100"
                 style={metricCardStyle(card.cor, ativo)}
                 onMouseEnter={() => setCardHoverAtivo(card.titulo)}
@@ -1085,14 +1205,14 @@ export default function Dashboard() {
                     />
                   </div>
                 </div>
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           );
         })}
-      </div>
+      </motion.div>
 
-      <div className="row g-4 mb-4">
-        <div className="col-xl-8">
+      <motion.div className="row g-4 mb-4" variants={fadeUpMotion}>
+        <motion.div className="col-xl-8" variants={cardMotion} custom={0}>
           <div className="p-4 h-100" style={cardStyle}>
             <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
               <div>
@@ -1136,9 +1256,9 @@ export default function Dashboard() {
               <Line data={chartData} options={chartOptions} />
             </div>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="col-xl-4">
+        <motion.div className="col-xl-4" variants={cardMotion} custom={1}>
           <div className="p-4 h-100" style={cardStyle}>
             <h4
               className="fw-bold mb-1"
@@ -1160,13 +1280,15 @@ export default function Dashboard() {
             </p>
 
             <div className="d-flex flex-column gap-3">
-              {statusCards.map(([status, total]) => {
+              {statusCards.map(([status, total], index) => {
                 const corStatus = getStatusColor(status);
                 const ativo = statusHoverAtivo === status;
 
                 return (
-                  <div
+                  <motion.div
                     key={status}
+                    custom={index}
+                    variants={cardMotion}
                     className="d-flex justify-content-between align-items-center"
                     style={statusCardStyle(corStatus, ativo)}
                     onMouseEnter={() => setStatusHoverAtivo(status)}
@@ -1204,15 +1326,15 @@ export default function Dashboard() {
                     >
                       {formatarNumero(total)}
                     </strong>
-                  </div>
+                  </motion.div>
                 );
               })}
             </div>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
-      <div className="p-4" style={cardStyle}>
+      <motion.div className="p-4" style={cardStyle} variants={fadeUpMotion}>
         <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
           <div>
             <h4
@@ -1249,31 +1371,14 @@ export default function Dashboard() {
         </div>
 
         {dadosCalculados.pedidosRecentes.length === 0 ? (
-          <div
-            className="text-center py-5"
-            style={{
-              ...innerCardStyle,
-            }}
-          >
-            <i
-              className="bi bi-bag-x"
-              style={{
-                color: "#ffcf40",
-                fontSize: "3rem",
-              }}
-            />
-
-            <h5 className="fw-bold mt-3">Nenhum pedido encontrado</h5>
-
-            <p
-              className="mb-0"
-              style={{
-                color: "rgba(255,255,255,.55)",
-              }}
-            >
-              Quando houver pedidos, eles aparecerão aqui.
-            </p>
-          </div>
+          <AlertCard
+            variant="empty"
+            icon="bi-bag-x"
+            title="Nenhum pedido encontrado"
+            message="Quando houver pedidos, eles aparecerão aqui."
+            centered
+            style={{ minHeight: "240px", boxShadow: "none" }}
+          />
         ) : (
           <div className="table-responsive" style={dashboardTableWrapperStyle}>
             <table
@@ -1292,11 +1397,15 @@ export default function Dashboard() {
               </thead>
 
               <tbody>
-                {dadosCalculados.pedidosRecentes.map((pedido) => {
+                {dadosCalculados.pedidosRecentes.map((pedido, index) => {
                   const status = obterStatusPedido(pedido);
 
                   return (
-                    <tr key={obterIdPedido(pedido)}>
+                    <motion.tr
+                      key={obterIdPedido(pedido)}
+                      custom={index}
+                      variants={tableRowMotion}
+                    >
                       <td style={dashboardTableCellStyle} className="fw-bold">
                         #{obterIdPedido(pedido)}
                       </td>
@@ -1388,14 +1497,14 @@ export default function Dashboard() {
                       >
                         {formatarMoeda(pedido.valor_calculado)}
                       </td>
-                    </tr>
+                    </motion.tr>
                   );
                 })}
               </tbody>
             </table>
           </div>
         )}
-      </div>
-    </main>
+      </motion.div>
+    </motion.main>
   );
 }

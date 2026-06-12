@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import AlertCard from "@/components/AlertCard";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
 const NOTIFICACOES_URL = `${API_URL}/api/notificacoes`;
@@ -663,33 +664,18 @@ export default function Header() {
                     </div>
 
                     {notificacoes.length === 0 ? (
-                      <div
-                        className="text-center"
+                      <AlertCard
+                        variant="empty"
+                        icon="bi-bell-slash"
+                        title="Nenhuma notificação"
+                        message="Quando houver novidades, elas aparecerão aqui."
+                        centered
                         style={{
-                          padding: "28px 18px",
-                          color: "rgba(255,255,255,.62)",
+                          margin: "10px 4px",
+                          width: "calc(100% - 8px)",
+                          padding: "22px 16px",
                         }}
-                      >
-                        <i
-                          className="bi bi-bell-slash d-block mb-2"
-                          style={{
-                            color: "#ffcf40",
-                            fontSize: "1.7rem",
-                          }}
-                        />
-
-                        <strong
-                          style={{
-                            display: "block",
-                            color: "#ffffff",
-                            marginBottom: "4px",
-                          }}
-                        >
-                          Nenhuma notificação
-                        </strong>
-
-                        <small>Quando houver novidades, elas aparecerão aqui.</small>
-                      </div>
+                      />
                     ) : (
                       <div
                         style={{

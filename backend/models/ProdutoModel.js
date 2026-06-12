@@ -72,7 +72,7 @@ class ProdutoModel {
                 LIMIT ? OFFSET ?;
             `;
 
-            const [produtos] = await connection.execute(sqlProdutos, [
+            const [produtos] = await connection.query(sqlProdutos, [
                 ...params,
                 limiteSeguro,
                 offsetSeguro,

@@ -2,11 +2,135 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import * as THREE from "three";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import AlertCard from "@/components/AlertCard";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
+
+const pageVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      duration: 0.45,
+      ease: "easeOut",
+      staggerChildren: 0.08,
+    },
+  },
+};
+
+const cardVariants = {
+  hidden: {
+    opacity: 0,
+    y: 34,
+    scale: 0.96,
+    filter: "blur(8px)",
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    filter: "blur(0px)",
+    transition: {
+      duration: 0.72,
+      ease: [0.22, 1, 0.36, 1],
+    },
+  },
+};
+
+const logoVariants = {
+  hidden: {
+    opacity: 0,
+    y: -22,
+    scale: 0.92,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: 0.65,
+      ease: [0.22, 1, 0.36, 1],
+    },
+  },
+};
+
+const titleVariants = {
+  hidden: {
+    opacity: 0,
+    y: 16,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.55,
+      ease: "easeOut",
+    },
+  },
+};
+
+const formVariants = {
+  hidden: {
+    opacity: 0,
+    y: 16,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: 0.12,
+      duration: 0.55,
+      ease: "easeOut",
+      staggerChildren: 0.08,
+    },
+  },
+};
+
+const fieldVariants = {
+  hidden: {
+    opacity: 0,
+    y: 12,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.42,
+      ease: "easeOut",
+    },
+  },
+};
+
+const alertMotion = {
+  initial: {
+    opacity: 0,
+    y: -10,
+    scale: 0.98,
+  },
+  animate: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: 0.32,
+      ease: "easeOut",
+    },
+  },
+  exit: {
+    opacity: 0,
+    y: -8,
+    scale: 0.98,
+    transition: {
+      duration: 0.2,
+      ease: "easeIn",
+    },
+  },
+};
+
 
 export default function Login() {
   const mountRef = useRef(null);
@@ -324,7 +448,10 @@ export default function Login() {
   }, []);
 
   return (
-    <div
+    <motion.div
+      variants={pageVariants}
+      initial="hidden"
+      animate="visible"
       style={{
         backgroundColor: "#1a0a0a",
         minHeight: "100vh",
@@ -378,8 +505,9 @@ export default function Login() {
         }}
       />
 
-      <div
+      <motion.div
         className="d-flex justify-content-center align-items-center"
+        variants={cardVariants}
         style={{
           minHeight: "100vh",
           position: "relative",
@@ -387,7 +515,8 @@ export default function Login() {
           padding: "20px",
         }}
       >
-        <div
+        <motion.div
+          whileHover={{ y: -4, transition: { duration: 0.25 } }}
           style={{
             backgroundColor: "rgba(148, 5, 50, 0.4)",
             backdropFilter: "blur(16px)",
@@ -403,7 +532,7 @@ export default function Login() {
           }}
         >
           <div className="text-center">
-            <div className="d-flex justify-content-center">
+            <motion.div className="d-flex justify-content-center" variants={logoVariants}>
               <Image
                 src="/ATRIXsuply.png"
                 alt="ATRIXsuply logo"
@@ -416,9 +545,10 @@ export default function Login() {
                   filter: "drop-shadow(0 0 12px rgba(255,179,0,0.4))",
                 }}
               />
-            </div>
+            </motion.div>
 
-            <h1
+            <motion.h1
+              variants={titleVariants}
               style={{
                 color: "#ffb300",
                 fontSize: "32px",
@@ -427,23 +557,24 @@ export default function Login() {
               }}
             >
               Login
-            </h1>
+            </motion.h1>
           </div>
 
-          <form onSubmit={handleLogin}>
-            {erro && (
-              <div
-                className="alert alert-danger p-2 text-center"
-                style={{
-                  fontSize: "14px",
-                  borderRadius: "10px",
-                }}
-              >
-                {erro}
-              </div>
-            )}
+          <motion.form onSubmit={handleLogin} variants={formVariants}>
+            <AnimatePresence>
+              {erro && (
+                <motion.div key="login-error-alert" {...alertMotion}>
+                  <AlertCard
+                    variant="danger"
+                    title="Erro"
+                    message={erro}
+                    style={{ padding: "12px", borderRadius: "14px" }}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-            <div className="mb-3">
+            <motion.div className="mb-3" variants={fieldVariants}>
               <label className="form-label">Email</label>
 
               <input
@@ -462,9 +593,9 @@ export default function Login() {
                   backdropFilter: "blur(4px)",
                 }}
               />
-            </div>
+            </motion.div>
 
-            <div className="mb-3">
+            <motion.div className="mb-3" variants={fieldVariants}>
               <label className="form-label">Senha</label>
 
               <input
@@ -483,9 +614,12 @@ export default function Login() {
                   backdropFilter: "blur(4px)",
                 }}
               />
-            </div>
+            </motion.div>
 
-            <button
+            <motion.button
+              variants={fieldVariants}
+              whileHover={loading ? undefined : { y: -2, scale: 1.015 }}
+              whileTap={loading ? undefined : { scale: 0.98 }}
               type="submit"
               className="btn w-100 mt-1"
               disabled={loading}
@@ -501,10 +635,11 @@ export default function Login() {
               }}
             >
               {loading ? "Entrando..." : "Entrar"}
-            </button>
-          </form>
+            </motion.button>
+          </motion.form>
 
-          <p
+          <motion.p
+            variants={fieldVariants}
             className="text-center mt-3 d-flex flex-column gap-2"
             style={{
               color: "#ccc",
@@ -525,9 +660,9 @@ export default function Login() {
               </Link>
             </span>
 
-          </p>
-        </div>
-      </div>
-    </div>
+          </motion.p>
+        </motion.div>
+      </motion.div>
+    </motion.div>
   );
 }

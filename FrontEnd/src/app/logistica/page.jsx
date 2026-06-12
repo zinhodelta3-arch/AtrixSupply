@@ -5,6 +5,8 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { motion } from "motion/react";
+import AlertCard from "@/components/AlertCard";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
 const LOGISTICA_URL = `${API_URL}/api/logistica`;
@@ -59,6 +61,18 @@ const buttonGradient = {
   borderRadius: "16px",
   fontWeight: "800",
 };
+
+const motionTransition = {
+  duration: 0.42,
+  ease: [0.22, 1, 0.36, 1],
+};
+
+const fadeUpMotion = {
+  initial: { opacity: 0, y: 24 },
+  animate: { opacity: 1, y: 0 },
+  transition: motionTransition,
+};
+
 
 function obterToken() {
   if (typeof window === "undefined") return "";
@@ -678,14 +692,17 @@ export default function LogisticaFornecedor() {
 
   if (validandoAcesso) {
     return (
-      <main
+      <motion.main
         className="d-flex justify-content-center align-items-center text-white"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={motionTransition}
         style={{
           minHeight: "100vh",
           background: pageBackground,
         }}
       >
-        <div className="text-center">
+        <motion.div className="text-center" {...fadeUpMotion}>
           <div className="spinner-border text-warning mb-3" />
 
           <h4 className="fw-bold">
@@ -695,13 +712,16 @@ export default function LogisticaFornecedor() {
           <p className="text-secondary mb-0">
             Apenas fornecedores e administradores podem acessar esta página.
           </p>
-        </div>
-      </main>
+        </motion.div>
+      </motion.main>
     );
   }
 
   return (
-    <main
+    <motion.main
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
       style={{
         minHeight: "100vh",
         background: pageBackground,
@@ -709,8 +729,11 @@ export default function LogisticaFornecedor() {
         overflow: "hidden",
       }}
     >
-      <section
+      <motion.section
         className="py-5 text-white"
+        initial={{ opacity: 0, y: -18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={motionTransition}
         style={{
           background: heroGradient,
           borderBottom: "1px solid rgba(255,255,255,.08)",
@@ -769,12 +792,20 @@ export default function LogisticaFornecedor() {
             </div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
-      <div className="container-fluid px-4 px-lg-5 py-5">
+      <motion.div
+        className="container-fluid px-4 px-lg-5 py-5"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ ...motionTransition, delay: 0.08 }}
+      >
         <div className="row g-4">
           <div className="col-xl-3">
-            <aside
+            <motion.aside
+              initial={{ opacity: 0, x: -24 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ ...motionTransition, delay: 0.12 }}
               style={{
                 ...panelStyle,
                 padding: "30px",
@@ -934,11 +965,14 @@ export default function LogisticaFornecedor() {
                   </div>
                 ))}
               </div>
-            </aside>
+            </motion.aside>
           </div>
 
           <div className="col-xl-9">
-            <section
+            <motion.section
+              initial={{ opacity: 0, x: 24 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ ...motionTransition, delay: 0.16 }}
               style={{
                 ...panelStyle,
                 padding: "35px",
@@ -1075,23 +1109,29 @@ export default function LogisticaFornecedor() {
               </div>
 
               {feedback && (
-                <div
-                  className={`alert ${
+                <AlertCard
+                  variant={feedback.tipo}
+                  title={
                     feedback.tipo === "success"
-                      ? "alert-success"
+                      ? "Sucesso"
                       : feedback.tipo === "warning"
-                      ? "alert-warning"
-                      : feedback.tipo === "danger"
-                      ? "alert-danger"
-                      : "alert-info"
-                  }`}
-                >
-                  {feedback.texto}
-                </div>
+                        ? "Atenção"
+                        : feedback.tipo === "danger"
+                          ? "Erro"
+                          : "Informação"
+                  }
+                  message={feedback.texto}
+                  className="mb-3"
+                />
               )}
 
               {erroLista && (
-                <div className="alert alert-danger">{erroLista}</div>
+                <AlertCard
+                  variant="danger"
+                  title="Erro"
+                  message={erroLista}
+                  className="mb-3"
+                />
               )}
 
               <div
@@ -1102,31 +1142,33 @@ export default function LogisticaFornecedor() {
                 }}
               >
                 {carregando ? (
-                  <div
-                    className="d-flex flex-column justify-content-center align-items-center"
-                    style={{
-                      height: "320px",
-                      borderRadius: "28px",
-                      background: "rgba(255,255,255,.02)",
-                      border: "1px solid rgba(255,255,255,.06)",
-                    }}
-                  >
-                    <div className="spinner-border text-warning mb-3" />
-
-                    <h4 style={{ fontWeight: "700" }}>
-                      Carregando logísticas...
-                    </h4>
-                  </div>
+                  <AlertCard
+                    variant="neutral"
+                    icon={<span className="spinner-border spinner-border-sm" aria-hidden="true" />}
+                    title="Carregando logísticas..."
+                    centered
+                    style={{ minHeight: "320px" }}
+                  />
                 ) : (
                   <div className="d-flex flex-column gap-4">
-                    {logisticas.map((item) => {
+                    {logisticas.map((item, index) => {
                       const cor = getCorDisponibilidade(item.disponibilidade);
                       const atualizando = statusAtualizandoId === item.id_logistica;
                       const bloqueada = logisticaEstaBloqueada(item);
 
                       return (
-                        <article
+                        <motion.article
                           key={item.id_logistica}
+                          initial={{ opacity: 0, y: 22 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{
+                            ...motionTransition,
+                            delay: Math.min(index, 10) * 0.06,
+                          }}
+                          whileHover={{
+                            y: -2,
+                            borderColor: "rgba(255,179,0,.18)",
+                          }}
                           style={{
                             position: "relative",
                             background: "rgba(255,255,255,.035)",
@@ -1405,47 +1447,19 @@ export default function LogisticaFornecedor() {
 
                       
                           </div>
-                        </article>
+                        </motion.article>
                       );
                     })}
 
                     {logisticas.length === 0 && (
-                      <div
-                        className="d-flex flex-column justify-content-center align-items-center"
-                        style={{
-                          height: "320px",
-                          borderRadius: "28px",
-                          background: "rgba(255,255,255,.02)",
-                          border: "1px solid rgba(255,255,255,.06)",
-                          textAlign: "center",
-                        }}
-                      >
-                        <i
-                          className="bi bi-truck"
-                          style={{
-                            color: "#ffcf40",
-                            fontSize: "2.5rem",
-                            marginBottom: "16px",
-                          }}
-                        />
-
-                        <h3
-                          style={{
-                            color: "#ffe082",
-                            fontWeight: "800",
-                          }}
-                        >
-                          Nenhuma logística encontrada
-                        </h3>
-
-                        <p
-                          style={{
-                            color: "rgba(255,255,255,.55)",
-                          }}
-                        >
-                          Cadastre uma nova logística ou altere os filtros.
-                        </p>
-                      </div>
+                      <AlertCard
+                        variant="empty"
+                        icon="bi-truck"
+                        title="Nenhuma logística encontrada"
+                        message="Cadastre uma nova logística ou altere os filtros."
+                        centered
+                        style={{ minHeight: "320px" }}
+                      />
                     )}
                   </div>
                 )}
@@ -1485,14 +1499,18 @@ export default function LogisticaFornecedor() {
                   </div>
                 </div>
               )}
-            </section>
+            </motion.section>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {modalAberto && (
-        <div
+        <motion.div
           role="dialog"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
           aria-modal="true"
           onClick={fecharModal}
           className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center"
@@ -1503,8 +1521,12 @@ export default function LogisticaFornecedor() {
             padding: "18px",
           }}
         >
-          <div
+          <motion.div
             onClick={(event) => event.stopPropagation()}
+            initial={{ opacity: 0, y: 24, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 14, scale: 0.98 }}
+            transition={motionTransition}
             style={{
               width: "min(760px, 100%)",
               maxHeight: "92vh",
@@ -1652,25 +1674,21 @@ export default function LogisticaFornecedor() {
                   </div>
 
                   <div className="col-12">
-                    <div
-                      className="alert mb-0"
-                      style={{
-                        background: "rgba(255,179,0,.10)",
-                        border: "1px solid rgba(255,179,0,.22)",
-                        color: "#ffe082",
-                        borderRadius: "16px",
-                      }}
-                    >
-                      <i className="bi bi-info-circle me-2" />
-                      O destino será definido automaticamente pelo endereço do comprador quando esta logística for atribuída a uma encomenda.
-                    </div>
+                    <AlertCard
+                      variant="info"
+                      title="Destino automático"
+                      message="O destino será definido automaticamente pelo endereço do comprador quando esta logística for atribuída a uma encomenda."
+                    />
                   </div>
                 </div>
 
                 {formErro && (
-                  <div className="alert alert-danger mt-4 mb-0">
-                    {formErro}
-                  </div>
+                  <AlertCard
+                    variant="danger"
+                    title="Erro"
+                    message={formErro}
+                    className="mt-4 mb-0"
+                  />
                 )}
               </div>
 
@@ -1718,9 +1736,9 @@ export default function LogisticaFornecedor() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
-    </main>
+    </motion.main>
   );
 }

@@ -2,9 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "motion/react";
 
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
+import AlertCard from "@/components/AlertCard";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
 const ENCOMENDAS_URL = `${API_URL}/api/encomendas`;
@@ -27,6 +29,15 @@ const buttonGradient = {
   borderRadius: "14px",
   fontWeight: "700",
 };
+
+const motionTransition = {
+  duration: 0.45,
+  ease: [0.22, 1, 0.36, 1],
+};
+
+function getDelaySequencial(index, limite = 8) {
+  return Math.min(Number(index) || 0, limite) * 0.07;
+}
 
 function decodificarToken(token) {
   try {
@@ -582,7 +593,10 @@ export default function Encomendas() {
   }
 
   return (
-    <main
+    <motion.main
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
       style={{
         minHeight: "100vh",
         color: "white",
@@ -629,7 +643,10 @@ export default function Encomendas() {
         }
       `}</style>
 
-      <section
+      <motion.section
+        initial={{ opacity: 0, y: -18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ ...motionTransition, delay: 0.05 }}
         className="py-5 text-white"
         style={{
           background: "linear-gradient(135deg,#940533,#c0012a,#f5061d)",
@@ -649,13 +666,21 @@ export default function Encomendas() {
             Veja o status, datas, orçamento e detalhes das suas encomendas.
           </p>
         </div>
-      </section>
+      </motion.section>
 
-      <section className="py-5">
+      <motion.section
+        className="py-5"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ ...motionTransition, delay: 0.14 }}
+      >
         <div className="container-fluid px-4">
           <div className="row g-4">
             <div className="col-lg-3">
-              <aside
+              <motion.aside
+                initial={{ opacity: 0, x: -22 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ ...motionTransition, delay: 0.2 }}
                 className="p-4 rounded-4 shadow-lg position-sticky"
                 style={{
                   top: "20px",
@@ -760,77 +785,77 @@ export default function Encomendas() {
                     </div>
                   ))}
                 </div>
-              </aside>
+              </motion.aside>
             </div>
 
             <div className="col-lg-9">
               {loading && (
-                <div
-                  className="text-center py-5 rounded-4"
-                  style={{
-                    background: "rgba(255,255,255,.03)",
-                    border: "1px solid rgba(255,255,255,.06)",
-                  }}
+                <motion.div
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={motionTransition}
                 >
-                  <div className="spinner-border text-warning mb-3" />
-
-                  <h4 className="fw-bold">
-                    Carregando encomendas...
-                  </h4>
-                </div>
+                  <AlertCard
+                    variant="neutral"
+                    icon={<span className="spinner-border spinner-border-sm" aria-hidden="true" />}
+                    title="Carregando encomendas..."
+                    centered
+                    style={{ minHeight: "240px" }}
+                  />
+                </motion.div>
               )}
 
               {erro && (
-                <div className="alert alert-danger">
-                  {erro}
-                </div>
+                <motion.div
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={motionTransition}
+                >
+                  <AlertCard variant="danger" title="Erro" message={erro} />
+                </motion.div>
               )}
 
               {!loading && !erro && encomendas.length === 0 && (
-                <div
-                  className="text-center py-5 rounded-4"
-                  style={{
-                    background: "rgba(255,255,255,.03)",
-                    border: "1px solid rgba(255,255,255,.06)",
-                    color: "rgba(255,255,255,.62)",
-                  }}
+                <motion.div
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={motionTransition}
                 >
-                  <i
-                    className="bi bi-inbox"
-                    style={{
-                      fontSize: "4rem",
-                      color: "#ffb300",
-                    }}
+                  <AlertCard
+                    variant="empty"
+                    title="Nenhuma encomenda encontrada"
+                    message="Você ainda não possui encomendas ou a pesquisa não encontrou resultados."
+                    centered
+                    style={{ minHeight: "280px" }}
+                    actions={
+                    <button
+                      type="button"
+                      className="btn"
+                      data-bs-toggle="modal"
+                      data-bs-target="#modalNovaEncomenda"
+                      onClick={limparFormEncomenda}
+                      style={{
+                        ...buttonGradient,
+                        padding: "12px 20px",
+                      }}
+                    >
+                      Criar encomenda
+                    </button>
+                  }
                   />
-
-                  <h3 className="fw-bold mt-3 text-white">
-                    Nenhuma encomenda encontrada
-                  </h3>
-
-                  <p className="mb-4">
-                    Você ainda não possui encomendas ou a pesquisa não encontrou resultados.
-                  </p>
-
-                  <button
-                    type="button"
-                    className="btn"
-                    data-bs-toggle="modal"
-                    data-bs-target="#modalNovaEncomenda"
-                    onClick={limparFormEncomenda}
-                    style={{
-                      ...buttonGradient,
-                      padding: "12px 20px",
-                    }}
-                  >
-                    Criar encomenda
-                  </button>
-                </div>
+                </motion.div>
               )}
 
               <div className="row g-4">
                 {!loading &&
-                  encomendas.map((encomenda) => (
-                    <div className="col-12" key={encomenda.id_encomenda}>
+                  encomendas.map((encomenda, index) => (
+                    <motion.div
+                      className="col-12"
+                      key={encomenda.id_encomenda}
+                      initial={{ opacity: 0, y: 22 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ ...motionTransition, delay: getDelaySequencial(index) }}
+                    >
                       <article
                         className="card shadow-lg overflow-hidden"
                         style={{
@@ -964,12 +989,17 @@ export default function Encomendas() {
                           </div>
                         </div>
                       </article>
-                    </div>
+                    </motion.div>
                   ))}
               </div>
 
               {paginacao.totalPaginas > 1 && (
-                <nav className="mt-5">
+                <motion.nav
+                  className="mt-5"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ ...motionTransition, delay: 0.18 }}
+                >
                   <ul className="pagination justify-content-center flex-wrap gap-2">
                     <li className={`page-item ${paginaAtual <= 1 ? "disabled" : ""}`}>
                       <button
@@ -1038,12 +1068,12 @@ export default function Encomendas() {
                       </button>
                     </li>
                   </ul>
-                </nav>
+                </motion.nav>
               )}
             </div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       <div className="modal fade" id="modalNovaEncomenda" tabIndex="-1">
         <div className="modal-dialog modal-dialog-centered">
@@ -1079,11 +1109,21 @@ export default function Encomendas() {
 
             <form onSubmit={criarEncomenda} className="modal-body p-4">
               {erroFormulario && (
-                <div className="alert alert-danger">{erroFormulario}</div>
+                <AlertCard
+                  variant="danger"
+                  title="Erro"
+                  message={erroFormulario}
+                  className="mb-3"
+                />
               )}
 
               {feedbackEncomenda && (
-                <div className="alert alert-success">{feedbackEncomenda}</div>
+                <AlertCard
+                  variant="success"
+                  title="Sucesso"
+                  message={feedbackEncomenda}
+                  className="mb-3"
+                />
               )}
 
               <div className="mb-3">
@@ -1247,27 +1287,41 @@ export default function Encomendas() {
                 </div>
 
                 {erroOrcamentos && (
-                  <div className="alert alert-danger">{erroOrcamentos}</div>
+                  <AlertCard
+                    variant="danger"
+                    title="Erro"
+                    message={erroOrcamentos}
+                    className="mb-3"
+                  />
                 )}
 
                 {feedbackOrcamentos && (
-                  <div className="alert alert-success">{feedbackOrcamentos}</div>
+                  <AlertCard
+                    variant="success"
+                    title="Sucesso"
+                    message={feedbackOrcamentos}
+                    className="mb-3"
+                  />
                 )}
 
                 {carregandoOrcamentos && (
-                  <div className="text-center py-4">
-                    <div className="spinner-border text-warning mb-2" />
-                    <p className="mb-0 text-secondary">Carregando orçamentos...</p>
-                  </div>
+                  <AlertCard
+                    variant="neutral"
+                    icon={<span className="spinner-border spinner-border-sm" aria-hidden="true" />}
+                    title="Carregando orçamentos..."
+                    centered
+                    className="mb-3"
+                  />
                 )}
 
                 {!carregandoOrcamentos && orcamentosSelecionados.length === 0 && (
-                  <div className="p-4 rounded-4 text-center" style={{ background: "#181818" }}>
-                    <i className="bi bi-receipt text-warning" style={{ fontSize: "2.4rem" }} />
-                    <p className="mb-0 mt-3 text-secondary">
-                      Nenhum orçamento visível foi enviado para esta encomenda.
-                    </p>
-                  </div>
+                  <AlertCard
+                    variant="empty"
+                    icon="bi-receipt"
+                    title="Nenhum orçamento disponível"
+                    message="Nenhum orçamento visível foi enviado para esta encomenda."
+                    centered
+                  />
                 )}
 
                 {!carregandoOrcamentos && orcamentosSelecionados.length > 0 && (
@@ -1339,7 +1393,7 @@ export default function Encomendas() {
           </div>
         </div>
       </div>
-    </main>
+    </motion.main>
   );
 }
 

@@ -5,6 +5,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "./suporte.css";
 import "../algo.css";
+import AlertCard from "@/components/AlertCard";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
 const SUPORTE_URL = `${API_URL}/api/suporte`;
@@ -762,16 +763,12 @@ export default function SuporteAdmin() {
       </div>
 
       {(feedback || erro) && (
-        <div
-          className="alert border-0 mb-4"
-          style={{
-            background: feedback ? "rgba(34,197,94,0.10)" : "rgba(245,6,29,0.10)",
-            color: feedback ? "#5cff95" : "#ff758f",
-            borderRadius: "18px",
-          }}
-        >
-          {feedback || erro}
-        </div>
+        <AlertCard
+          variant={feedback ? "success" : "danger"}
+          title={feedback ? "Sucesso" : "Erro"}
+          message={feedback || erro}
+          className="mb-4"
+        />
       )}
 
       <section className="p-3 p-lg-4" style={cardStyle}>
@@ -916,45 +913,21 @@ export default function SuporteAdmin() {
             >
               <div className="d-flex flex-column gap-3">
                 {carregando ? (
-                  <div
-                    className="text-center p-5"
-                    style={{
-                      background: "rgba(255,255,255,.025)",
-                      border: "1px solid rgba(255,255,255,.06)",
-                      borderRadius: "24px",
-                    }}
-                  >
-                    <div className="spinner-border text-warning mb-3" />
-                    <h5 className="fw-bold mb-1">Carregando solicitações...</h5>
-                  </div>
+                  <AlertCard
+                    variant="neutral"
+                    icon={<span className="spinner-border spinner-border-sm" aria-hidden="true" />}
+                    title="Carregando solicitações..."
+                    centered
+                    style={{ minHeight: "210px" }}
+                  />
                 ) : mensagensAtuais.length === 0 ? (
-                  <div
-                    className="text-center p-5"
-                    style={{
-                      background: "rgba(255,255,255,.025)",
-                      border: "1px solid rgba(255,255,255,.06)",
-                      borderRadius: "24px",
-                    }}
-                  >
-                    <i
-                      className="bi bi-inbox d-block mb-3"
-                      style={{
-                        color: "#ffcf40",
-                        fontSize: "2.5rem",
-                      }}
-                    />
-
-                    <h5 className="fw-bold mb-1">Nenhuma solicitação encontrada</h5>
-
-                    <p
-                      className="mb-0"
-                      style={{
-                        color: "rgba(255,255,255,.52)",
-                      }}
-                    >
-                      Tente alterar os filtros de pesquisa.
-                    </p>
-                  </div>
+                  <AlertCard
+                    variant="empty"
+                    title="Nenhuma solicitação encontrada"
+                    message="Tente alterar os filtros de pesquisa."
+                    centered
+                    style={{ minHeight: "230px" }}
+                  />
                 ) : (
                   mensagensAtuais.map((mensagem) => {
                     const selecionada = mensagemSelecionada?.id === mensagem.id;

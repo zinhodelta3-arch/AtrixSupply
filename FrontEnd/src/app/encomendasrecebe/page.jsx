@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
+import AlertCard from "@/components/AlertCard";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
 
@@ -34,6 +36,100 @@ const gradientButtonStyle = {
   borderRadius: "14px",
   color: "white",
   fontWeight: "700",
+};
+
+const pageMotion = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      duration: 0.45,
+      ease: "easeOut",
+    },
+  },
+};
+
+const fadeUpMotion = {
+  hidden: {
+    opacity: 0,
+    y: 22,
+  },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.45,
+      ease: [0.22, 1, 0.36, 1],
+    },
+  },
+};
+
+const heroMotion = {
+  hidden: {
+    opacity: 0,
+    y: -16,
+  },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.5,
+      ease: [0.22, 1, 0.36, 1],
+    },
+  },
+};
+
+const staggerMotion = {
+  hidden: {},
+  show: {
+    transition: {
+      staggerChildren: 0.07,
+      delayChildren: 0.05,
+    },
+  },
+};
+
+const cardMotion = {
+  hidden: {
+    opacity: 0,
+    y: 18,
+    scale: 0.985,
+  },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: 0.38,
+      ease: [0.22, 1, 0.36, 1],
+    },
+  },
+};
+
+const alertMotion = {
+  hidden: {
+    opacity: 0,
+    y: 12,
+    scale: 0.99,
+  },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: 0.3,
+      ease: "easeOut",
+    },
+  },
+  exit: {
+    opacity: 0,
+    y: -8,
+    scale: 0.99,
+    transition: {
+      duration: 0.2,
+      ease: "easeIn",
+    },
+  },
 };
 
 function obterToken() {
@@ -753,18 +849,21 @@ export default function PainelFornecedor() {
 
   if (validandoAcesso || !usuarioLogado) {
     return (
-      <main
+      <motion.main
         className="d-flex justify-content-center align-items-center text-white"
+        variants={pageMotion}
+        initial="hidden"
+        animate="show"
         style={{
           minHeight: "100vh",
           background: "linear-gradient(145deg,#08080a,#101014,#160d12)",
         }}
       >
-        <div className="text-center">
+        <motion.div className="text-center" variants={fadeUpMotion}>
           <div className="spinner-border text-warning mb-3" />
           <h4 className="fw-bold">Verificando acesso...</h4>
-        </div>
-      </main>
+        </motion.div>
+      </motion.main>
     );
   }
 
@@ -778,7 +877,10 @@ export default function PainelFornecedor() {
   const podeEnviarOrcamentoSelecionado = etapaAbertaParaOrcamento(pedidoSelecionado?.status);
 
   return (
-    <main
+    <motion.main
+      variants={pageMotion}
+      initial="hidden"
+      animate="show"
       style={{
         background: `
           radial-gradient(circle at top left, rgba(255,136,0,.10), transparent 25%),
@@ -829,14 +931,15 @@ export default function PainelFornecedor() {
         }
       `}</style>
 
-      <section
+      <motion.section
         className="py-5 text-white"
+        variants={heroMotion}
         style={{
           background: "linear-gradient(135deg,#940533,#c0012a,#f5061d)",
           borderBottom: "1px solid rgba(255,255,255,.08)",
         }}
       >
-        <div className="container py-4 text-center">
+        <motion.div className="container py-4 text-center" variants={fadeUpMotion}>
           <span className="badge bg-warning text-dark mb-3 px-3 py-2">
             Painel do Fornecedor
           </span>
@@ -848,15 +951,16 @@ export default function PainelFornecedor() {
           <p className="lead mt-3 mb-0">
             Visualize encomendas e administre os orçamentos enviados.
           </p>
-        </div>
-      </section>
+        </motion.div>
+      </motion.section>
 
-      <section className="py-5">
+      <motion.section className="py-5" variants={fadeUpMotion}>
         <div className="container-fluid px-4">
           <div className="row g-4">
             <div className="col-lg-3">
-              <div
+              <motion.aside
                 className="p-4 rounded-4 shadow-lg position-sticky"
+                variants={fadeUpMotion}
                 style={{
                   top: "20px",
                   background: "rgba(17,17,17,.95)",
@@ -902,8 +1006,10 @@ export default function PainelFornecedor() {
                       icon: "bi-check-circle",
                     },
                   ].map((item) => (
-                    <div
+                    <motion.div
                       key={item.titulo}
+                      variants={cardMotion}
+                      whileHover={{ y: -2 }}
                       className="d-flex align-items-center gap-3"
                       style={{
                         background: "rgba(255,255,255,.035)",
@@ -940,62 +1046,70 @@ export default function PainelFornecedor() {
                           {String(item.valor).padStart(2, "0")}
                         </strong>
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
-              </div>
+              </motion.aside>
             </div>
 
             <div className="col-lg-9">
-              {loading && (
-                <div
-                  className="text-white text-center py-5 rounded-4"
-                  style={{
-                    background: "rgba(255,255,255,.03)",
-                    border: "1px solid rgba(255,255,255,.06)",
-                  }}
-                >
-                  <div className="spinner-border text-warning mb-3" />
-                  <h4 className="fw-bold">
-                    Carregando encomendas...
-                  </h4>
-                </div>
-              )}
+              <motion.div variants={fadeUpMotion}>
+              <AnimatePresence mode="wait">
+                {loading && (
+                  <motion.div
+                    key="loading-encomendas"
+                    variants={alertMotion}
+                    initial="hidden"
+                    animate="show"
+                    exit="exit"
+                  >
+                <AlertCard
+                  variant="neutral"
+                  icon={<span className="spinner-border spinner-border-sm" aria-hidden="true" />}
+                  title="Carregando encomendas..."
+                  centered
+                  style={{ minHeight: "240px" }}
+                />
+                  </motion.div>
+                )}
 
-              {error && (
-                <div className="alert alert-danger">
-                  {error}
-                </div>
-              )}
+                {error && (
+                  <motion.div
+                    key="erro-encomendas"
+                    variants={alertMotion}
+                    initial="hidden"
+                    animate="show"
+                    exit="exit"
+                  >
+                    <AlertCard variant="danger" title="Erro" message={error} />
+                  </motion.div>
+                )}
 
-              {!loading && !error && listaEncomendas.length === 0 && (
-                <div
-                  className="text-center py-5 rounded-4"
-                  style={{
-                    background: "rgba(255,255,255,.03)",
-                    border: "1px solid rgba(255,255,255,.06)",
-                    color: "rgba(255,255,255,.62)",
-                  }}
-                >
-                  <i
-                    className="bi bi-inbox"
-                    style={{
-                      fontSize: "4rem",
-                      color: "#ffb300",
-                    }}
-                  />
+                {!loading && !error && listaEncomendas.length === 0 && (
+                  <motion.div
+                    key="empty-encomendas"
+                    variants={alertMotion}
+                    initial="hidden"
+                    animate="show"
+                    exit="exit"
+                  >
+                    <AlertCard
+                      variant="empty"
+                      title="Nenhuma encomenda encontrada"
+                      message="Nenhuma encomenda disponível para sua busca no momento."
+                      centered
+                      style={{ minHeight: "260px" }}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-                  <h3 className="fw-bold mt-3 text-white">
-                    Nenhuma encomenda encontrada
-                  </h3>
-
-                  <p className="mb-0">
-                    Nenhuma encomenda disponível para sua busca no momento.
-                  </p>
-                </div>
-              )}
-
-              <div className="row g-4">
+              <motion.div
+                className="row g-4"
+                variants={staggerMotion}
+                initial="hidden"
+                animate={!loading && !error ? "show" : "hidden"}
+              >
                 {!loading &&
                   listaEncomendas.map((pedido) => {
                     const idUsuario = Number(obterIdUsuario(usuarioLogado));
@@ -1006,9 +1120,16 @@ export default function PainelFornecedor() {
                     const podeEnviarOrcamento = etapaAbertaParaOrcamento(pedido.status);
 
                     return (
-                    <div className="col-12" key={pedido.id_encomenda}>
-                      <div
+                    <motion.div
+                      className="col-12"
+                      key={pedido.id_encomenda}
+                      variants={cardMotion}
+                      layout
+                    >
+                      <motion.div
                         className="card shadow-lg overflow-hidden encomenda-card"
+                        whileHover={{ y: -3, scale: 1.005 }}
+                        transition={{ duration: 0.22, ease: "easeOut" }}
                         style={{
                           background: "rgba(17,17,17,.96)",
                           borderRadius: "24px",
@@ -1137,14 +1258,14 @@ export default function PainelFornecedor() {
                             </div>
                           </div>
                         </div>
-                      </div>
-                    </div>
+                      </motion.div>
+                    </motion.div>
                     );
                   })}
-              </div>
+              </motion.div>
 
               {totalPaginas > 1 && (
-                <nav className="mt-5">
+                <motion.nav className="mt-5" variants={fadeUpMotion}>
                   <ul className="pagination justify-content-center flex-wrap gap-2">
                     <li className={`page-item ${paginaAtual <= 1 ? "disabled" : ""}`}>
                       <button
@@ -1204,12 +1325,13 @@ export default function PainelFornecedor() {
                       </button>
                     </li>
                   </ul>
-                </nav>
+                </motion.nav>
               )}
+              </motion.div>
             </div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* MODAL DETALHES */}
       <div className="modal fade" id="modalDetalhes" tabIndex="-1">
@@ -1344,11 +1466,21 @@ export default function PainelFornecedor() {
                   </div>
 
                   {erroLogistica && (
-                    <div className="alert alert-danger">{erroLogistica}</div>
+                    <AlertCard
+                      variant="danger"
+                      title="Erro"
+                      message={erroLogistica}
+                      className="mb-3"
+                    />
                   )}
 
                   {feedbackLogistica && (
-                    <div className="alert alert-success">{feedbackLogistica}</div>
+                    <AlertCard
+                      variant="success"
+                      title="Sucesso"
+                      message={feedbackLogistica}
+                      className="mb-3"
+                    />
                   )}
 
                   <div className="row g-3 align-items-end">
@@ -1446,15 +1578,21 @@ export default function PainelFornecedor() {
 
             <div className="modal-body p-4">
               {erroOrcamento && (
-                <div className="alert alert-danger">
-                  {erroOrcamento}
-                </div>
+                <AlertCard
+                  variant="danger"
+                  title="Erro"
+                  message={erroOrcamento}
+                  className="mb-3"
+                />
               )}
 
               {feedbackOrcamento && (
-                <div className="alert alert-success">
-                  {feedbackOrcamento}
-                </div>
+                <AlertCard
+                  variant="success"
+                  title="Sucesso"
+                  message={feedbackOrcamento}
+                  className="mb-3"
+                />
               )}
 
               {podeEnviarOrcamentoSelecionado || formOrcamento.id_orcamento ? (
@@ -1620,40 +1758,23 @@ export default function PainelFornecedor() {
               </div>
 
               {carregandoOrcamentos && (
-                <div className="text-center py-5">
-                  <div className="spinner-border text-warning mb-3" />
-
-                  <h5 className="fw-bold">
-                    Carregando orçamentos...
-                  </h5>
-                </div>
+                <AlertCard
+                  variant="neutral"
+                  icon={<span className="spinner-border spinner-border-sm" aria-hidden="true" />}
+                  title="Carregando orçamentos..."
+                  centered
+                  className="mb-3"
+                />
               )}
 
               {!carregandoOrcamentos && orcamentos.length === 0 && (
-                <div
-                  className="text-center py-5 rounded-4"
-                  style={{
-                    background: "#181818",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    color: "rgba(255,255,255,.65)",
-                  }}
-                >
-                  <i
-                    className="bi bi-receipt"
-                    style={{
-                      fontSize: "3.5rem",
-                      color: "#ffb300",
-                    }}
-                  />
-
-                  <h4 className="fw-bold mt-3 text-white">
-                    Nenhum orçamento cadastrado
-                  </h4>
-
-                  <p className="mb-0">
-                    Crie uma opção de orçamento para esta encomenda.
-                  </p>
-                </div>
+                <AlertCard
+                  variant="empty"
+                  icon="bi-receipt"
+                  title="Nenhum orçamento cadastrado"
+                  message="Crie uma opção de orçamento para esta encomenda."
+                  centered
+                />
               )}
 
               {!carregandoOrcamentos && orcamentos.length > 0 && (
@@ -1731,6 +1852,6 @@ export default function PainelFornecedor() {
           </div>
         </div>
       </div>
-    </main>
+    </motion.main>
   );
 }

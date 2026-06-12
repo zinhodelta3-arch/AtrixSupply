@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { motion } from "motion/react";
+import AlertCard from "@/components/AlertCard";
 import { resolveImageUrl } from "@/utils/imageUrl";
 import "../algo.css";
 
@@ -169,6 +171,24 @@ const paginationBtnStyle = {
   fontWeight: "800",
   boxShadow: "none",
 };
+
+
+const pageMotionProps = {
+  initial: { opacity: 0, y: 14 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.42, ease: "easeOut" },
+};
+
+function getSequencedMotion(index = 0, deslocamento = 14) {
+  const delay = Math.min(Number(index) || 0, 14) * 0.045;
+
+  return {
+    initial: { opacity: 0, y: deslocamento },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.32, ease: "easeOut", delay },
+  };
+}
+
 
 function pegarToken() {
   if (typeof window === "undefined") return "";
@@ -565,7 +585,7 @@ export default function Produtos() {
   const totalPaginas = Math.max(1, Number(paginacao.totalPaginas || 1));
 
   return (
-    <main
+    <motion.main {...pageMotionProps}
       className="container-fluid py-4 px-3 px-lg-4"
       style={{
         background: pageBackground,
@@ -624,11 +644,11 @@ export default function Produtos() {
       </div>
 
       <div className="row g-4 mb-4">
-        {metricasCards.map((card) => {
+        {metricasCards.map((card, index) => {
           const ativo = cardHoverAtivo === card.titulo;
 
           return (
-            <div className="col-12 col-md-6 col-xl-3" key={card.titulo}>
+            <motion.div className="col-12 col-md-6 col-xl-3" key={card.titulo} {...getSequencedMotion(index, 16)}>
               <div
                 className="p-4 h-100"
                 style={metricCardStyle(card.cor, ativo)}
@@ -678,12 +698,12 @@ export default function Produtos() {
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           );
         })}
       </div>
 
-      <section className="p-3 p-lg-4" style={cardStyle}>
+      <motion.section className="p-3 p-lg-4" style={cardStyle}>
         <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
           <div>
             <h4
@@ -735,16 +755,12 @@ export default function Produtos() {
         </div>
 
         {erroLista && (
-          <div
-            className="alert border-0 mb-4"
-            style={{
-              background: "rgba(245,6,29,0.10)",
-              color: "#fca5a5",
-              borderRadius: "16px",
-            }}
-          >
-            {erroLista}
-          </div>
+          <AlertCard
+            variant="danger"
+            title="Erro"
+            message={erroLista}
+            className="mb-4"
+          />
         )}
 
         <div className="table-responsive" style={dashboardTableWrapperStyle}>
@@ -753,7 +769,7 @@ export default function Produtos() {
             style={dashboardTableStyle}
           >
             <thead>
-              <tr>
+              <motion.tr>
                 <th style={dashboardTableHeadCellStyle}>Produto</th>
                 <th style={dashboardTableHeadCellStyle}>Categoria</th>
                 <th style={dashboardTableHeadCellStyle}>Preço</th>
@@ -762,12 +778,12 @@ export default function Produtos() {
                 <th style={{ ...dashboardTableHeadCellStyle, textAlign: "right" }}>
                   Ações
                 </th>
-              </tr>
+              </motion.tr>
             </thead>
 
             <tbody>
               {carregando ? (
-                <tr>
+                <motion.tr>
                   <td
                     colSpan="6"
                     className="text-center"
@@ -777,12 +793,17 @@ export default function Produtos() {
                       color: "rgba(255,255,255,.65)",
                     }}
                   >
-                    <span className="spinner-border spinner-border-sm text-warning me-2" />
-                    Carregando produtos...
+                    <AlertCard
+                      variant="neutral"
+                      icon={<span className="spinner-border spinner-border-sm" aria-hidden="true" />}
+                      title="Carregando produtos..."
+                      centered
+                      style={{ boxShadow: "none" }}
+                    />
                   </td>
-                </tr>
+                </motion.tr>
               ) : produtos.length === 0 ? (
-                <tr>
+                <motion.tr>
                   <td
                     colSpan="6"
                     className="text-center"
@@ -791,33 +812,23 @@ export default function Produtos() {
                       padding: "42px 18px",
                     }}
                   >
-                    <i
-                      className="bi bi-box-seam d-block mb-3"
-                      style={{
-                        color: "#ffcf40",
-                        fontSize: "2.4rem",
-                      }}
+                    <AlertCard
+                      variant="empty"
+                      icon="bi-box-seam"
+                      title="Nenhum produto encontrado"
+                      message="Tente pesquisar outro nome ou cadastre um novo produto."
+                      centered
+                      style={{ boxShadow: "none" }}
                     />
-
-                    <h5 className="fw-bold mb-1">Nenhum produto encontrado</h5>
-
-                    <p
-                      className="mb-0"
-                      style={{
-                        color: "rgba(255,255,255,.52)",
-                      }}
-                    >
-                      Tente pesquisar outro nome ou cadastre um novo produto.
-                    </p>
                   </td>
-                </tr>
+                </motion.tr>
               ) : (
-                produtos.map((produto) => {
+                produtos.map((produto, index) => {
                   const status = getStatusProduto(produto);
                   const imagemUrl = produto.imagem ? resolveImageUrl(produto.imagem, "") : "";
 
                   return (
-                    <tr key={getProdutoId(produto)}>
+                    <motion.tr key={getProdutoId(produto)} {...getSequencedMotion(index)}>
                       <td style={dashboardTableCellStyle}>
                         <div className="d-flex align-items-center">
                           <div
@@ -960,7 +971,7 @@ export default function Produtos() {
                           </button>
                         </div>
                       </td>
-                    </tr>
+                    </motion.tr>
                   );
                 })
               )}
@@ -1038,7 +1049,7 @@ export default function Produtos() {
             </div>
           </div>
         )}
-      </section>
+      </motion.section>
 
       <div
         className="modal fade"
@@ -1118,29 +1129,21 @@ export default function Produtos() {
             <form onSubmit={salvarProduto}>
               <div className="modal-body" style={{ padding: "28px 32px 10px" }}>
                 {formErro && (
-                  <div
-                    className="alert border-0 mb-4"
-                    style={{
-                      background: "rgba(245,6,29,0.14)",
-                      color: "#fecaca",
-                      borderRadius: "16px",
-                    }}
-                  >
-                    {formErro}
-                  </div>
+                  <AlertCard
+                    variant="danger"
+                    title="Erro"
+                    message={formErro}
+                    className="mb-4"
+                  />
                 )}
 
                 {formSucesso && (
-                  <div
-                    className="alert border-0 mb-4"
-                    style={{
-                      background: "rgba(34,197,94,0.14)",
-                      color: "#bbf7d0",
-                      borderRadius: "16px",
-                    }}
-                  >
-                    {formSucesso}
-                  </div>
+                  <AlertCard
+                    variant="success"
+                    title="Sucesso"
+                    message={formSucesso}
+                    className="mb-4"
+                  />
                 )}
 
                 <div className="row g-3">
@@ -1340,6 +1343,6 @@ export default function Produtos() {
           </div>
         </div>
       </div>
-    </main>
+    </motion.main>
   );
 }

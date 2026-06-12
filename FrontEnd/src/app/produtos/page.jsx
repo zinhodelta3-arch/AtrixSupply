@@ -2,11 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
 import "./produtos.css";
+import AlertCard from "@/components/AlertCard";
 import CardProduto from "@/components/CardProduto";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -58,6 +60,31 @@ const buttonGradient = {
   color: "white",
   borderRadius: "14px",
   fontWeight: "700",
+};
+
+const fadeIn = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  transition: { duration: 0.35, ease: "easeOut" },
+};
+
+const slideUp = {
+  initial: { opacity: 0, y: 22 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.45, ease: "easeOut" },
+};
+
+const slideLeft = {
+  initial: { opacity: 0, x: -18 },
+  animate: { opacity: 1, x: 0 },
+  transition: { duration: 0.45, ease: "easeOut", delay: 0.08 },
+};
+
+const alertMotion = {
+  initial: { opacity: 0, y: 12, scale: 0.985 },
+  animate: { opacity: 1, y: 0, scale: 1 },
+  exit: { opacity: 0, y: -8, scale: 0.985 },
+  transition: { duration: 0.25, ease: "easeOut" },
 };
 
 function normalizarCategoria(categoria) {
@@ -414,8 +441,9 @@ export default function Produtos() {
 
   if (validandoAcesso || !acessoPermitido) {
     return (
-      <div
+      <motion.div
         className="d-flex flex-column justify-content-center align-items-center text-center px-4"
+        {...fadeIn}
         style={{
           minHeight: "100vh",
           background: "#09090b",
@@ -438,20 +466,24 @@ export default function Produtos() {
             ? "Estamos verificando seu tipo de usuário."
             : "Apenas usuários comuns ou visitantes podem acessar esta página."}
         </p>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <main
+    <motion.main
+      {...fadeIn}
       style={{
         background: pageBackground,
         minHeight: "100vh",
         color: "white",
       }}
     >
-      <section
+      <motion.section
         className="py-5 text-white"
+        initial={{ opacity: 0, y: -18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut", delay: 0.05 }}
         style={{
           background: heroGradient,
           borderBottom: "1px solid rgba(255,255,255,.08)",
@@ -472,14 +504,15 @@ export default function Produtos() {
             específicas para sua empresa com rapidez e segurança.
           </p>
         </div>
-      </section>
+      </motion.section>
 
-      <section className="py-5">
+      <motion.section className="py-5" {...slideUp}>
         <div className="container-fluid px-4">
           <div className="row g-4">
             <div className="col-lg-3">
-              <aside
+              <motion.aside
                 className="p-4 rounded-4 shadow-lg position-sticky"
+                {...slideLeft}
                 style={{
                   top: "20px",
                   ...panelStyle,
@@ -595,20 +628,26 @@ export default function Produtos() {
                   </div>
                 </div>
 
-                <button
+                <motion.button
                   type="button"
                   className="btn w-100 text-white fw-semibold"
                   onClick={limparFiltros}
+                  whileHover={{ scale: 1.015, y: -1 }}
+                  whileTap={{ scale: 0.985 }}
+                  transition={{ type: "spring", stiffness: 260, damping: 22 }}
                   style={{
                     ...buttonGradient,
                     padding: "12px",
                   }}
                 >
                   Limpar filtros
-                </button>
+                </motion.button>
 
-                <div
+                <motion.div
                   className="mt-4 p-3 rounded-4"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.35, ease: "easeOut", delay: 0.18 }}
                   style={{
                     background: "rgba(255,255,255,.035)",
                     border: "1px solid rgba(255,255,255,.06)",
@@ -630,82 +669,64 @@ export default function Produtos() {
                       paginacaoApi?.total ?? produtosFiltrados.length
                     ).padStart(2, "0")}
                   </h3>
-                </div>
-              </aside>
+                </motion.div>
+              </motion.aside>
             </div>
 
             <div className="col-lg-9">
-              {carregandoProdutos && (
-                <div
-                  className="text-center py-5 rounded-4"
-                  style={{
-                    background: "rgba(255,255,255,.03)",
-                    border: "1px solid rgba(255,255,255,.06)",
-                  }}
-                >
-                  <div className="spinner-border text-warning mb-3" />
+              <AnimatePresence mode="wait">
+                {carregandoProdutos && (
+                  <motion.div key="loading-produtos" {...alertMotion}>
+                    <AlertCard
+                      variant="neutral"
+                      icon={<span className="spinner-border spinner-border-sm" aria-hidden="true" />}
+                      title="Carregando produtos..."
+                      message="Buscando catálogo atualizado."
+                      centered
+                      style={{ minHeight: "240px" }}
+                    />
+                  </motion.div>
+                )}
 
-                  <h4 className="fw-bold">
-                    Carregando produtos...
-                  </h4>
+                {!carregandoProdutos && erro && (
+                  <motion.div key="erro-produtos" {...alertMotion}>
+                    <AlertCard variant="danger" title="Erro" message={erro} />
+                  </motion.div>
+                )}
 
-                  <p
-                    className="mb-0"
-                    style={{
-                      color: "rgba(255,255,255,.58)",
-                    }}
-                  >
-                    Buscando catálogo atualizado.
-                  </p>
-                </div>
-              )}
-
-              {erro && (
-                <div className="alert alert-danger rounded-4">
-                  {erro}
-                </div>
-              )}
-
-              {!carregandoProdutos && !erro && produtosFiltrados.length === 0 && (
-                <div
-                  className="text-center py-5 rounded-4"
-                  style={{
-                    background: "rgba(255,255,255,.03)",
-                    border: "1px solid rgba(255,255,255,.06)",
-                    color: "rgba(255,255,255,.62)",
-                  }}
-                >
-                  <i
-                    className="bi bi-box-seam"
-                    style={{
-                      fontSize: "4rem",
-                      color: "#ffb300",
-                    }}
-                  />
-
-                  <h3 className="fw-bold mt-3 text-white">
-                    Nenhum produto encontrado
-                  </h3>
-
-                  <p className="mb-0">
-                    Tente limpar os filtros ou buscar outro termo.
-                  </p>
-                </div>
-              )}
+                {!carregandoProdutos && !erro && produtosFiltrados.length === 0 && (
+                  <motion.div key="vazio-produtos" {...alertMotion}>
+                    <AlertCard
+                      variant="empty"
+                      icon="bi-box-seam"
+                      title="Nenhum produto encontrado"
+                      message="Tente limpar os filtros ou buscar outro termo."
+                      centered
+                      style={{ minHeight: "260px" }}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               <div className="row g-4">
                 {!carregandoProdutos &&
                   !erro &&
-                  produtosAtuais.map((produto) => (
+                  produtosAtuais.map((produto, index) => (
                     <CardProduto
                       key={produto.id_produto || produto.id}
                       produto={produto}
+                      index={index}
                     />
                   ))}
               </div>
 
               {!carregandoProdutos && !erro && Number(paginacaoApi?.total || 0) > 0 && (
-                <nav className="mt-5">
+                <motion.nav
+                  className="mt-5"
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.35, ease: "easeOut" }}
+                >
                   <ul className="pagination justify-content-center flex-wrap gap-2">
                     <li className={`page-item ${paginaAtual === 1 ? "disabled" : ""}`}>
                       <button
@@ -752,12 +773,12 @@ export default function Produtos() {
                       </button>
                     </li>
                   </ul>
-                </nav>
+                </motion.nav>
               )}
             </div>
           </div>
         </div>
-      </section>
-    </main>
+      </motion.section>
+    </motion.main>
   );
 }

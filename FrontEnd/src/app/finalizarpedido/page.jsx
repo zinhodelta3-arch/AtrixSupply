@@ -5,6 +5,8 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import AlertCard from "@/components/AlertCard";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
 const PEDIDOS_URL = `${API_URL}/api/pedidos`;
@@ -63,6 +65,41 @@ const buttonGradient = {
   fontWeight: "800",
   boxShadow: "none",
 };
+
+const pageMotionProps = {
+  initial: {
+    opacity: 0,
+    y: 14,
+  },
+  animate: {
+    opacity: 1,
+    y: 0,
+  },
+  transition: {
+    duration: 0.42,
+    ease: "easeOut",
+  },
+};
+
+function getSequencedMotion(index = 0, deslocamento = 16) {
+  const delay = Math.min(Number(index) || 0, 14) * 0.055;
+
+  return {
+    initial: {
+      opacity: 0,
+      y: deslocamento,
+    },
+    animate: {
+      opacity: 1,
+      y: 0,
+    },
+    transition: {
+      duration: 0.34,
+      ease: "easeOut",
+      delay,
+    },
+  };
+}
 
 function obterToken() {
   if (typeof window === "undefined") return "";
@@ -397,28 +434,43 @@ export default function FinalizarPedido() {
 
   if (carregandoPagina) {
     return (
-      <main
+      <motion.main
+        {...pageMotionProps}
         className="d-flex justify-content-center align-items-center text-white"
         style={{
           minHeight: "100vh",
           background: pageBackground,
         }}
       >
-        <div className="text-center">
-          <div className="spinner-border text-warning mb-3" />
+        <motion.div
+          className="text-center"
+          initial={{ opacity: 0, y: 16, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.38, ease: "easeOut" }}
+        >
+          <motion.div
+            className="spinner-border text-warning mb-3"
+            animate={{ rotate: 360 }}
+            transition={{
+              duration: 1,
+              repeat: Infinity,
+              ease: "linear",
+            }}
+          />
 
           <h4 className="fw-bold">Carregando finalização...</h4>
 
           <p className="text-secondary mb-0">
             Conferindo seu carrinho e seus dados.
           </p>
-        </div>
-      </main>
+        </motion.div>
+      </motion.main>
     );
   }
 
   return (
-    <main
+    <motion.main
+      {...pageMotionProps}
       style={{
         minHeight: "100vh",
         background: pageBackground,
@@ -426,8 +478,11 @@ export default function FinalizarPedido() {
         overflow: "hidden",
       }}
     >
-      <section
+      <motion.section
         className="py-5 text-white"
+        initial={{ opacity: 0, y: -18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.38, ease: "easeOut" }}
         style={{
           background: heroGradient,
           borderBottom: "1px solid rgba(255,255,255,.08)",
@@ -439,8 +494,11 @@ export default function FinalizarPedido() {
         <div className="container-fluid px-4 px-lg-5 py-4">
           <div className="d-flex justify-content-between align-items-center flex-wrap gap-4">
             <div className="d-flex align-items-center gap-3">
-              <div
+              <motion.div
                 className="d-flex justify-content-center align-items-center"
+                initial={{ opacity: 0, scale: 0.92, rotate: -4 }}
+                animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                transition={{ duration: 0.36, ease: "easeOut", delay: 0.08 }}
                 style={{
                   width: "60px",
                   height: "60px",
@@ -456,9 +514,9 @@ export default function FinalizarPedido() {
                     color: "#ffcf40",
                   }}
                 />
-              </div>
+              </motion.div>
 
-              <div>
+              <motion.div {...getSequencedMotion(1, 12)}>
                 <span className="badge bg-warning text-dark mb-2 px-3 py-2">
                   Finalização
                 </span>
@@ -482,13 +540,15 @@ export default function FinalizarPedido() {
                 >
                   Revise seus produtos, confirme seus dados e conclua sua compra.
                 </p>
-              </div>
+              </motion.div>
             </div>
 
-            <button
+            <motion.button
               type="button"
               onClick={() => router.push("/produtos")}
               className="btn btn-outline-light"
+              whileHover={{ x: -3 }}
+              whileTap={{ scale: 0.98 }}
               style={{
                 borderRadius: "16px",
                 padding: "12px 18px",
@@ -498,40 +558,53 @@ export default function FinalizarPedido() {
             >
               <i className="bi bi-arrow-left me-2" />
               Continuar comprando
-            </button>
+            </motion.button>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       <section className="container-fluid px-4 px-lg-5 py-5">
-        {erro && (
-          <div
-            className="alert alert-danger mb-4"
-            style={{
-              borderRadius: "18px",
-              border: "none",
-            }}
-          >
-            {erro}
-          </div>
-        )}
+        <AnimatePresence>
+          {erro && (
+            <motion.div
+              key="erro-finalizar-pedido"
+              initial={{ opacity: 0, y: -12, scale: 0.985 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.985 }}
+              transition={{ duration: 0.24, ease: "easeOut" }}
+            >
+              <AlertCard
+                variant="danger"
+                title="Erro"
+                message={erro}
+                className="mb-4"
+              />
+            </motion.div>
+          )}
 
-        {sucesso && (
-          <div
-            className="alert alert-success mb-4"
-            style={{
-              borderRadius: "18px",
-              border: "none",
-            }}
-          >
-            {sucesso}
-          </div>
-        )}
+          {sucesso && (
+            <motion.div
+              key="sucesso-finalizar-pedido"
+              initial={{ opacity: 0, y: -12, scale: 0.985 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.985 }}
+              transition={{ duration: 0.24, ease: "easeOut" }}
+            >
+              <AlertCard
+                variant="success"
+                title="Sucesso"
+                message={sucesso}
+                className="mb-4"
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <form onSubmit={finalizarPedido}>
           <div className="row g-4">
             <div className="col-xl-8">
-              <div
+              <motion.div
+                {...getSequencedMotion(0, 20)}
                 style={{
                   ...panelStyle,
                   padding: "32px",
@@ -559,247 +632,289 @@ export default function FinalizarPedido() {
                     </p>
                   </div>
 
-                  {carrinho.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={limparCarrinho}
-                      className="btn btn-outline-danger"
-                      style={{
-                        borderRadius: "14px",
-                        fontWeight: "700",
-                      }}
-                    >
-                      <i className="bi bi-trash3 me-2" />
-                      Limpar carrinho
-                    </button>
-                  )}
-                </div>
-
-                {carrinho.length === 0 ? (
-                  <div
-                    className="d-flex flex-column justify-content-center align-items-center text-center"
-                    style={{
-                      minHeight: "330px",
-                      ...innerPanelStyle,
-                      borderRadius: "26px",
-                      padding: "32px",
-                    }}
-                  >
-                    <i
-                      className="bi bi-bag-x"
-                      style={{
-                        fontSize: "4rem",
-                        color: "#ffcf40",
-                        marginBottom: "18px",
-                      }}
-                    />
-
-                    <h3 className="fw-bold text-white">
-                      Seu carrinho está vazio
-                    </h3>
-
-                    <p
-                      style={{
-                        color: "rgba(255,255,255,.58)",
-                        maxWidth: "480px",
-                      }}
-                    >
-                      Adicione produtos ao carrinho antes de finalizar o pedido.
-                    </p>
-
-                    <button
-                      type="button"
-                      onClick={() => router.push("/produtos")}
-                      className="btn mt-3"
-                      style={{
-                        ...buttonGradient,
-                        padding: "13px 22px",
-                      }}
-                    >
-                      Ver produtos
-                    </button>
-                  </div>
-                ) : (
-                  <div className="d-flex flex-column gap-3">
-                    {carrinho.map((item) => (
-                      <article
-                        key={item.id}
-                        className="d-flex flex-column flex-md-row align-items-md-center gap-3"
+                  <AnimatePresence>
+                    {carrinho.length > 0 && (
+                      <motion.button
+                        type="button"
+                        onClick={limparCarrinho}
+                        className="btn btn-outline-danger"
+                        initial={{ opacity: 0, scale: 0.96 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.96 }}
+                        whileHover={{ y: -2 }}
+                        whileTap={{ scale: 0.98 }}
                         style={{
-                          ...innerPanelStyle,
-                          borderRadius: "24px",
-                          padding: "18px",
+                          borderRadius: "14px",
+                          fontWeight: "700",
                         }}
                       >
-                        <div
-                          className="d-flex align-items-center justify-content-center"
+                        <i className="bi bi-trash3 me-2" />
+                        Limpar carrinho
+                      </motion.button>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                <AnimatePresence mode="popLayout">
+                  {carrinho.length === 0 ? (
+                    <motion.div
+                      key="carrinho-vazio"
+                      className="d-flex flex-column justify-content-center align-items-center text-center"
+                      initial={{ opacity: 0, y: 14, scale: 0.985 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.985 }}
+                      transition={{ duration: 0.3, ease: "easeOut" }}
+                      style={{
+                        minHeight: "330px",
+                        ...innerPanelStyle,
+                        borderRadius: "26px",
+                        padding: "32px",
+                      }}
+                    >
+                      <i
+                        className="bi bi-bag-x"
+                        style={{
+                          fontSize: "4rem",
+                          color: "#ffcf40",
+                          marginBottom: "18px",
+                        }}
+                      />
+
+                      <h3 className="fw-bold text-white">
+                        Seu carrinho está vazio
+                      </h3>
+
+                      <p
+                        style={{
+                          color: "rgba(255,255,255,.58)",
+                          maxWidth: "480px",
+                        }}
+                      >
+                        Adicione produtos ao carrinho antes de finalizar o pedido.
+                      </p>
+
+                      <motion.button
+                        type="button"
+                        onClick={() => router.push("/produtos")}
+                        className="btn mt-3"
+                        whileHover={{ y: -3 }}
+                        whileTap={{ scale: 0.98 }}
+                        style={{
+                          ...buttonGradient,
+                          padding: "13px 22px",
+                        }}
+                      >
+                        Ver produtos
+                      </motion.button>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="lista-carrinho"
+                      className="d-flex flex-column gap-3"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                    >
+                      {carrinho.map((item, index) => (
+                        <motion.article
+                          key={item.id}
+                          className="d-flex flex-column flex-md-row align-items-md-center gap-3"
+                          layout
+                          {...getSequencedMotion(index, 16)}
+                          exit={{ opacity: 0, x: -18, scale: 0.985 }}
+                          transition={{ duration: 0.28, ease: "easeOut" }}
                           style={{
-                            width: "110px",
-                            height: "110px",
-                            borderRadius: "20px",
-                            background: "rgba(0,0,0,.22)",
-                            border: "1px solid rgba(255,255,255,.06)",
-                            overflow: "hidden",
-                            flexShrink: 0,
+                            ...innerPanelStyle,
+                            borderRadius: "24px",
+                            padding: "18px",
                           }}
                         >
-                          <img
-                            src={item.img}
-                            alt={item.name}
-                            onError={(event) => {
-                              event.currentTarget.src = "/logo.png";
-                            }}
-                            style={{
-                              width: "100%",
-                              height: "100%",
-                              objectFit: "contain",
-                              padding: "10px",
-                            }}
-                          />
-                        </div>
-
-                        <div className="flex-grow-1" style={{ minWidth: 0 }}>
-                          <span
-                            style={{
-                              color: "#ffcf40",
-                              fontSize: ".78rem",
-                              fontWeight: "800",
-                              textTransform: "uppercase",
-                              letterSpacing: ".7px",
-                            }}
-                          >
-                            Produto #{item.id_produto}
-                          </span>
-
-                          <h4
-                            className="mt-2 mb-2"
-                            style={{
-                              color: "white",
-                              fontWeight: "800",
-                              fontSize: "1.15rem",
-                            }}
-                          >
-                            {item.name}
-                          </h4>
-
-                          <p
-                            className="mb-0"
-                            style={{
-                              color: "rgba(255,255,255,.55)",
-                            }}
-                          >
-                            Valor unitário:{" "}
-                            <strong style={{ color: "#ffe082" }}>
-                              {formatarPreco(item.price)}
-                            </strong>
-                          </p>
-                        </div>
-
-                        <div
-                          className="d-flex align-items-center"
-                          style={{
-                            width: "fit-content",
-                            background: "rgba(0,0,0,.18)",
-                            border: "1px solid rgba(255,255,255,.07)",
-                            borderRadius: "18px",
-                            overflow: "hidden",
-                            boxShadow: "none",
-                          }}
-                        >
-                          <button
-                            type="button"
-                            onClick={() => diminuirQuantidade(item.id)}
-                            disabled={item.qty <= 1}
-                            className="btn"
-                            style={{
-                              width: "48px",
-                              height: "48px",
-                              border: "none",
-                              color: "white",
-                              opacity: item.qty <= 1 ? 0.35 : 1,
-                            }}
-                          >
-                            <i className="bi bi-dash-lg" />
-                          </button>
-
                           <div
                             className="d-flex align-items-center justify-content-center"
                             style={{
-                              width: "58px",
-                              fontWeight: "800",
-                              color: "white",
+                              width: "110px",
+                              height: "110px",
+                              borderRadius: "20px",
+                              background: "rgba(0,0,0,.22)",
+                              border: "1px solid rgba(255,255,255,.06)",
+                              overflow: "hidden",
+                              flexShrink: 0,
                             }}
                           >
-                            {item.qty}
+                            <motion.img
+                              src={item.img}
+                              alt={item.name}
+                              onError={(event) => {
+                                event.currentTarget.src = "/logo.png";
+                              }}
+                              initial={{ opacity: 0, scale: 0.96 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ duration: 0.24, ease: "easeOut" }}
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "contain",
+                                padding: "10px",
+                              }}
+                            />
                           </div>
 
-                          <button
-                            type="button"
-                            onClick={() => aumentarQuantidade(item.id)}
-                            className="btn"
-                            style={{
-                              width: "48px",
-                              height: "48px",
-                              border: "none",
-                              color: "white",
-                            }}
-                          >
-                            <i className="bi bi-plus-lg" />
-                          </button>
-                        </div>
+                          <div className="flex-grow-1" style={{ minWidth: 0 }}>
+                            <span
+                              style={{
+                                color: "#ffcf40",
+                                fontSize: ".78rem",
+                                fontWeight: "800",
+                                textTransform: "uppercase",
+                                letterSpacing: ".7px",
+                              }}
+                            >
+                              Produto #{item.id_produto}
+                            </span>
 
-                        <div
-                          className="text-md-end"
-                          style={{
-                            minWidth: "150px",
-                          }}
-                        >
-                          <span
-                            style={{
-                              display: "block",
-                              color: "rgba(255,255,255,.48)",
-                              fontSize: ".78rem",
-                              textTransform: "uppercase",
-                              fontWeight: "800",
-                            }}
-                          >
-                            Subtotal
-                          </span>
+                            <h4
+                              className="mt-2 mb-2"
+                              style={{
+                                color: "white",
+                                fontWeight: "800",
+                                fontSize: "1.15rem",
+                              }}
+                            >
+                              {item.name}
+                            </h4>
 
-                          <strong
-                            style={{
-                              display: "block",
-                              color: "#5cff95",
-                              fontSize: "1.15rem",
-                              marginTop: "4px",
-                            }}
-                          >
-                            {formatarPreco(item.price * item.qty)}
-                          </strong>
+                            <p
+                              className="mb-0"
+                              style={{
+                                color: "rgba(255,255,255,.55)",
+                              }}
+                            >
+                              Valor unitário:{" "}
+                              <strong style={{ color: "#ffe082" }}>
+                                {formatarPreco(item.price)}
+                              </strong>
+                            </p>
+                          </div>
 
-                          <button
-                            type="button"
-                            onClick={() => removerItem(item.id)}
-                            className="btn btn-sm mt-2"
+                          <div
+                            className="d-flex align-items-center"
                             style={{
-                              color: "#ff758f",
-                              border: "1px solid rgba(255,117,143,.25)",
-                              borderRadius: "12px",
+                              width: "fit-content",
+                              background: "rgba(0,0,0,.18)",
+                              border: "1px solid rgba(255,255,255,.07)",
+                              borderRadius: "18px",
+                              overflow: "hidden",
                               boxShadow: "none",
                             }}
                           >
-                            <i className="bi bi-x-lg me-1" />
-                            Remover
-                          </button>
-                        </div>
-                      </article>
-                    ))}
-                  </div>
-                )}
-              </div>
+                            <motion.button
+                              type="button"
+                              onClick={() => diminuirQuantidade(item.id)}
+                              disabled={item.qty <= 1}
+                              className="btn"
+                              whileTap={item.qty <= 1 ? {} : { scale: 0.94 }}
+                              style={{
+                                width: "48px",
+                                height: "48px",
+                                border: "none",
+                                color: "white",
+                                opacity: item.qty <= 1 ? 0.35 : 1,
+                              }}
+                            >
+                              <i className="bi bi-dash-lg" />
+                            </motion.button>
 
-              <div
+                            <motion.div
+                              key={item.qty}
+                              className="d-flex align-items-center justify-content-center"
+                              initial={{ opacity: 0, y: -4 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.18, ease: "easeOut" }}
+                              style={{
+                                width: "58px",
+                                fontWeight: "800",
+                                color: "white",
+                              }}
+                            >
+                              {item.qty}
+                            </motion.div>
+
+                            <motion.button
+                              type="button"
+                              onClick={() => aumentarQuantidade(item.id)}
+                              className="btn"
+                              whileTap={{ scale: 0.94 }}
+                              style={{
+                                width: "48px",
+                                height: "48px",
+                                border: "none",
+                                color: "white",
+                              }}
+                            >
+                              <i className="bi bi-plus-lg" />
+                            </motion.button>
+                          </div>
+
+                          <div
+                            className="text-md-end"
+                            style={{
+                              minWidth: "150px",
+                            }}
+                          >
+                            <span
+                              style={{
+                                display: "block",
+                                color: "rgba(255,255,255,.48)",
+                                fontSize: ".78rem",
+                                textTransform: "uppercase",
+                                fontWeight: "800",
+                              }}
+                            >
+                              Subtotal
+                            </span>
+
+                            <motion.strong
+                              key={item.price * item.qty}
+                              initial={{ opacity: 0, y: -4 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.18, ease: "easeOut" }}
+                              style={{
+                                display: "block",
+                                color: "#5cff95",
+                                fontSize: "1.15rem",
+                                marginTop: "4px",
+                              }}
+                            >
+                              {formatarPreco(item.price * item.qty)}
+                            </motion.strong>
+
+                            <motion.button
+                              type="button"
+                              onClick={() => removerItem(item.id)}
+                              className="btn btn-sm mt-2"
+                              whileHover={{ y: -2 }}
+                              whileTap={{ scale: 0.98 }}
+                              style={{
+                                color: "#ff758f",
+                                border: "1px solid rgba(255,117,143,.25)",
+                                borderRadius: "12px",
+                                boxShadow: "none",
+                              }}
+                            >
+                              <i className="bi bi-x-lg me-1" />
+                              Remover
+                            </motion.button>
+                          </div>
+                        </motion.article>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+
+              <motion.div
                 className="mt-4"
+                {...getSequencedMotion(1, 20)}
                 style={{
                   ...panelStyle,
                   padding: "32px",
@@ -825,82 +940,67 @@ export default function FinalizarPedido() {
                 </p>
 
                 <div className="row g-3">
-                  <div className="col-md-6">
-                    <label className="form-label text-white-50">
-                      Nome
-                    </label>
+                  {[
+                    {
+                      campo: "nome",
+                      label: "Nome",
+                      type: "text",
+                      placeholder: "Seu nome",
+                      col: "col-md-6",
+                    },
+                    {
+                      campo: "email",
+                      label: "Email",
+                      type: "email",
+                      placeholder: "seuemail@empresa.com",
+                      col: "col-md-6",
+                    },
+                    {
+                      campo: "telefone",
+                      label: "Telefone",
+                      type: "text",
+                      placeholder: "(00) 00000-0000",
+                      col: "col-md-6",
+                    },
+                    {
+                      campo: "cep",
+                      label: "CEP",
+                      type: "text",
+                      placeholder: "00000-000",
+                      col: "col-md-6",
+                    },
+                    {
+                      campo: "endereco",
+                      label: "Endereço",
+                      type: "text",
+                      placeholder: "Rua, número, bairro, cidade",
+                      col: "col-12",
+                    },
+                  ].map((field, index) => (
+                    <motion.div
+                      className={field.col}
+                      key={field.campo}
+                      {...getSequencedMotion(index, 12)}
+                    >
+                      <label className="form-label text-white-50">
+                        {field.label}
+                      </label>
 
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={formData.nome}
-                      onChange={(event) => atualizarCampo("nome", event.target.value)}
-                      placeholder="Seu nome"
-                      style={inputStyle}
-                    />
-                  </div>
+                      <input
+                        type={field.type}
+                        className="form-control"
+                        value={formData[field.campo]}
+                        onChange={(event) => atualizarCampo(field.campo, event.target.value)}
+                        placeholder={field.placeholder}
+                        style={inputStyle}
+                      />
+                    </motion.div>
+                  ))}
 
-                  <div className="col-md-6">
-                    <label className="form-label text-white-50">
-                      Email
-                    </label>
-
-                    <input
-                      type="email"
-                      className="form-control"
-                      value={formData.email}
-                      onChange={(event) => atualizarCampo("email", event.target.value)}
-                      placeholder="seuemail@empresa.com"
-                      style={inputStyle}
-                    />
-                  </div>
-
-                  <div className="col-md-6">
-                    <label className="form-label text-white-50">
-                      Telefone
-                    </label>
-
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={formData.telefone}
-                      onChange={(event) => atualizarCampo("telefone", event.target.value)}
-                      placeholder="(00) 00000-0000"
-                      style={inputStyle}
-                    />
-                  </div>
-
-                  <div className="col-md-6">
-                    <label className="form-label text-white-50">
-                      CEP
-                    </label>
-
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={formData.cep}
-                      onChange={(event) => atualizarCampo("cep", event.target.value)}
-                      placeholder="00000-000"
-                      style={inputStyle}
-                    />
-                  </div>
-
-                  <div className="col-12">
-                    <label className="form-label text-white-50">
-                      Endereço
-                    </label>
-
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={formData.endereco}
-                      onChange={(event) => atualizarCampo("endereco", event.target.value)}
-                      placeholder="Rua, número, bairro, cidade"
-                      style={inputStyle}
-                    />
-                  </div>
-
-                  <div className="col-12">
+                  <motion.div
+                    className="col-12"
+                    {...getSequencedMotion(5, 12)}
+                  >
                     <label className="form-label text-white-50">
                       Observação
                     </label>
@@ -916,12 +1016,15 @@ export default function FinalizarPedido() {
                         resize: "none",
                       }}
                     />
-                  </div>
+                  </motion.div>
                 </div>
-              </div>
+              </motion.div>
             </div>
 
-            <div className="col-xl-4">
+            <motion.div
+              className="col-xl-4"
+              {...getSequencedMotion(2, 20)}
+            >
               <aside
                 className="position-sticky"
                 style={{
@@ -931,8 +1034,11 @@ export default function FinalizarPedido() {
                 }}
               >
                 <div className="d-flex align-items-center gap-3 mb-4">
-                  <div
+                  <motion.div
                     className="d-flex align-items-center justify-content-center"
+                    initial={{ opacity: 0, scale: 0.92, rotate: -4 }}
+                    animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                    transition={{ duration: 0.34, ease: "easeOut" }}
                     style={{
                       width: "54px",
                       height: "54px",
@@ -943,7 +1049,7 @@ export default function FinalizarPedido() {
                     }}
                   >
                     <i className="bi bi-receipt" style={{ fontSize: "1.4rem" }} />
-                  </div>
+                  </motion.div>
 
                   <div>
                     <h3
@@ -968,54 +1074,33 @@ export default function FinalizarPedido() {
                 </div>
 
                 <div className="d-flex flex-column gap-3">
-                  <div
-                    className="d-flex justify-content-between"
-                    style={{
-                      ...innerPanelStyle,
-                      borderRadius: "16px",
-                      padding: "15px",
-                    }}
-                  >
-                    <span style={{ color: "rgba(255,255,255,.58)" }}>
-                      Produtos
-                    </span>
+                  {[
+                    ["Produtos", resumo.quantidadeTotal],
+                    ["Subtotal", formatarPreco(resumo.subtotal)],
+                    ["Frete estimado", "A combinar"],
+                  ].map(([label, value], index) => (
+                    <motion.div
+                      key={label}
+                      className="d-flex justify-content-between"
+                      {...getSequencedMotion(index, 12)}
+                      style={{
+                        ...innerPanelStyle,
+                        borderRadius: "16px",
+                        padding: "15px",
+                      }}
+                    >
+                      <span style={{ color: "rgba(255,255,255,.58)" }}>
+                        {label}
+                      </span>
 
-                    <strong>{resumo.quantidadeTotal}</strong>
-                  </div>
+                      <strong style={label === "Frete estimado" ? { color: "#5cff95" } : undefined}>
+                        {value}
+                      </strong>
+                    </motion.div>
+                  ))}
 
-                  <div
-                    className="d-flex justify-content-between"
-                    style={{
-                      ...innerPanelStyle,
-                      borderRadius: "16px",
-                      padding: "15px",
-                    }}
-                  >
-                    <span style={{ color: "rgba(255,255,255,.58)" }}>
-                      Subtotal
-                    </span>
-
-                    <strong>{formatarPreco(resumo.subtotal)}</strong>
-                  </div>
-
-                  <div
-                    className="d-flex justify-content-between"
-                    style={{
-                      ...innerPanelStyle,
-                      borderRadius: "16px",
-                      padding: "15px",
-                    }}
-                  >
-                    <span style={{ color: "rgba(255,255,255,.58)" }}>
-                      Frete estimado
-                    </span>
-
-                    <strong style={{ color: "#5cff95" }}>
-                      A combinar
-                    </strong>
-                  </div>
-
-                  <div
+                  <motion.div
+                    {...getSequencedMotion(3, 8)}
                     style={{
                       height: "1px",
                       background: "rgba(255,255,255,.08)",
@@ -1023,7 +1108,10 @@ export default function FinalizarPedido() {
                     }}
                   />
 
-                  <div className="d-flex justify-content-between align-items-end">
+                  <motion.div
+                    className="d-flex justify-content-between align-items-end"
+                    {...getSequencedMotion(4, 12)}
+                  >
                     <div>
                       <span
                         style={{
@@ -1043,21 +1131,27 @@ export default function FinalizarPedido() {
                       </small>
                     </div>
 
-                    <strong
+                    <motion.strong
+                      key={resumo.total}
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.18, ease: "easeOut" }}
                       style={{
                         color: "#5cff95",
                         fontSize: "1.7rem",
                       }}
                     >
                       {formatarPreco(resumo.total)}
-                    </strong>
-                  </div>
+                    </motion.strong>
+                  </motion.div>
                 </div>
 
-                <button
+                <motion.button
                   type="submit"
                   disabled={finalizando || carrinho.length === 0}
                   className="btn w-100 mt-4"
+                  whileHover={finalizando || carrinho.length === 0 ? {} : { y: -3 }}
+                  whileTap={finalizando || carrinho.length === 0 ? {} : { scale: 0.98 }}
                   style={{
                     ...buttonGradient,
                     padding: "15px",
@@ -1079,12 +1173,14 @@ export default function FinalizarPedido() {
                       Confirmar Pedido
                     </>
                   )}
-                </button>
+                </motion.button>
 
-                <button
+                <motion.button
                   type="button"
                   onClick={() => router.push("/pedidos")}
                   className="btn btn-outline-light w-100 mt-3"
+                  whileHover={{ y: -3 }}
+                  whileTap={{ scale: 0.98 }}
                   style={{
                     borderRadius: "16px",
                     padding: "13px",
@@ -1093,10 +1189,11 @@ export default function FinalizarPedido() {
                   }}
                 >
                   Ver meus pedidos
-                </button>
+                </motion.button>
 
-                <div
+                <motion.div
                   className="mt-4"
+                  {...getSequencedMotion(5, 12)}
                   style={{
                     ...innerPanelStyle,
                     borderRadius: "20px",
@@ -1124,12 +1221,12 @@ export default function FinalizarPedido() {
                   >
                     O pedido será enviado ao backend usando o usuário logado e os produtos do carrinho.
                   </p>
-                </div>
+                </motion.div>
               </aside>
-            </div>
+            </motion.div>
           </div>
         </form>
       </section>
-    </main>
+    </motion.main>
   );
 }

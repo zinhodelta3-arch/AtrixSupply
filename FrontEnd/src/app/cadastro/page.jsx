@@ -3,11 +3,128 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import * as THREE from "three";
 import Link from "next/link";
+import AlertCard from "@/components/AlertCard";
 
 const TERMOS_SERVICO_URL = "/docs/Termos_de_Servico_ATRIX_SUPPLY.pdf";
 const TERMOS_PRIVACIDADE_URL = "/docs/Termos_de_Privacidade_ATRIX_SUPPLY.pdf";
+
+const pageVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      duration: 0.55,
+      ease: "easeOut",
+      when: "beforeChildren",
+      staggerChildren: 0.08,
+    },
+  },
+};
+
+const panelVariants = {
+  hidden: {
+    opacity: 0,
+    y: 34,
+    scale: 0.965,
+    filter: "blur(8px)",
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    filter: "blur(0px)",
+    transition: {
+      duration: 0.72,
+      ease: [0.16, 1, 0.3, 1],
+    },
+  },
+};
+
+const logoVariants = {
+  hidden: {
+    opacity: 0,
+    y: -18,
+    scale: 0.92,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: 0.62,
+      ease: [0.16, 1, 0.3, 1],
+    },
+  },
+};
+
+const titleVariants = {
+  hidden: {
+    opacity: 0,
+    y: 12,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.48,
+      ease: "easeOut",
+    },
+  },
+};
+
+const formVariants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.045,
+      delayChildren: 0.15,
+    },
+  },
+};
+
+const fieldVariants = {
+  hidden: {
+    opacity: 0,
+    y: 16,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.42,
+      ease: [0.16, 1, 0.3, 1],
+    },
+  },
+};
+
+const feedbackVariants = {
+  hidden: {
+    opacity: 0,
+    y: -10,
+    scale: 0.98,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: 0.32,
+      ease: "easeOut",
+    },
+  },
+  exit: {
+    opacity: 0,
+    y: -8,
+    scale: 0.98,
+    transition: {
+      duration: 0.22,
+      ease: "easeIn",
+    },
+  },
+};
 
 function manterApenasNumeros(valor) {
   return String(valor || "").replace(/\D/g, "");
@@ -435,8 +552,13 @@ export default function Cadastro() {
     flexDirection: "column",
   };
 
+  const disabledSubmit = carregando || !aceitouTermos;
+
   return (
-    <div
+    <motion.div
+      variants={pageVariants}
+      initial="hidden"
+      animate="visible"
       style={{
         backgroundColor: "#1a0a0a",
         minHeight: "100vh",
@@ -449,8 +571,11 @@ export default function Cadastro() {
         padding: "20px",
       }}
     >
-      <div
+      <motion.div
         ref={mountRef}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1.1, ease: "easeOut" }}
         style={{
           position: "absolute",
           inset: 0,
@@ -458,7 +583,10 @@ export default function Cadastro() {
         }}
       />
 
-      <div
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.9, ease: "easeOut" }}
         style={{
           position: "absolute",
           inset: 0,
@@ -469,7 +597,8 @@ export default function Cadastro() {
         }}
       />
 
-      <main
+      <motion.main
+        variants={panelVariants}
         style={{
           position: "relative",
           zIndex: 2,
@@ -488,20 +617,33 @@ export default function Cadastro() {
           alignItems: "center",
         }}
       >
-        <Image
-          src="/ATRIXsuply.png"
-          alt="ATRIXsuply logo"
-          width={260}
-          height={174}
-          priority
+        <motion.div
+          variants={logoVariants}
+          whileHover={{
+            scale: 1.025,
+            rotate: -0.35,
+            filter: "drop-shadow(0 0 18px rgba(255,179,0,0.55))",
+          }}
+          transition={{ type: "spring", stiffness: 260, damping: 18 }}
           style={{
             marginTop: "-70px",
             marginBottom: "-20px",
-            filter: "drop-shadow(0 0 12px rgba(255,179,0,0.4))",
           }}
-        />
+        >
+          <Image
+            src="/ATRIXsuply.png"
+            alt="ATRIXsuply logo"
+            width={260}
+            height={174}
+            priority
+            style={{
+              filter: "drop-shadow(0 0 12px rgba(255,179,0,0.4))",
+            }}
+          />
+        </motion.div>
 
-        <h1
+        <motion.h1
+          variants={titleVariants}
           style={{
             color: "#ffb300",
             fontSize: "28px",
@@ -510,9 +652,10 @@ export default function Cadastro() {
           }}
         >
           Cadastro
-        </h1>
+        </motion.h1>
 
-        <form
+        <motion.form
+          variants={formVariants}
           onSubmit={handleSubmit}
           style={{
             display: "flex",
@@ -521,44 +664,53 @@ export default function Cadastro() {
             gap: "16px",
           }}
         >
-          {erro && (
-            <div
-              style={{
-                backgroundColor: "rgba(245, 6, 29, 0.18)",
-                border: "1px solid rgba(245, 6, 29, 0.6)",
-                color: "#fff",
-                padding: "10px 12px",
-                borderRadius: "10px",
-                fontSize: "14px",
-              }}
-            >
-              {erro}
-            </div>
-          )}
+          <AnimatePresence mode="popLayout">
+            {erro && (
+              <motion.div
+                key="erro-cadastro"
+                variants={feedbackVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                layout
+              >
+                <AlertCard
+                  variant="danger"
+                  title="Erro"
+                  message={erro}
+                  style={{ padding: "12px", borderRadius: "14px" }}
+                />
+              </motion.div>
+            )}
 
-          {sucesso && (
-            <div
-              style={{
-                backgroundColor: "rgba(255, 179, 0, 0.18)",
-                border: "1px solid rgba(255, 179, 0, 0.6)",
-                color: "#fff",
-                padding: "10px 12px",
-                borderRadius: "10px",
-                fontSize: "14px",
-              }}
-            >
-              {sucesso}
-            </div>
-          )}
+            {sucesso && (
+              <motion.div
+                key="sucesso-cadastro"
+                variants={feedbackVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                layout
+              >
+                <AlertCard
+                  variant="success"
+                  title="Sucesso"
+                  message={sucesso}
+                  style={{ padding: "12px", borderRadius: "14px" }}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-          <div
+          <motion.div
+            variants={fieldVariants}
             style={{
               display: "grid",
               gridTemplateColumns: "1fr 1fr",
               gap: "16px",
             }}
           >
-            <div style={fieldStyle}>
+            <motion.div variants={fieldVariants} style={fieldStyle}>
               <label style={labelStyle}>Nome</label>
 
               <input
@@ -570,9 +722,9 @@ export default function Cadastro() {
                 style={inputStyle}
                 required
               />
-            </div>
+            </motion.div>
 
-            <div style={fieldStyle}>
+            <motion.div variants={fieldVariants} style={fieldStyle}>
               <label style={labelStyle}>Email empresarial</label>
 
               <input
@@ -584,17 +736,18 @@ export default function Cadastro() {
                 style={inputStyle}
                 required
               />
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
-          <div
+          <motion.div
+            variants={fieldVariants}
             style={{
               display: "grid",
               gridTemplateColumns: "1fr 1fr",
               gap: "16px",
             }}
           >
-            <div style={fieldStyle}>
+            <motion.div variants={fieldVariants} style={fieldStyle}>
               <label style={labelStyle}>CNPJ</label>
 
               <input
@@ -609,9 +762,9 @@ export default function Cadastro() {
                 style={inputStyle}
                 required
               />
-            </div>
+            </motion.div>
 
-            <div style={fieldStyle}>
+            <motion.div variants={fieldVariants} style={fieldStyle}>
               <label style={labelStyle}>Empresa</label>
 
               <input
@@ -623,9 +776,9 @@ export default function Cadastro() {
                 style={inputStyle}
                 required
               />
-            </div>
+            </motion.div>
 
-            <div style={fieldStyle}>
+            <motion.div variants={fieldVariants} style={fieldStyle}>
               <label style={labelStyle}>Cargo</label>
 
               <input
@@ -637,9 +790,9 @@ export default function Cadastro() {
                 style={inputStyle}
                 required
               />
-            </div>
+            </motion.div>
 
-            <div style={fieldStyle}>
+            <motion.div variants={fieldVariants} style={fieldStyle}>
               <label style={labelStyle}>Tipo</label>
 
               <select
@@ -648,6 +801,7 @@ export default function Cadastro() {
                 onChange={handleChange}
                 style={{
                   ...inputStyle,
+                  color: formData.tipo ? "white" : "rgba(255,255,255,0.58)",
                   cursor: "pointer",
                 }}
                 required
@@ -659,9 +813,9 @@ export default function Cadastro() {
                 <option value="comum">Comum</option>
                 <option value="fornecedor">Fornecedor</option>
               </select>
-            </div>
+            </motion.div>
 
-            <div style={fieldStyle}>
+            <motion.div variants={fieldVariants} style={fieldStyle}>
               <label style={labelStyle}>CEP</label>
 
               <input
@@ -676,9 +830,9 @@ export default function Cadastro() {
                 style={inputStyle}
                 required
               />
-            </div>
+            </motion.div>
 
-            <div style={fieldStyle}>
+            <motion.div variants={fieldVariants} style={fieldStyle}>
               <label style={labelStyle}>Endereço</label>
 
               <input
@@ -690,17 +844,18 @@ export default function Cadastro() {
                 style={inputStyle}
                 required
               />
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
-          <div
+          <motion.div
+            variants={fieldVariants}
             style={{
               display: "grid",
               gridTemplateColumns: "1fr 1fr",
               gap: "16px",
             }}
           >
-            <div style={fieldStyle}>
+            <motion.div variants={fieldVariants} style={fieldStyle}>
               <label style={labelStyle}>Senha</label>
 
               <input
@@ -712,9 +867,9 @@ export default function Cadastro() {
                 style={inputStyle}
                 required
               />
-            </div>
+            </motion.div>
 
-            <div style={fieldStyle}>
+            <motion.div variants={fieldVariants} style={fieldStyle}>
               <label style={labelStyle}>Confirmar senha</label>
 
               <input
@@ -726,10 +881,13 @@ export default function Cadastro() {
                 style={inputStyle}
                 required
               />
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
-          <div
+          <motion.div
+            variants={fieldVariants}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            whileHover={{ scale: 1.005 }}
             style={{
               display: "flex",
               alignItems: "flex-start",
@@ -745,11 +903,12 @@ export default function Cadastro() {
               color: "#fff",
             }}
           >
-            <input
+            <motion.input
               id="aceite-termos-servico"
               type="checkbox"
               checked={aceitouTermos}
               onChange={(event) => setAceitouTermos(event.target.checked)}
+              whileTap={{ scale: 0.88 }}
               style={{
                 width: "18px",
                 height: "18px",
@@ -783,7 +942,7 @@ export default function Cadastro() {
                 }}
               >
                 Termos de Serviço
-              </Link> e {" "}
+              </Link> e{" "}
               <Link
                 href={TERMOS_PRIVACIDADE_URL}
                 target="_blank"
@@ -800,30 +959,43 @@ export default function Cadastro() {
               . Ao marcar esta opção, você confirma que leu, compreendeu e aceita
               as regras de uso da plataforma ATRIX Supply.
             </label>
-          </div>
+          </motion.div>
 
-          <button
+          <motion.button
+            variants={fieldVariants}
             type="submit"
-            disabled={carregando || !aceitouTermos}
+            disabled={disabledSubmit}
+            whileHover={
+              disabledSubmit
+                ? undefined
+                : {
+                    scale: 1.02,
+                    y: -1,
+                    boxShadow: "0 0 28px rgba(255,179,0,0.52)",
+                  }
+            }
+            whileTap={disabledSubmit ? undefined : { scale: 0.985 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
             style={{
-              backgroundColor: carregando || !aceitouTermos ? "#946b00" : "#ffb300",
+              backgroundColor: disabledSubmit ? "#946b00" : "#ffb300",
               color: "#1a0a0a",
               padding: "12px",
               border: "none",
               borderRadius: "10px",
-              cursor: carregando || !aceitouTermos ? "not-allowed" : "pointer",
+              cursor: disabledSubmit ? "not-allowed" : "pointer",
               fontWeight: "bold",
               fontSize: "16px",
               marginTop: "4px",
               boxShadow: "0 0 20px rgba(255,179,0,0.35)",
-              opacity: carregando || !aceitouTermos ? 0.65 : 1,
+              opacity: disabledSubmit ? 0.65 : 1,
             }}
           >
             {carregando ? "Cadastrando..." : "Cadastrar"}
-          </button>
-        </form>
+          </motion.button>
+        </motion.form>
 
-        <p
+        <motion.p
+          variants={fieldVariants}
           style={{
             color: "#ccc",
             fontSize: "14px",
@@ -833,18 +1005,24 @@ export default function Cadastro() {
         >
           Já tem conta?{" "}
 
-          <Link
-            href="/login"
-            style={{
-              color: "#0d6efd",
-              textDecoration: "none",
-              fontWeight: "bold",
-            }}
+          <motion.span
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.98 }}
+            style={{ display: "inline-block" }}
           >
-            Faça login
-          </Link>
-        </p>
-      </main>
-    </div>
+            <Link
+              href="/login"
+              style={{
+                color: "#0d6efd",
+                textDecoration: "none",
+                fontWeight: "bold",
+              }}
+            >
+              Faça login
+            </Link>
+          </motion.span>
+        </motion.p>
+      </motion.main>
+    </motion.div>
   );
 }

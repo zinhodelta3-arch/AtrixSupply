@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
+import { motion } from "motion/react";
+import AlertCard from "@/components/AlertCard";
 import "../algo.css";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -164,6 +166,24 @@ const paginationBtnStyle = {
   fontWeight: "800",
   boxShadow: "none",
 };
+
+
+const pageMotionProps = {
+  initial: { opacity: 0, y: 14 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.42, ease: "easeOut" },
+};
+
+function getSequencedMotion(index = 0, deslocamento = 14) {
+  const delay = Math.min(Number(index) || 0, 14) * 0.045;
+
+  return {
+    initial: { opacity: 0, y: deslocamento },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.32, ease: "easeOut", delay },
+  };
+}
+
 
 function obterIniciais(nome) {
   if (!nome) return "US";
@@ -872,27 +892,21 @@ export default function Usuarios() {
 
         <div style={{ padding: "28px 32px 10px" }}>
           {formErro && (
-            <div
-              className="alert alert-danger mb-4"
-              style={{
-                borderRadius: "16px",
-                border: "none",
-              }}
-            >
-              {formErro}
-            </div>
+            <AlertCard
+              variant="danger"
+              title="Erro"
+              message={formErro}
+              className="mb-4"
+            />
           )}
 
           {formSucesso && (
-            <div
-              className="alert alert-success mb-4"
-              style={{
-                borderRadius: "16px",
-                border: "none",
-              }}
-            >
-              {formSucesso}
-            </div>
+            <AlertCard
+              variant="success"
+              title="Sucesso"
+              message={formSucesso}
+              className="mb-4"
+            />
           )}
 
           <div className="row g-3">
@@ -1064,7 +1078,7 @@ export default function Usuarios() {
   };
 
   return (
-    <main
+    <motion.main {...pageMotionProps}
       className="container-fluid py-4 px-3 px-lg-4"
       style={{
         background: pageBackground,
@@ -1151,11 +1165,11 @@ export default function Usuarios() {
             icon: "bi-building-check",
             cor: "#5cff95",
           },
-        ].map((card) => {
+        ].map((card, index) => {
           const ativo = cardHoverAtivo === card.titulo;
 
           return (
-            <div className="col-12 col-md-6 col-xl-3" key={card.titulo}>
+            <motion.div className="col-12 col-md-6 col-xl-3" key={card.titulo} {...getSequencedMotion(index, 16)}>
               <div
                 className="p-4 h-100"
                 style={metricCardStyle(card.cor, ativo)}
@@ -1204,12 +1218,12 @@ export default function Usuarios() {
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           );
         })}
       </div>
 
-      <section className="p-3 p-lg-4" style={cardStyle}>
+      <motion.section className="p-3 p-lg-4" style={cardStyle}>
         <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
           <div>
             <h4
@@ -1261,15 +1275,12 @@ export default function Usuarios() {
         </div>
 
         {erroLista && (
-          <div
-            className="alert alert-danger mb-4"
-            style={{
-              borderRadius: "16px",
-              border: "none",
-            }}
-          >
-            {erroLista}
-          </div>
+          <AlertCard
+            variant="danger"
+            title="Erro"
+            message={erroLista}
+            className="mb-4"
+          />
         )}
 
         <div className="table-responsive" style={dashboardTableWrapperStyle}>
@@ -1278,7 +1289,7 @@ export default function Usuarios() {
             style={dashboardTableStyle}
           >
             <thead>
-              <tr>
+              <motion.tr>
                 <th style={dashboardTableHeadCellStyle}>Usuário</th>
                 <th style={dashboardTableHeadCellStyle}>Empresa</th>
                 <th style={dashboardTableHeadCellStyle}>Cargo</th>
@@ -1287,12 +1298,12 @@ export default function Usuarios() {
                 <th style={{ ...dashboardTableHeadCellStyle, textAlign: "right" }}>
                   Ações
                 </th>
-              </tr>
+              </motion.tr>
             </thead>
 
             <tbody>
               {carregando ? (
-                <tr>
+                <motion.tr>
                   <td
                     colSpan="6"
                     className="text-center"
@@ -1302,12 +1313,17 @@ export default function Usuarios() {
                       color: "rgba(255,255,255,.65)",
                     }}
                   >
-                    <span className="spinner-border spinner-border-sm text-warning me-2" />
-                    Carregando usuários...
+                    <AlertCard
+                      variant="neutral"
+                      icon={<span className="spinner-border spinner-border-sm" aria-hidden="true" />}
+                      title="Carregando usuários..."
+                      centered
+                      style={{ boxShadow: "none" }}
+                    />
                   </td>
-                </tr>
+                </motion.tr>
               ) : usuariosFiltrados.length === 0 ? (
-                <tr>
+                <motion.tr>
                   <td
                     colSpan="6"
                     className="text-center"
@@ -1316,33 +1332,23 @@ export default function Usuarios() {
                       padding: "42px 18px",
                     }}
                   >
-                    <i
-                      className="bi bi-person-x d-block mb-3"
-                      style={{
-                        color: "#ffcf40",
-                        fontSize: "2.4rem",
-                      }}
+                    <AlertCard
+                      variant="empty"
+                      icon="bi-person-x"
+                      title="Nenhum usuário encontrado"
+                      message="Tente pesquisar por outro nome, email ou empresa."
+                      centered
+                      style={{ boxShadow: "none" }}
                     />
-
-                    <h5 className="fw-bold mb-1">Nenhum usuário encontrado</h5>
-
-                    <p
-                      className="mb-0"
-                      style={{
-                        color: "rgba(255,255,255,.52)",
-                      }}
-                    >
-                      Tente pesquisar por outro nome, email ou empresa.
-                    </p>
                   </td>
-                </tr>
+                </motion.tr>
               ) : (
-                usuariosFiltrados.map((user) => {
+                usuariosFiltrados.map((user, index) => {
                   const tipoStyle = getTipoBadgeStyle(user.tipo);
                   const fotoUsuario = resolverUrlImagemUsuario(user);
 
                   return (
-                    <tr key={user.id_user}>
+                    <motion.tr key={user.id_user} {...getSequencedMotion(index)}>
                       <td style={dashboardTableCellStyle}>
                         <div className="d-flex align-items-center">
                           <div
@@ -1503,7 +1509,7 @@ export default function Usuarios() {
                           </button>
                         </div>
                       </td>
-                    </tr>
+                    </motion.tr>
                   );
                 })
               )}
@@ -1559,7 +1565,7 @@ export default function Usuarios() {
             </div>
           </div>
         )}
-      </section>
+      </motion.section>
 
       {modalCriarAberto && (
         <div
@@ -1578,6 +1584,6 @@ export default function Usuarios() {
           {renderFormularioUsuario({ modo: "editar" })}
         </div>
       )}
-    </main>
+    </motion.main>
   );
 }

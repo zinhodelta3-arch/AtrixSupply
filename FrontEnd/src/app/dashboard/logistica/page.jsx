@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
+import AlertCard from "@/components/AlertCard";
 import "../algo.css";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -159,6 +161,24 @@ const paginationBtnStyle = {
   fontWeight: "800",
   boxShadow: "none",
 };
+
+
+const pageMotionProps = {
+  initial: { opacity: 0, y: 14 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.42, ease: "easeOut" },
+};
+
+function getSequencedMotion(index = 0, deslocamento = 14) {
+  const delay = Math.min(Number(index) || 0, 14) * 0.045;
+
+  return {
+    initial: { opacity: 0, y: deslocamento },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.32, ease: "easeOut", delay },
+  };
+}
+
 
 const modalBackdropStyle = {
   position: "fixed",
@@ -811,7 +831,7 @@ export default function LogisticaDashboard() {
 
   if (!acessoValidado) {
     return (
-      <main
+      <motion.main {...pageMotionProps}
         className="d-flex justify-content-center align-items-center"
         style={{
           minHeight: "100vh",
@@ -823,12 +843,12 @@ export default function LogisticaDashboard() {
           <div className="spinner-border text-warning mb-3" />
           <h4 className="fw-bold">Validando acesso...</h4>
         </div>
-      </main>
+      </motion.main>
     );
   }
 
   return (
-    <main
+    <motion.main {...pageMotionProps}
       className="container-fluid py-4 px-3 px-lg-4"
       style={{
         background: pageBackground,
@@ -886,11 +906,11 @@ export default function LogisticaDashboard() {
       </div>
 
       <div className="row g-4 mb-4">
-        {metricasCards.map((card) => {
+        {metricasCards.map((card, index) => {
           const ativo = cardHoverAtivo === card.titulo;
 
           return (
-            <div className="col-12 col-md-6 col-xl-3" key={card.titulo}>
+            <motion.div className="col-12 col-md-6 col-xl-3" key={card.titulo} {...getSequencedMotion(index, 16)}>
               <div
                 className="p-4 h-100"
                 style={metricCardStyle(card.cor, ativo)}
@@ -940,25 +960,21 @@ export default function LogisticaDashboard() {
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           );
         })}
       </div>
 
       {(feedback || erroLista) && (
-        <div
-          className="alert border-0 mb-4"
-          style={{
-            background: feedback ? "rgba(34,197,94,0.10)" : "rgba(245,6,29,0.10)",
-            color: feedback ? "#5cff95" : "#ff758f",
-            borderRadius: "18px",
-          }}
-        >
-          {feedback || erroLista}
-        </div>
+        <AlertCard
+          variant={feedback ? "success" : "danger"}
+          title={feedback ? "Sucesso" : "Erro"}
+          message={feedback || erroLista}
+          className="mb-4"
+        />
       )}
 
-      <section className="p-3 p-lg-4" style={cardStyle}>
+      <motion.section className="p-3 p-lg-4" style={cardStyle}>
         <div className="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
           <div>
             <h4
@@ -1104,7 +1120,7 @@ export default function LogisticaDashboard() {
             style={dashboardTableStyle}
           >
             <thead>
-              <tr>
+              <motion.tr>
                 <th style={dashboardTableHeadCellStyle}>Logística</th>
                 <th style={dashboardTableHeadCellStyle}>Dono</th>
                 <th style={dashboardTableHeadCellStyle}>Veículo</th>
@@ -1113,12 +1129,12 @@ export default function LogisticaDashboard() {
                 <th style={{ ...dashboardTableHeadCellStyle, textAlign: "right" }}>
                   Ações
                 </th>
-              </tr>
+              </motion.tr>
             </thead>
 
             <tbody>
               {carregando ? (
-                <tr>
+                <motion.tr>
                   <td
                     colSpan="6"
                     className="text-center"
@@ -1128,12 +1144,17 @@ export default function LogisticaDashboard() {
                       color: "rgba(255,255,255,.65)",
                     }}
                   >
-                    <span className="spinner-border spinner-border-sm text-warning me-2" />
-                    Carregando logísticas...
+                    <AlertCard
+                      variant="neutral"
+                      icon={<span className="spinner-border spinner-border-sm" aria-hidden="true" />}
+                      title="Carregando logísticas..."
+                      centered
+                      style={{ boxShadow: "none" }}
+                    />
                   </td>
-                </tr>
+                </motion.tr>
               ) : logisticas.length === 0 ? (
-                <tr>
+                <motion.tr>
                   <td
                     colSpan="6"
                     className="text-center"
@@ -1142,28 +1163,18 @@ export default function LogisticaDashboard() {
                       padding: "42px 18px",
                     }}
                   >
-                    <i
-                      className="bi bi-truck d-block mb-3"
-                      style={{
-                        color: "#ffcf40",
-                        fontSize: "2.4rem",
-                      }}
+                    <AlertCard
+                      variant="empty"
+                      icon="bi-truck"
+                      title="Nenhuma logística encontrada"
+                      message="Tente mudar os filtros ou cadastre uma nova logística."
+                      centered
+                      style={{ boxShadow: "none" }}
                     />
-
-                    <h5 className="fw-bold mb-1">Nenhuma logística encontrada</h5>
-
-                    <p
-                      className="mb-0"
-                      style={{
-                        color: "rgba(255,255,255,.52)",
-                      }}
-                    >
-                      Tente mudar os filtros ou cadastre uma nova logística.
-                    </p>
                   </td>
-                </tr>
+                </motion.tr>
               ) : (
-                logisticas.map((logistica) => {
+                logisticas.map((logistica, index) => {
                   const idLogistica = getIdLogistica(logistica);
                   const disponibilidade =
                     getOpcao(DISPONIBILIDADE_OPTIONS, logistica.disponibilidade)?.value ||
@@ -1172,7 +1183,7 @@ export default function LogisticaDashboard() {
                   const atualizando = statusAtualizandoId === idLogistica;
 
                   return (
-                    <tr key={idLogistica}>
+                    <motion.tr key={idLogistica} {...getSequencedMotion(index)}>
                       <td style={dashboardTableCellStyle}>
                         <div className="d-flex align-items-center">
                           <div
@@ -1327,7 +1338,7 @@ export default function LogisticaDashboard() {
                           </button>
                         </div>
                       </td>
-                    </tr>
+                    </motion.tr>
                   );
                 })
               )}
@@ -1405,7 +1416,7 @@ export default function LogisticaDashboard() {
             </div>
           </div>
         )}
-      </section>
+      </motion.section>
 
       {modalAberto && (
         <div
@@ -1499,16 +1510,12 @@ export default function LogisticaDashboard() {
 
             <div style={{ padding: "28px 32px 10px" }}>
               {formErro && (
-                <div
-                  className="alert border-0 mb-4"
-                  style={{
-                    background: "rgba(245,6,29,0.14)",
-                    color: "#fecaca",
-                    borderRadius: "16px",
-                  }}
-                >
-                  {formErro}
-                </div>
+                <AlertCard
+                  variant="danger"
+                  title="Erro"
+                  message={formErro}
+                  className="mb-4"
+                />
               )}
 
               <div className="row g-3">
@@ -1671,6 +1678,6 @@ export default function LogisticaDashboard() {
           </form>
         </div>
       )}
-    </main>
+    </motion.main>
   );
 }

@@ -5,6 +5,7 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import AlertCard from "@/components/AlertCard";
 import { resolveImageUrl } from "@/utils/imageUrl";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -800,15 +801,12 @@ export default function Perfil() {
 
       <div className="container-fluid px-4 px-lg-5 py-5">
         {feedback && (
-          <div
-            className="alert alert-success mb-4"
-            style={{
-              borderRadius: "18px",
-              border: "none",
-            }}
-          >
-            {feedback}
-          </div>
+          <AlertCard
+            variant="success"
+            title="Sucesso"
+            message={feedback}
+            className="mb-4"
+          />
         )}
 
         <div className="row g-4">
@@ -1408,9 +1406,12 @@ export default function Perfil() {
                 </div>
 
                 {formErro && (
-                  <div className="alert alert-danger mt-4 mb-0">
-                    {formErro}
-                  </div>
+                  <AlertCard
+                    variant="danger"
+                    title="Erro"
+                    message={formErro}
+                    className="mt-4 mb-0"
+                  />
                 )}
               </div>
 

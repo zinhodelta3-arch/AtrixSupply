@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { motion } from "motion/react";
 import "./card.css";
 import { FALLBACK_IMAGE, getEntityImage, useImageFallback } from "@/utils/imageUrl";
 
@@ -23,14 +24,24 @@ function formatarCategoria(categoria) {
     .replace(/\b\w/g, (letra) => letra.toUpperCase());
 }
 
-export default function CardProduto({ produto }) {
+export default function CardProduto({ produto, index = 0 }) {
   const idProduto = produto?.id_produto || produto?.id;
   const nomeProduto = produto?.nome_produto || produto?.nome || "Produto sem nome";
-
   const imagemUrl = getEntityImage(produto);
 
+  const delayCard = Math.min(Number(index) || 0, 11) * 0.065;
+
   return (
-    <div className="col-md-6 col-lg-3">
+    <motion.div
+      className="col-md-6 col-lg-3"
+      initial={{ opacity: 0, y: 18, scale: 0.985 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{
+        duration: 0.38,
+        ease: "easeOut",
+        delay: delayCard,
+      }}
+    >
       <Link
         href={idProduto ? `/produtos/${idProduto}` : "/produtos"}
         style={{ textDecoration: "none" }}
@@ -104,6 +115,6 @@ export default function CardProduto({ produto }) {
           </div>
         </div>
       </Link>
-    </div>
+    </motion.div>
   );
 }

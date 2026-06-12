@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
+import AlertCard from "@/components/AlertCard";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
 const SUPORTE_URL = `${API_URL}/api/suporte`;
@@ -22,6 +24,68 @@ const buttonGradient = {
   color: "white",
   borderRadius: "14px",
   fontWeight: "700",
+};
+
+const motionEase = [0.22, 1, 0.36, 1];
+
+const fadeUp = {
+  hidden: {
+    opacity: 0,
+    y: 24,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.55,
+      ease: motionEase,
+    },
+  },
+};
+
+const fadeLeft = {
+  hidden: {
+    opacity: 0,
+    x: -22,
+  },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: {
+      duration: 0.55,
+      ease: motionEase,
+    },
+  },
+};
+
+const fadeRight = {
+  hidden: {
+    opacity: 0,
+    x: 22,
+  },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: {
+      duration: 0.55,
+      ease: motionEase,
+    },
+  },
+};
+
+const scaleIn = {
+  hidden: {
+    opacity: 0,
+    scale: 0.96,
+  },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: {
+      duration: 0.45,
+      ease: motionEase,
+    },
+  },
 };
 
 function obterToken() {
@@ -84,12 +148,89 @@ function obterNomeUsuario(usuario) {
     usuario?.nome_user ||
     usuario?.nome ||
     usuario?.name ||
+    usuario?.empresa ||
     usuario?.dados?.nome_user ||
     usuario?.dados?.nome ||
+    usuario?.dados?.empresa ||
     usuario?.usuario?.nome_user ||
     usuario?.usuario?.nome ||
+    usuario?.usuario?.empresa ||
     "Usuário Atrix"
   );
+}
+
+function obterIniciaisUsuario(nome) {
+  const partes = String(nome || "")
+    .trim()
+    .split(" ")
+    .filter(Boolean);
+
+  if (partes.length === 0) return "UA";
+
+  if (partes.length === 1) {
+    return partes[0].slice(0, 2).toUpperCase();
+  }
+
+  return `${partes[0][0]}${partes[partes.length - 1][0]}`.toUpperCase();
+}
+
+function obterFotoBrutaUsuario(usuario) {
+  return (
+    usuario?.foto ||
+    usuario?.foto_user ||
+    usuario?.foto_perfil ||
+    usuario?.imagem ||
+    usuario?.avatar ||
+    usuario?.profile_image ||
+    usuario?.dados?.foto ||
+    usuario?.dados?.foto_user ||
+    usuario?.dados?.foto_perfil ||
+    usuario?.dados?.imagem ||
+    usuario?.dados?.avatar ||
+    usuario?.usuario?.foto ||
+    usuario?.usuario?.foto_user ||
+    usuario?.usuario?.foto_perfil ||
+    usuario?.usuario?.imagem ||
+    usuario?.usuario?.avatar ||
+    ""
+  );
+}
+
+function resolverUrlImagemUsuario(imagem) {
+  const valorOriginal = String(imagem || "")
+    .trim()
+    .replace(/\\/g, "/");
+
+  if (!valorOriginal) return "";
+
+  if (
+    valorOriginal.startsWith("http://") ||
+    valorOriginal.startsWith("https://") ||
+    valorOriginal.startsWith("data:image") ||
+    valorOriginal.startsWith("blob:")
+  ) {
+    return valorOriginal;
+  }
+
+  if (valorOriginal.startsWith("/")) {
+    if (valorOriginal.startsWith("/uploads")) {
+      return `${API_URL}${valorOriginal}`;
+    }
+
+    return valorOriginal;
+  }
+
+  const caminhoLimpo = valorOriginal.replace(/^\/+/, "");
+
+  if (caminhoLimpo.startsWith("uploads/")) {
+    return `${API_URL}/${caminhoLimpo}`;
+  }
+
+  return `${API_URL}/uploads/imagens/${caminhoLimpo}`;
+}
+
+function obterFotoUsuario(usuario) {
+  return resolverUrlImagemUsuario(obterFotoBrutaUsuario(usuario));
 }
 
 function obterTipoUsuario(usuario) {
@@ -143,6 +284,7 @@ function mensagemUsuario(error, fallback) {
 
 export default function Suporte() {
   const [usuarioLogado, setUsuarioLogado] = useState(null);
+  const [fotoUsuarioQuebrou, setFotoUsuarioQuebrou] = useState(false);
   const [titulo, setTitulo] = useState("");
   const [categoria, setCategoria] = useState("geral");
   const [mensagem, setMensagem] = useState("");
@@ -154,8 +296,15 @@ export default function Suporte() {
     setUsuarioLogado(obterUsuarioLogado());
   }, []);
 
+  useEffect(() => {
+    setFotoUsuarioQuebrou(false);
+  }, [usuarioLogado]);
+
   const tipoUsuario = obterTipoUsuario(usuarioLogado);
   const nomeUsuario = obterNomeUsuario(usuarioLogado);
+  const fotoUsuario = obterFotoUsuario(usuarioLogado);
+  const iniciaisUsuario = obterIniciaisUsuario(nomeUsuario);
+  const exibirFotoUsuario = Boolean(fotoUsuario && !fotoUsuarioQuebrou);
 
   const solucoes = useMemo(
     () => [
@@ -271,7 +420,9 @@ export default function Suporte() {
   }
 
   return (
-    <main
+    <motion.main
+      initial="hidden"
+      animate="visible"
       style={{
         minHeight: "100vh",
         color: "white",
@@ -282,7 +433,8 @@ export default function Suporte() {
         `,
       }}
     >
-      <section
+      <motion.section
+        variants={fadeUp}
         className="py-5 text-white"
         style={{
           background: "linear-gradient(135deg,#940533,#c0012a,#f5061d)",
@@ -290,25 +442,37 @@ export default function Suporte() {
         }}
       >
         <div className="container py-4 text-center">
-          <span className="badge bg-warning text-dark mb-3 px-3 py-2">
+          <motion.span
+            variants={scaleIn}
+            className="badge bg-warning text-dark mb-3 px-3 py-2"
+          >
             Central de Suporte
-          </span>
+          </motion.span>
 
-          <h1 className="display-4 fw-bold">
+          <motion.h1
+            variants={fadeUp}
+            className="display-4 fw-bold"
+            transition={{ delay: 0.08 }}
+          >
             Como podemos ajudar?
-          </h1>
+          </motion.h1>
 
-          <p className="lead mt-3 mb-0">
+          <motion.p
+            variants={fadeUp}
+            className="lead mt-3 mb-0"
+            transition={{ delay: 0.14 }}
+          >
             Abra solicitações, resolva dúvidas e acompanhe problemas do sistema ATRIX Supply.
-          </p>
+          </motion.p>
         </div>
-      </section>
+      </motion.section>
 
       <section className="py-5">
         <div className="container-fluid px-4">
           <div className="row g-4">
             <div className="col-lg-3">
-              <aside
+              <motion.aside
+                variants={fadeLeft}
                 className="p-4 rounded-4 shadow-lg position-sticky"
                 style={{
                   top: "20px",
@@ -317,7 +481,8 @@ export default function Suporte() {
                   backdropFilter: "blur(12px)",
                 }}
               >
-                <div
+                <motion.div
+                  variants={scaleIn}
                   className="d-flex align-items-center gap-3 mb-4"
                   style={{
                     background: "rgba(255,255,255,.035)",
@@ -335,9 +500,43 @@ export default function Suporte() {
                       background: "rgba(255,136,0,.14)",
                       color: "#ffb300",
                       fontSize: "1.25rem",
+                      overflow: "hidden",
+                      flexShrink: 0,
                     }}
                   >
-                    <i className="bi bi-person-circle" />
+                    {exibirFotoUsuario ? (
+                      <img
+                        src={fotoUsuario}
+                        alt={`Foto de ${nomeUsuario}`}
+                        onError={() => setFotoUsuarioQuebrou(true)}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          display: "block",
+                        }}
+                      />
+                    ) : (
+                      <span
+                        aria-label={`Iniciais de ${nomeUsuario}`}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          background:
+                            "linear-gradient(135deg, rgba(148,5,51,.78), rgba(192,1,42,.58), rgba(255,136,0,.34))",
+                          color: "#ffb300",
+                          fontWeight: 900,
+                          fontSize: "1rem",
+                          letterSpacing: ".5px",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        {iniciaisUsuario}
+                      </span>
+                    )}
                   </div>
 
                   <div>
@@ -354,11 +553,13 @@ export default function Suporte() {
                       {formatarTipoUsuario(tipoUsuario)}
                     </span>
                   </div>
-                </div>
+                </motion.div>
 
-                <button
+                <motion.button
                   type="button"
                   className="btn w-100 mb-4"
+                  whileHover={{ y: -2, scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => {
                     const form = document.getElementById("form-suporte");
                     form?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -369,7 +570,7 @@ export default function Suporte() {
                   }}
                 >
                   Abrir solicitação
-                </button>
+                </motion.button>
 
                 <div className="d-flex flex-column gap-3">
                   {[
@@ -388,9 +589,12 @@ export default function Suporte() {
                       valor: categorias.find((item) => item.value === categoria)?.label || "Geral",
                       icon: "bi-tags",
                     },
-                  ].map((item) => (
-                    <div
+                  ].map((item, index) => (
+                    <motion.div
                       key={item.titulo}
+                      initial={{ opacity: 0, x: -14 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.16 + index * 0.07, duration: 0.38, ease: motionEase }}
                       className="d-flex align-items-center gap-3"
                       style={{
                         background: "rgba(255,255,255,.035)",
@@ -427,14 +631,15 @@ export default function Suporte() {
                           {item.valor}
                         </strong>
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
-              </aside>
+              </motion.aside>
             </div>
 
             <div className="col-lg-9">
-              <div
+              <motion.div
+                variants={fadeRight}
                 className="p-4 p-lg-5 rounded-4 shadow-lg mb-4"
                 style={{
                   background: "rgba(17,17,17,.96)",
@@ -456,8 +661,10 @@ export default function Suporte() {
                     </p>
                   </div>
 
-                  <div
+                  <motion.div
                     className="d-flex align-items-center justify-content-center"
+                    animate={{ rotate: [0, 4, -4, 0] }}
+                    transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
                     style={{
                       width: "58px",
                       height: "58px",
@@ -468,15 +675,23 @@ export default function Suporte() {
                     }}
                   >
                     <i className="bi bi-lightning-charge-fill" />
-                  </div>
+                  </motion.div>
                 </div>
 
                 <div className="row g-3">
-                  {solucoes.map((item) => (
-                    <div className="col-md-6" key={item.titulo}>
-                      <button
+                  {solucoes.map((item, index) => (
+                    <motion.div
+                      className="col-md-6"
+                      key={item.titulo}
+                      initial={{ opacity: 0, y: 18 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 + index * 0.08, duration: 0.42, ease: motionEase }}
+                    >
+                      <motion.button
                         type="button"
                         className="text-start w-100 h-100"
+                        whileHover={{ y: -4, scale: 1.01 }}
+                        whileTap={{ scale: 0.985 }}
                         onClick={() => preencherSolucaoRapida(item)}
                         style={{
                           background: "rgba(255,255,255,.035)",
@@ -514,15 +729,16 @@ export default function Suporte() {
                         >
                           {item.descricao}
                         </p>
-                      </button>
-                    </div>
+                      </motion.button>
+                    </motion.div>
                   ))}
                 </div>
-              </div>
+              </motion.div>
 
-              <form
+              <motion.form
                 id="form-suporte"
                 onSubmit={enviarSuporte}
+                variants={fadeUp}
                 className="p-4 p-lg-5 rounded-4 shadow-lg"
                 style={{
                   background: "rgba(17,17,17,.96)",
@@ -544,8 +760,9 @@ export default function Suporte() {
                     </p>
                   </div>
 
-                  <div
+                  <motion.div
                     className="d-flex align-items-center justify-content-center"
+                    whileHover={{ rotate: -8, scale: 1.05 }}
                     style={{
                       width: "58px",
                       height: "58px",
@@ -556,23 +773,50 @@ export default function Suporte() {
                     }}
                   >
                     <i className="bi bi-send-fill" />
-                  </div>
+                  </motion.div>
                 </div>
 
-                {feedback && (
-                  <div className="alert alert-success border-0" style={{ borderRadius: "16px" }}>
-                    {feedback}
-                  </div>
-                )}
+                <AnimatePresence mode="wait">
+                  {feedback && (
+                    <motion.div
+                      key="feedback-suporte"
+                      initial={{ opacity: 0, y: -10, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                      transition={{ duration: 0.26, ease: motionEase }}
+                    >
+                      <AlertCard
+                        variant="success"
+                        title="Sucesso"
+                        message={feedback}
+                      />
+                    </motion.div>
+                  )}
 
-                {erro && (
-                  <div className="alert alert-danger border-0" style={{ borderRadius: "16px" }}>
-                    {erro}
-                  </div>
-                )}
+                  {erro && (
+                    <motion.div
+                      key="erro-suporte"
+                      initial={{ opacity: 0, y: -10, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                      transition={{ duration: 0.26, ease: motionEase }}
+                    >
+                      <AlertCard
+                        variant="danger"
+                        title="Erro"
+                        message={erro}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 <div className="row g-3">
-                  <div className="col-md-8">
+                  <motion.div
+                    className="col-md-8"
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.24, duration: 0.36, ease: motionEase }}
+                  >
                     <label className="form-label text-secondary">
                       Título do problema
                     </label>
@@ -585,9 +829,14 @@ export default function Suporte() {
                       className="form-control"
                       style={inputStyle}
                     />
-                  </div>
+                  </motion.div>
 
-                  <div className="col-md-4">
+                  <motion.div
+                    className="col-md-4"
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3, duration: 0.36, ease: motionEase }}
+                  >
                     <label className="form-label text-secondary">
                       Categoria
                     </label>
@@ -604,9 +853,14 @@ export default function Suporte() {
                         </option>
                       ))}
                     </select>
-                  </div>
+                  </motion.div>
 
-                  <div className="col-12">
+                  <motion.div
+                    className="col-12"
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.36, duration: 0.36, ease: motionEase }}
+                  >
                     <label className="form-label text-secondary">
                       Descrição
                     </label>
@@ -622,7 +876,7 @@ export default function Suporte() {
                         resize: "vertical",
                       }}
                     />
-                  </div>
+                  </motion.div>
                 </div>
 
                 <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mt-4">
@@ -635,10 +889,12 @@ export default function Suporte() {
                     O chamado será enviado vinculado ao usuário logado.
                   </span>
 
-                  <button
+                  <motion.button
                     type="submit"
                     disabled={enviando}
                     className="btn"
+                    whileHover={enviando ? undefined : { y: -2, scale: 1.01 }}
+                    whileTap={enviando ? undefined : { scale: 0.98 }}
                     style={{
                       ...buttonGradient,
                       padding: "12px 24px",
@@ -653,13 +909,13 @@ export default function Suporte() {
                     ) : (
                       "Enviar solicitação"
                     )}
-                  </button>
+                  </motion.button>
                 </div>
-              </form>
+              </motion.form>
             </div>
           </div>
         </div>
       </section>
-    </main>
+    </motion.main>
   );
 }

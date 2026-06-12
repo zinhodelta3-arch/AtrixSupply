@@ -4,7 +4,9 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import AlertCard from "@/components/AlertCard";
 import { FALLBACK_IMAGE, resolveImageUrl, useImageFallback } from "@/utils/imageUrl";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
@@ -52,6 +54,41 @@ const buttonGradient = {
   border: "none",
   boxShadow: "none",
 };
+
+const pageMotionProps = {
+  initial: {
+    opacity: 0,
+    y: 14,
+  },
+  animate: {
+    opacity: 1,
+    y: 0,
+  },
+  transition: {
+    duration: 0.42,
+    ease: "easeOut",
+  },
+};
+
+function getSequencedMotion(index = 0, deslocamento = 16) {
+  const delay = Math.min(Number(index) || 0, 12) * 0.055;
+
+  return {
+    initial: {
+      opacity: 0,
+      y: deslocamento,
+    },
+    animate: {
+      opacity: 1,
+      y: 0,
+    },
+    transition: {
+      duration: 0.36,
+      ease: "easeOut",
+      delay,
+    },
+  };
+}
 
 function obterToken() {
   if (typeof window === "undefined") return "";
@@ -136,40 +173,11 @@ function getMensagemErro(data) {
   return data?.mensagem || data?.erro || "Não foi possível concluir a operação.";
 }
 
-function getToastStyle(tipo) {
-  if (tipo === "success") {
-    return {
-      icon: "bi-check-circle-fill",
-      cor: "#5cff95",
-      fundo: "rgba(32,130,75,.16)",
-      borda: "rgba(92,255,149,.28)",
-    };
-  }
-
-  if (tipo === "warning") {
-    return {
-      icon: "bi-exclamation-triangle-fill",
-      cor: "#ffcf40",
-      fundo: "rgba(255,179,0,.13)",
-      borda: "rgba(255,207,64,.28)",
-    };
-  }
-
-  return {
-    icon: "bi-x-circle-fill",
-    cor: "#ff5a5a",
-    fundo: "rgba(255,90,90,.14)",
-    borda: "rgba(255,90,90,.28)",
-  };
-}
-
 export default function Compra() {
   const params = useParams();
   const router = useRouter();
 
   const id_produto = params?.id_produto;
-  const toastTimerRef = useRef(null);
-
   const [produto, setProduto] = useState(null);
   const [quantidade, setQuantidade] = useState(1);
 
@@ -179,14 +187,6 @@ export default function Compra() {
 
   useEffect(() => {
     import("bootstrap/dist/js/bootstrap.bundle.min.js");
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (toastTimerRef.current) {
-        clearTimeout(toastTimerRef.current);
-      }
-    };
   }, []);
 
   useEffect(() => {
@@ -232,19 +232,11 @@ export default function Compra() {
   }, [precoProduto, quantidade]);
 
   function mostrarToast(tipo, titulo, texto) {
-    if (toastTimerRef.current) {
-      clearTimeout(toastTimerRef.current);
-    }
-
     setToast({
       tipo,
       titulo,
       texto,
     });
-
-    toastTimerRef.current = setTimeout(() => {
-      setToast(null);
-    }, 3200);
   }
 
   function diminuirQuantidade() {
@@ -335,73 +327,89 @@ export default function Compra() {
 
   if (carregando) {
     return (
-      <main
+      <motion.main
+        {...pageMotionProps}
         className="d-flex justify-content-center align-items-center text-white"
         style={{
           minHeight: "100vh",
           background: pageBackground,
         }}
       >
-        <div className="text-center">
-          <div className="spinner-border text-warning mb-3" />
+        <motion.div
+          className="text-center"
+          initial={{ opacity: 0, y: 16, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.38, ease: "easeOut" }}
+        >
+          <motion.div
+            className="spinner-border text-warning mb-3"
+            animate={{ rotate: 360 }}
+            transition={{
+              duration: 1,
+              repeat: Infinity,
+              ease: "linear",
+            }}
+          />
+
           <h4 className="fw-bold">Carregando produto...</h4>
-          <p className="text-secondary mb-0">Buscando detalhes da compra.</p>
-        </div>
-      </main>
+
+          <p className="text-secondary mb-0">
+            Buscando detalhes da compra.
+          </p>
+        </motion.div>
+      </motion.main>
     );
   }
 
   if (erro) {
     return (
-      <main
+      <motion.main
+        {...pageMotionProps}
         className="d-flex justify-content-center align-items-center text-white p-4"
         style={{
           minHeight: "100vh",
           background: pageBackground,
         }}
       >
-        <div
-          className="text-center"
-          style={{
-            width: "min(520px, 100%)",
-            ...panelStyle,
-            padding: "36px",
-          }}
+        <motion.div
+          initial={{ opacity: 0, y: 18, scale: 0.985 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.38, ease: "easeOut" }}
+          style={{ width: "min(520px, 100%)" }}
         >
-          <i
-            className="bi bi-exclamation-triangle"
-            style={{
-              fontSize: "3.2rem",
-              color: "#ffb300",
-            }}
+          <AlertCard
+            variant="empty"
+            icon="bi-exclamation-triangle"
+            title="Produto não encontrado"
+            message={erro}
+            centered
+            style={{ width: "100%", padding: "36px" }}
+            actions={
+              <motion.button
+                type="button"
+                onClick={() => router.push("/produtos")}
+                className="btn"
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.98 }}
+                style={{
+                  ...buttonGradient,
+                  borderRadius: "16px",
+                  padding: "12px 22px",
+                  fontWeight: "800",
+                }}
+              >
+                Voltar aos produtos
+              </motion.button>
+            }
           />
-
-          <h3 className="fw-bold mt-3">Produto não encontrado</h3>
-
-          <p className="text-secondary mt-3">{erro}</p>
-
-          <button
-            type="button"
-            onClick={() => router.push("/produtos")}
-            className="btn mt-3"
-            style={{
-              ...buttonGradient,
-              borderRadius: "16px",
-              padding: "12px 22px",
-              fontWeight: "800",
-            }}
-          >
-            Voltar aos produtos
-          </button>
-        </div>
-      </main>
+        </motion.div>
+      </motion.main>
     );
   }
 
-  const toastVisual = toast ? getToastStyle(toast.tipo) : null;
-
   return (
-    <main
+    <motion.main
+      {...pageMotionProps}
       style={{
         minHeight: "100vh",
         background: pageBackground,
@@ -409,82 +417,36 @@ export default function Compra() {
         overflow: "hidden",
       }}
     >
-      {toast && toastVisual && (
-        <div
-          role="alert"
-          aria-live="assertive"
-          aria-atomic="true"
-          style={{
-            position: "fixed",
-            top: "92px",
-            right: "24px",
-            zIndex: 9999,
-            width: "min(380px, calc(100vw - 32px))",
-            background: surfaceGradient,
-            border: `1px solid ${toastVisual.borda}`,
-            boxShadow: "none",
-            borderRadius: "22px",
-            padding: "16px",
-            backdropFilter: "blur(16px)",
-          }}
-        >
-          <div className="d-flex gap-3 align-items-start">
-            <div
-              className="d-flex justify-content-center align-items-center"
-              style={{
-                width: "44px",
-                height: "44px",
-                borderRadius: "15px",
-                background: toastVisual.fundo,
-                color: toastVisual.cor,
-                flexShrink: 0,
-              }}
-            >
-              <i className={`bi ${toastVisual.icon}`} />
-            </div>
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            key={`${toast.tipo}-${toast.titulo}-${toast.texto}`}
+            initial={{ opacity: 0, y: -14, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -12, scale: 0.98 }}
+            transition={{ duration: 0.24, ease: "easeOut" }}
+            style={{
+              position: "relative",
+              zIndex: 80,
+            }}
+          >
+            <AlertCard
+              variant={toast.tipo}
+              title={toast.titulo}
+              message={toast.texto}
+              toast
+              duration={3200}
+              onClose={() => setToast(null)}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-            <div style={{ minWidth: 0 }}>
-              <strong
-                style={{
-                  display: "block",
-                  color: "#ffffff",
-                  fontSize: ".98rem",
-                  marginBottom: "4px",
-                }}
-              >
-                {toast.titulo}
-              </strong>
-
-              <span
-                style={{
-                  display: "block",
-                  color: "rgba(255,255,255,.68)",
-                  fontSize: ".9rem",
-                  lineHeight: "1.45",
-                }}
-              >
-                {toast.texto}
-              </span>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setToast(null)}
-              className="btn p-0 ms-auto"
-              style={{
-                color: "rgba(255,255,255,.55)",
-                lineHeight: 1,
-              }}
-              aria-label="Fechar aviso"
-            >
-              <i className="bi bi-x-lg" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      <header
+      <motion.header
         className="px-4 px-lg-5 py-4"
+        initial={{ opacity: 0, y: -16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.38, ease: "easeOut" }}
         style={{
           borderBottom: "1px solid rgba(255,255,255,.05)",
           backdropFilter: "blur(12px)",
@@ -493,10 +455,12 @@ export default function Compra() {
       >
         <div className="container-fluid">
           <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
-            <button
+            <motion.button
               type="button"
               onClick={() => router.push("/produtos")}
               className="btn btn-outline-light"
+              whileHover={{ x: -3 }}
+              whileTap={{ scale: 0.98 }}
               style={{
                 borderRadius: "14px",
                 padding: "10px 16px",
@@ -504,7 +468,7 @@ export default function Compra() {
             >
               <i className="bi bi-arrow-left me-2" />
               Voltar
-            </button>
+            </motion.button>
 
             <div className="text-lg-end">
               <span
@@ -534,11 +498,14 @@ export default function Compra() {
             </div>
           </div>
         </div>
-      </header>
+      </motion.header>
 
       <section className="container-fluid px-4 px-lg-5 py-5">
         <div className="row g-4 align-items-stretch">
-          <div className="col-xl-7">
+          <motion.div
+            className="col-xl-7"
+            {...getSequencedMotion(0, 20)}
+          >
             <div
               className="h-100"
               style={{
@@ -546,8 +513,11 @@ export default function Compra() {
                 padding: "28px",
               }}
             >
-              <div
+              <motion.div
                 className="d-flex justify-content-center align-items-center"
+                initial={{ opacity: 0, scale: 0.985 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.42, ease: "easeOut", delay: 0.1 }}
                 style={{
                   minHeight: "560px",
                   borderRadius: "28px",
@@ -557,10 +527,13 @@ export default function Compra() {
                   boxShadow: "none",
                 }}
               >
-                <img
+                <motion.img
                   src={imagemProduto}
                   alt={produto?.nome_produto || "Produto Atrix Supply"}
                   onError={(event) => useImageFallback(event, IMAGEM_PADRAO_PRODUTO)}
+                  initial={{ opacity: 0, scale: 0.96 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.44, ease: "easeOut", delay: 0.18 }}
                   style={{
                     width: "100%",
                     height: "520px",
@@ -569,7 +542,7 @@ export default function Compra() {
                     filter: "none",
                   }}
                 />
-              </div>
+              </motion.div>
 
               <div className="row g-3 mt-3">
                 {[
@@ -588,10 +561,16 @@ export default function Compra() {
                     titulo: "Pagamento",
                     texto: "Ambiente seguro",
                   },
-                ].map((item) => (
-                  <div className="col-md-4" key={item.titulo}>
-                    <div
+                ].map((item, index) => (
+                  <motion.div
+                    className="col-md-4"
+                    key={item.titulo}
+                    {...getSequencedMotion(index + 2, 14)}
+                  >
+                    <motion.div
                       className="h-100"
+                      whileHover={{ y: -4 }}
+                      transition={{ duration: 0.2, ease: "easeOut" }}
                       style={{
                         ...innerPanelStyle,
                         borderRadius: "20px",
@@ -625,14 +604,17 @@ export default function Compra() {
                       >
                         {item.texto}
                       </p>
-                    </div>
-                  </div>
+                    </motion.div>
+                  </motion.div>
                 ))}
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="col-xl-5">
+          <motion.div
+            className="col-xl-5"
+            {...getSequencedMotion(1, 20)}
+          >
             <div
               className="h-100"
               style={{
@@ -640,7 +622,10 @@ export default function Compra() {
                 padding: "36px",
               }}
             >
-              <div className="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+              <motion.div
+                className="d-flex justify-content-between align-items-start gap-3 flex-wrap"
+                {...getSequencedMotion(0, 12)}
+              >
                 <span
                   style={{
                     color: "#ffcf40",
@@ -667,10 +652,11 @@ export default function Compra() {
                   <i className={`bi ${estoqueInfo.icon} me-2`} />
                   {estoqueInfo.disponivel ? "Disponível" : "Indisponível"}
                 </span>
-              </div>
+              </motion.div>
 
-              <h2
+              <motion.h2
                 className="mt-4"
+                {...getSequencedMotion(1, 14)}
                 style={{
                   fontSize: "clamp(2rem, 4vw, 3.3rem)",
                   fontWeight: "900",
@@ -679,10 +665,11 @@ export default function Compra() {
                 }}
               >
                 {produto?.nome_produto || "Produto sem nome"}
-              </h2>
+              </motion.h2>
 
-              <p
+              <motion.p
                 className="mt-3"
+                {...getSequencedMotion(2, 14)}
                 style={{
                   color: "rgba(255,255,255,.62)",
                   lineHeight: "1.8",
@@ -691,10 +678,11 @@ export default function Compra() {
               >
                 {produto?.descricao ||
                   "Produto industrial selecionado para alta performance, segurança e uso profissional."}
-              </p>
+              </motion.p>
 
-              <div
+              <motion.div
                 className="mt-4"
+                {...getSequencedMotion(3, 14)}
                 style={{
                   ...innerPanelStyle,
                   borderRadius: "26px",
@@ -734,10 +722,11 @@ export default function Compra() {
                 >
                   Pagamento seguro · até 12x sem juros
                 </p>
-              </div>
+              </motion.div>
 
-              <div
+              <motion.div
                 className="mt-4"
+                {...getSequencedMotion(4, 14)}
                 style={{
                   ...innerPanelStyle,
                   borderRadius: "24px",
@@ -782,11 +771,12 @@ export default function Compra() {
                       boxShadow: "none",
                     }}
                   >
-                    <button
+                    <motion.button
                       type="button"
                       className="btn"
                       onClick={diminuirQuantidade}
                       disabled={quantidade <= 1}
+                      whileTap={{ scale: quantidade <= 1 ? 1 : 0.94 }}
                       style={{
                         width: "54px",
                         height: "54px",
@@ -796,10 +786,14 @@ export default function Compra() {
                       }}
                     >
                       <i className="bi bi-dash-lg" />
-                    </button>
+                    </motion.button>
 
-                    <div
+                    <motion.div
+                      key={quantidade}
                       className="d-flex justify-content-center align-items-center"
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.18, ease: "easeOut" }}
                       style={{
                         width: "70px",
                         fontWeight: "800",
@@ -807,13 +801,17 @@ export default function Compra() {
                       }}
                     >
                       {quantidade}
-                    </div>
+                    </motion.div>
 
-                    <button
+                    <motion.button
                       type="button"
                       className="btn"
                       onClick={aumentarQuantidade}
                       disabled={estoqueProduto > 0 && quantidade >= estoqueProduto}
+                      whileTap={{
+                        scale:
+                          estoqueProduto > 0 && quantidade >= estoqueProduto ? 1 : 0.94,
+                      }}
                       style={{
                         width: "54px",
                         height: "54px",
@@ -824,13 +822,14 @@ export default function Compra() {
                       }}
                     >
                       <i className="bi bi-plus-lg" />
-                    </button>
+                    </motion.button>
                   </div>
                 </div>
-              </div>
+              </motion.div>
 
-              <div
+              <motion.div
                 className="mt-4"
+                {...getSequencedMotion(5, 14)}
                 style={{
                   ...innerPanelStyle,
                   borderRadius: "22px",
@@ -847,23 +846,32 @@ export default function Compra() {
                     Subtotal
                   </span>
 
-                  <strong
+                  <motion.strong
+                    key={subtotal}
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.18, ease: "easeOut" }}
                     style={{
                       color: "#5cff95",
                       fontSize: "1.25rem",
                     }}
                   >
                     {formatarPreco(subtotal)}
-                  </strong>
+                  </motion.strong>
                 </div>
-              </div>
+              </motion.div>
 
-              <div className="d-grid gap-3 mt-4">
-                <button
+              <motion.div
+                className="d-grid gap-3 mt-4"
+                {...getSequencedMotion(6, 14)}
+              >
+                <motion.button
                   type="button"
                   className="btn"
                   onClick={adicionarAoCarrinho}
                   disabled={!estoqueInfo.disponivel}
+                  whileHover={estoqueInfo.disponivel ? { y: -3 } : {}}
+                  whileTap={estoqueInfo.disponivel ? { scale: 0.98 } : {}}
                   style={{
                     ...buttonGradient,
                     background: estoqueInfo.disponivel
@@ -879,12 +887,14 @@ export default function Compra() {
                 >
                   <i className="bi bi-cart-plus-fill me-2" />
                   Adicionar ao carrinho
-                </button>
+                </motion.button>
 
-                <button
+                <motion.button
                   type="button"
                   className="btn btn-outline-light"
                   onClick={() => router.push("/produtos")}
+                  whileHover={{ y: -3 }}
+                  whileTap={{ scale: 0.98 }}
                   style={{
                     borderRadius: "18px",
                     padding: "15px",
@@ -893,8 +903,8 @@ export default function Compra() {
                   }}
                 >
                   Continuar comprando
-                </button>
-              </div>
+                </motion.button>
+              </motion.div>
 
               <div className="d-flex flex-column gap-3 mt-5">
                 {[
@@ -910,10 +920,12 @@ export default function Compra() {
                     icon: "bi-lock",
                     texto: "Dados protegidos durante toda a compra",
                   },
-                ].map((item) => (
-                  <div
+                ].map((item, index) => (
+                  <motion.div
                     key={item.texto}
                     className="d-flex align-items-center gap-3"
+                    {...getSequencedMotion(index + 7, 12)}
+                    whileHover={{ x: 3 }}
                     style={{
                       ...innerPanelStyle,
                       borderRadius: "16px",
@@ -930,15 +942,16 @@ export default function Compra() {
                     />
 
                     <span>{item.texto}</span>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
 
-        <section
+        <motion.section
           className="mt-4"
+          {...getSequencedMotion(3, 18)}
           style={{
             ...panelStyle,
             padding: "32px",
@@ -946,7 +959,10 @@ export default function Compra() {
           }}
         >
           <div className="row g-4">
-            <div className="col-lg-7">
+            <motion.div
+              className="col-lg-7"
+              {...getSequencedMotion(0, 12)}
+            >
               <h4
                 style={{
                   color: "#ffe082",
@@ -967,9 +983,12 @@ export default function Compra() {
                 {produto?.descricao ||
                   "Este produto ainda não possui uma descrição detalhada cadastrada."}
               </p>
-            </div>
+            </motion.div>
 
-            <div className="col-lg-5">
+            <motion.div
+              className="col-lg-5"
+              {...getSequencedMotion(1, 12)}
+            >
               <h4
                 style={{
                   color: "#ffe082",
@@ -986,28 +1005,32 @@ export default function Compra() {
                   ["Categoria", formatarCategoria(produto?.categoria)],
                   ["Fornecedor", produto?.fornecedor || "Não informado"],
                   ["Estoque", `${estoqueProduto} unidade(s)`],
-                ].map(([label, value]) => (
-                  <div
+                ].map(([label, value], index) => (
+                  <motion.div
                     key={label}
                     className="d-flex justify-content-between gap-3"
+                    {...getSequencedMotion(index, 10)}
+                    whileHover={{ x: 3 }}
                     style={{
                       ...innerPanelStyle,
                       borderRadius: "14px",
                       padding: "13px 15px",
                     }}
                   >
-                    <span style={{ color: "rgba(255,255,255,.5)" }}>{label}</span>
+                    <span style={{ color: "rgba(255,255,255,.5)" }}>
+                      {label}
+                    </span>
 
                     <strong style={{ color: "rgba(255,255,255,.86)" }}>
                       {value}
                     </strong>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
-            </div>
+            </motion.div>
           </div>
-        </section>
+        </motion.section>
       </section>
-    </main>
+    </motion.main>
   );
 }
