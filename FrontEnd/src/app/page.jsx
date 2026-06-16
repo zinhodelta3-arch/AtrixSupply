@@ -1103,124 +1103,162 @@ export default function Home() {
               >
                 <span className="custom-icon">❯</span>
               </button>
-
-              <div className="carousel-inner">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={`slide-${currentSlide}`}
-                    className="carousel-item active"
-                    variants={carouselSlideMotion}
-                    initial="enter"
-                    animate="center"
-                    exit="exit"
-                    transition={{
-                      duration: 0.42,
-                      ease: "easeOut",
-                    }}
-                  >
+                <div
+                  className="carousel-inner"
+                  style={{
+                    paddingTop: "18px",
+                    paddingRight: "10px",
+                    paddingBottom: "22px",
+                    paddingLeft: "10px",
+                    boxSizing: "border-box",
+                  }}
+                >
+                  <AnimatePresence mode="wait">
                     <motion.div
-                      className="row g-4"
-                      variants={staggerContainer}
-                      initial="hidden"
-                      animate="show"
+                      key={`slide-${currentSlide}`}
+                      className="carousel-item active"
+                      variants={carouselSlideMotion}
+                      initial="enter"
+                      animate="center"
+                      exit="exit"
+                      transition={{
+                        duration: 0.42,
+                        ease: "easeOut",
+                      }}
                     >
-                      {slideAtual.map((produto) => (
-                        <motion.div
-                          className="col-md-4"
-                          key={produto.titulo}
-                          variants={productItemMotion}
-                        >
-                          <Link
-                            href={isFornecedor ? "#" : "/produtos"}
-                            onClick={(event) => {
-                              if (isFornecedor) {
-                                event.preventDefault();
-                              }
-                            }}
-                            aria-label={`Ver produtos de ${produto.titulo}`}
-                            draggable={false}
-                            onDragStart={impedirArrastarBotao}
+                      <motion.div
+                        className="row g-4"
+                        variants={staggerContainer}
+                        initial="hidden"
+                        animate="show"
+                        style={{
+                          marginTop: 0,
+                        }}
+                      >
+                        {slideAtual.map((produto) => (
+                          <motion.div
+                            className="col-md-4"
+                            key={produto.titulo}
+                            variants={productItemMotion}
                             style={{
-                              textDecoration: "none",
-                              color: "inherit",
-                              userSelect: "none",
-                              WebkitUserSelect: "none",
-                              WebkitUserDrag: "none",
+                              paddingTop: "4px",
                             }}
                           >
-                            <motion.div
-                              className="card produto-card h-100 border-0"
-                              {...(!isFornecedor
-                                ? {
-                                    whileHover: {
-                                      y: -9,
-                                      scale: 1.025,
-                                      borderColor: "rgba(255,255,255,.20)",
-                                    },
-                                    whileTap: {
-                                      scale: 0.985,
-                                    },
-                                  }
-                                : {})}
+                            <Link
+                              href={isFornecedor ? "#" : "/produtos"}
+                              onClick={(event) => {
+                                if (isFornecedor) {
+                                  event.preventDefault();
+                                }
+                              }}
+                              aria-label={`Ver produtos de ${produto.titulo}`}
+                              draggable={false}
+                              onDragStart={impedirArrastarBotao}
                               style={{
-                                ...productCardStyle,
-                                cursor: isFornecedor ? "default" : "pointer",
-                                pointerEvents: isFornecedor ? "none" : "auto",
+                                display: "block",
+                                height: "100%",
+                                textDecoration: "none",
+                                color: "inherit",
+                                userSelect: "none",
+                                WebkitUserSelect: "none",
+                                WebkitUserDrag: "none",
                               }}
                             >
-                              <motion.img
-                                src={produto.imagem}
-                                className="card-img-top produto-img"
-                                alt={produto.titulo}
-                                whileHover={
-                                  !isFornecedor
-                                    ? {
-                                        scale: 1.04,
-                                      }
-                                    : undefined
-                                }
+                              <motion.div
+                                className="card produto-card h-100 border-0"
+                                {...(!isFornecedor
+                                  ? {
+                                      whileHover: {
+                                        y: -9,
+                                        scale: 1.025,
+                                        borderColor: "rgba(255,255,255,.20)",
+                                      },
+                                      whileTap: {
+                                        scale: 0.985,
+                                      },
+                                    }
+                                  : {})}
                                 transition={{
-                                  duration: 0.35,
+                                  duration: 0.25,
                                   ease: "easeOut",
                                 }}
-                              />
-
-                              <div className="card-body">
-                                <div className="d-flex justify-content-between align-items-start gap-2 mb-2">
-                                  <h5 className="card-title text-white mb-0">
-                                    {produto.titulo}
-                                  </h5>
-
-                                  {!isFornecedor && (
-                                    <motion.span
-                                      className="badge"
-                                      whileHover={{
-                                        scale: 1.04,
-                                      }}
-                                      style={{
-                                        background: "rgba(255,179,0,.12)",
-                                        color: "#ffcf40",
-                                        border: "1px solid rgba(255,179,0,.22)",
-                                        borderRadius: "999px",
-                                      }}
-                                    >
-                                      Ver catálogo
-                                    </motion.span>
-                                  )}
+                                style={{
+                                  ...productCardStyle,
+                                  cursor: isFornecedor ? "default" : "pointer",
+                                  pointerEvents: isFornecedor ? "none" : "auto",
+                                  transformOrigin: "center center",
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    overflow: "hidden",
+                                    borderRadius: "21px 21px 0 0",
+                                  }}
+                                >
+                                  <motion.img
+                                    src={produto.imagem}
+                                    className="card-img-top produto-img"
+                                    alt={produto.titulo}
+                                    whileHover={
+                                      !isFornecedor
+                                        ? {
+                                            scale: 1.04,
+                                          }
+                                        : undefined
+                                    }
+                                    transition={{
+                                      duration: 0.35,
+                                      ease: "easeOut",
+                                    }}
+                                    style={{
+                                      display: "block",
+                                      width: "100%",
+                                      transformOrigin: "center center",
+                                    }}
+                                  />
                                 </div>
 
-                                <p className="card-text mb-0" style={{ color: "#b3b3b3" }}>
-                                  {produto.descricao}
-                                </p>
-                              </div>
-                            </motion.div>
-                          </Link>
-                        </motion.div>
-                      ))}
+                                <div className="card-body">
+                                  <div className="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                    <h5 className="card-title text-white mb-0">
+                                      {produto.titulo}
+                                    </h5>
+
+                                    {!isFornecedor && (
+                                      <motion.span
+                                        className="badge"
+                                        whileHover={{
+                                          scale: 1.04,
+                                        }}
+                                        style={{
+                                          background: "rgba(255,179,0,.12)",
+                                          color: "#ffcf40",
+                                          border: "1px solid rgba(255,179,0,.22)",
+                                          borderRadius: "999px",
+                                        }}
+                                      >
+                                        Ver catálogo
+                                      </motion.span>
+                                    )}
+                                  </div>
+
+                                  <p
+                                    className="card-text mb-0"
+                                    style={{
+                                      color: "#b3b3b3",
+                                    }}
+                                  >
+                                    {produto.descricao}
+                                  </p>
+                                </div>
+                              </motion.div>
+                            </Link>
+                          </motion.div>
+                        ))}
+                      </motion.div>
                     </motion.div>
-                  </motion.div>
-                </AnimatePresence>
-              </div>
+                  </AnimatePresence>
+                </div>
             </div>
           </div>
         </motion.section>
