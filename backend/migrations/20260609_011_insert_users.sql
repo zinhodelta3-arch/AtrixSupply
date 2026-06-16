@@ -43,15 +43,15 @@ INSERT INTO usuarios (
     senha,
     cep
 ) VALUES (
-    'Pato Azul',
+    'Kyle Gehrmar',
     '54.987.323/0001-45',
     'Avenida Brasil, 850 - Curitiba/PR',
-    'julio.png',
-    'Silva Tech',
+    'blood.png',
+    'Borne Tech',
     'Gerente',
-    'Especialista em fornecimento de equipamentos industriais e logística empresarial',
-    'fornecedor',
-    'pato@azultech.com',
+    'Especialista em organização de equipamentos industriais e logística empresarial',
+    'comum',
+    'kyle@bornetech.com',
     '$2a$10$buPZe1aioomTKna06bHeCeHwbXMGb0ivFQM2FjZrY4zUzE.ixPMAm',
     '80140-120'
 );
