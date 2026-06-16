@@ -41,11 +41,26 @@ const cardStyle = {
 };
 
 const inputStyle = {
-  background: "#1c1c1c",
+  backgroundColor: "#1c1c1c",
   border: "1px solid #3b3b3b",
-  color: "white",
+  color: "#ffffff",
   borderRadius: "14px",
   padding: "12px 14px",
+  boxShadow: "none",
+};
+
+const searchInputStyle = {
+  ...inputStyle,
+  backgroundColor: "#1c1c1c",
+  color: "#ffffff",
+  caretColor: "#ffffff",
+};
+
+const statusSelectStyle = {
+  ...inputStyle,
+  backgroundColor: "#1c1c1c",
+  color: "#ffffff",
+  colorScheme: "dark",
 };
 
 const buttonGradient = {
@@ -728,6 +743,60 @@ export default function Pedidos() {
         color: "white",
       }}
     >
+      <style>{`
+        .pedidos-search-input {
+          background-color: #1c1c1c !important;
+          border-color: #3b3b3b !important;
+          color: #ffffff !important;
+          caret-color: #ffffff;
+        }
+
+        .pedidos-search-input::placeholder {
+          color: #9c9c9c !important;
+          opacity: 1;
+        }
+
+        .pedidos-search-input:focus {
+          background-color: #222222 !important;
+          border-color: #ff8800 !important;
+          color: #ffffff !important;
+          box-shadow: 0 0 0 0.2rem rgba(255, 136, 0, 0.14) !important;
+        }
+
+        .pedidos-search-input:-webkit-autofill,
+        .pedidos-search-input:-webkit-autofill:hover,
+        .pedidos-search-input:-webkit-autofill:focus {
+          -webkit-text-fill-color: #ffffff !important;
+          -webkit-box-shadow: 0 0 0 1000px #1c1c1c inset !important;
+          caret-color: #ffffff;
+        }
+
+        .pedidos-status-select {
+          background-color: #1c1c1c !important;
+          border-color: #3b3b3b !important;
+          color: #ffffff !important;
+          color-scheme: dark;
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3E%3C/svg%3E") !important;
+          background-repeat: no-repeat !important;
+          background-position: right 0.9rem center !important;
+          background-size: 16px 12px !important;
+          padding-right: 2.8rem !important;
+        }
+
+        .pedidos-status-select:focus {
+          background-color: #222222 !important;
+          border-color: #ff8800 !important;
+          color: #ffffff !important;
+          box-shadow: 0 0 0 0.2rem rgba(255, 136, 0, 0.14) !important;
+        }
+
+        .pedidos-status-select option,
+        .pedidos-status-select optgroup {
+          background-color: #242424 !important;
+          color: #ffffff !important;
+        }
+      `}</style>
+
       <section
         className="py-5 text-white"
         style={{
@@ -880,11 +949,11 @@ export default function Pedidos() {
 
                   <input
                     type="text"
-                    className="form-control"
+                    className="form-control pedidos-search-input"
                     placeholder="Digite o nome do produto..."
                     value={buscaProduto}
                     onChange={(e) => setBuscaProduto(e.target.value)}
-                    style={inputStyle}
+                    style={searchInputStyle}
                   />
                 </div>
 
@@ -894,16 +963,19 @@ export default function Pedidos() {
                   </label>
 
                   <select
-                    className="form-select"
+                    className="form-select pedidos-status-select"
                     value={statusSelecionado}
                     onChange={(e) => setStatusSelecionado(e.target.value)}
-                    style={inputStyle}
+                    style={statusSelectStyle}
                   >
                     {statusOptions.map((status) => (
                       <option
                         key={status.value}
                         value={status.value}
-                        style={{ color: "#111" }}
+                        style={{
+                          backgroundColor: "#242424",
+                          color: "#ffffff",
+                        }}
                       >
                         {status.label}
                       </option>

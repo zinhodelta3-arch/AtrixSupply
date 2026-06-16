@@ -396,38 +396,6 @@ export default function FinalizarPedido() {
         return;
       }
 
-      if (!formData.nome.trim()) {
-        setErro(
-          "Informe seu nome para finalizar o pedido."
-        );
-
-        return;
-      }
-
-      if (!formData.email.trim()) {
-        setErro(
-          "Informe seu email para finalizar o pedido."
-        );
-
-        return;
-      }
-
-      if (!formData.cep.trim()) {
-        setErro(
-          "Informe seu CEP para finalizar o pedido."
-        );
-
-        return;
-      }
-
-      if (!formData.endereco.trim()) {
-        setErro(
-          "Informe seu endereço para finalizar o pedido."
-        );
-
-        return;
-      }
-
       const pedidosParaCriar = [];
 
       carrinho.forEach((item) => {
