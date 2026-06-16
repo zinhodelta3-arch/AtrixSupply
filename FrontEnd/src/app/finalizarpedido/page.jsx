@@ -261,20 +261,6 @@ export default function FinalizarPedido() {
       setUsuario(usuarioLocal);
       setIdUsuario(String(idLogado));
 
-      setFormData({
-        nome:
-          usuarioLocal?.nome_user ||
-          usuarioLocal?.nome ||
-          "",
-        email: usuarioLocal?.email || "",
-        telefone: formatarTelefone(
-          usuarioLocal?.telefone || ""
-        ),
-        cep: usuarioLocal?.cep || "",
-        endereco: usuarioLocal?.endereco || "",
-        observacao: "",
-      });
-
       const carrinhoStorage =
         localStorage.getItem("carrinho");
 

@@ -43,7 +43,7 @@ INSERT INTO usuarios (
     senha,
     cep
 ) VALUES (
-    'Kyle Gehrmar',
+    'Kyle Gehrman',
     '54.987.323/0001-45',
     'Avenida Brasil, 850 - Curitiba/PR',
     'blood.png',
@@ -71,11 +71,11 @@ INSERT INTO usuarios (
 ) VALUES (
     'Julio Cesar',
     '54.987.321/0001-45',
-    'Avenida Brasil, 850 - Curitiba/PR',
+    'Rua Maranhão, 357 - Maranhão/MA',
     'julio.png',
-    'Silva Tech',
-    'Gerente',
-    'Especialista em fornecimento de equipamentos industriais e logística empresarial',
+    'AtrixSupply',
+    'Admin',
+    'ADMIN ADMIN ADMIN',
     'administrador',
     'julio@cesartech.com',
     '$2a$10$buPZe1aioomTKna06bHeCeHwbXMGb0ivFQM2FjZrY4zUzE.ixPMAm',
