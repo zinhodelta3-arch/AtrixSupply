@@ -8,7 +8,10 @@ import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import AlertCard from "@/components/AlertCard";
 
-const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/$/, "");
+const API_URL = (
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
+).replace(/\/$/, "");
+
 const PEDIDOS_URL = `${API_URL}/api/pedidos`;
 
 const pageBackground = `
@@ -17,7 +20,8 @@ const pageBackground = `
   linear-gradient(145deg,#08080a,#101014,#160d12)
 `;
 
-const heroGradient = "linear-gradient(135deg,#940533,#c0012a,#f5061d,#ff8800)";
+const heroGradient =
+  "linear-gradient(135deg,#940533,#c0012a,#f5061d,#ff8800)";
 
 const surfaceGradient = `
   linear-gradient(
@@ -183,7 +187,11 @@ function normalizarItemCarrinho(item) {
   return {
     id: String(idProduto || ""),
     id_produto: idProduto,
-    name: item?.name || item?.nome_produto || item?.nome || "Produto sem nome",
+    name:
+      item?.name ||
+      item?.nome_produto ||
+      item?.nome ||
+      "Produto sem nome",
     qty: Math.max(1, Number(item?.qty || item?.quantidade || 1)),
     price: Number(item?.price || item?.preco || 0),
     img: getImagemCarrinho(item?.img || item?.imagem),
@@ -192,10 +200,16 @@ function normalizarItemCarrinho(item) {
 
 function getMensagemErro(data) {
   if (Array.isArray(data?.detalhes)) {
-    return data.detalhes.map((item) => item.mensagem).join(" | ");
+    return data.detalhes
+      .map((item) => item.mensagem)
+      .join(" | ");
   }
 
-  return data?.mensagem || data?.erro || "Não foi possível concluir a operação.";
+  return (
+    data?.mensagem ||
+    data?.erro ||
+    "Não foi possível concluir a operação."
+  );
 }
 
 export default function FinalizarPedido() {
@@ -205,7 +219,9 @@ export default function FinalizarPedido() {
   const [idUsuario, setIdUsuario] = useState("");
   const [carrinho, setCarrinho] = useState([]);
 
-  const [carregandoPagina, setCarregandoPagina] = useState(true);
+  const [carregandoPagina, setCarregandoPagina] =
+    useState(true);
+
   const [finalizando, setFinalizando] = useState(false);
 
   const [erro, setErro] = useState("");
@@ -246,24 +262,41 @@ export default function FinalizarPedido() {
       setIdUsuario(String(idLogado));
 
       setFormData({
-        nome: usuarioLocal?.nome_user || usuarioLocal?.nome || "",
+        nome:
+          usuarioLocal?.nome_user ||
+          usuarioLocal?.nome ||
+          "",
         email: usuarioLocal?.email || "",
-        telefone: usuarioLocal?.telefone || "",
+        telefone: formatarTelefone(
+          usuarioLocal?.telefone || ""
+        ),
         cep: usuarioLocal?.cep || "",
         endereco: usuarioLocal?.endereco || "",
         observacao: "",
       });
 
-      const carrinhoStorage = localStorage.getItem("carrinho");
-      const carrinhoParseado = carrinhoStorage ? JSON.parse(carrinhoStorage) : [];
+      const carrinhoStorage =
+        localStorage.getItem("carrinho");
 
-      const carrinhoSeguro = Array.isArray(carrinhoParseado)
-        ? carrinhoParseado.map(normalizarItemCarrinho).filter((item) => item.id_produto)
+      const carrinhoParseado = carrinhoStorage
+        ? JSON.parse(carrinhoStorage)
+        : [];
+
+      const carrinhoSeguro = Array.isArray(
+        carrinhoParseado
+      )
+        ? carrinhoParseado
+            .map(normalizarItemCarrinho)
+            .filter((item) => item.id_produto)
         : [];
 
       setCarrinho(carrinhoSeguro);
     } catch (error) {
-      console.error("Erro ao carregar finalizar pedido:", error);
+      console.error(
+        "Erro ao carregar finalizar pedido:",
+        error
+      );
+
       setErro("Não foi possível carregar seu carrinho.");
       setCarrinho([]);
     } finally {
@@ -280,13 +313,22 @@ export default function FinalizarPedido() {
 
   function salvarCarrinhoAtualizado(novoCarrinho) {
     setCarrinho(novoCarrinho);
-    localStorage.setItem("carrinho", JSON.stringify(novoCarrinho));
-    window.dispatchEvent(new Event("carrinhoAtualizado"));
+
+    localStorage.setItem(
+      "carrinho",
+      JSON.stringify(novoCarrinho)
+    );
+
+    window.dispatchEvent(
+      new Event("carrinhoAtualizado")
+    );
   }
 
   function aumentarQuantidade(idProduto) {
     const novoCarrinho = carrinho.map((item) => {
-      if (String(item.id) !== String(idProduto)) return item;
+      if (String(item.id) !== String(idProduto)) {
+        return item;
+      }
 
       return {
         ...item,
@@ -299,7 +341,9 @@ export default function FinalizarPedido() {
 
   function diminuirQuantidade(idProduto) {
     const novoCarrinho = carrinho.map((item) => {
-      if (String(item.id) !== String(idProduto)) return item;
+      if (String(item.id) !== String(idProduto)) {
+        return item;
+      }
 
       return {
         ...item,
@@ -312,7 +356,8 @@ export default function FinalizarPedido() {
 
   function removerItem(idProduto) {
     const novoCarrinho = carrinho.filter(
-      (item) => String(item.id) !== String(idProduto)
+      (item) =>
+        String(item.id) !== String(idProduto)
     );
 
     salvarCarrinhoAtualizado(novoCarrinho);
@@ -332,7 +377,9 @@ export default function FinalizarPedido() {
       }),
     });
 
-    const data = await response.json().catch(() => null);
+    const data = await response
+      .json()
+      .catch(() => null);
 
     if (!response.ok || data?.sucesso === false) {
       throw new Error(getMensagemErro(data));
@@ -350,7 +397,10 @@ export default function FinalizarPedido() {
       setFinalizando(true);
 
       if (!idUsuario) {
-        setErro("Usuário não identificado. Faça login novamente.");
+        setErro(
+          "Usuário não identificado. Faça login novamente."
+        );
+
         router.replace("/login");
         return;
       }
@@ -361,22 +411,34 @@ export default function FinalizarPedido() {
       }
 
       if (!formData.nome.trim()) {
-        setErro("Informe seu nome para finalizar o pedido.");
+        setErro(
+          "Informe seu nome para finalizar o pedido."
+        );
+
         return;
       }
 
       if (!formData.email.trim()) {
-        setErro("Informe seu email para finalizar o pedido.");
+        setErro(
+          "Informe seu email para finalizar o pedido."
+        );
+
         return;
       }
 
       if (!formData.cep.trim()) {
-        setErro("Informe seu CEP para finalizar o pedido.");
+        setErro(
+          "Informe seu CEP para finalizar o pedido."
+        );
+
         return;
       }
 
       if (!formData.endereco.trim()) {
-        setErro("Informe seu endereço para finalizar o pedido.");
+        setErro(
+          "Informe seu endereço para finalizar o pedido."
+        );
+
         return;
       }
 
@@ -393,35 +455,55 @@ export default function FinalizarPedido() {
       }
 
       localStorage.removeItem("carrinho");
-      window.dispatchEvent(new Event("carrinhoAtualizado"));
+
+      window.dispatchEvent(
+        new Event("carrinhoAtualizado")
+      );
 
       setCarrinho([]);
 
-      setSucesso("Pedido finalizado com sucesso! Redirecionando para seus pedidos...");
+      setSucesso(
+        "Pedido finalizado com sucesso! Redirecionando para seus pedidos..."
+      );
 
       setTimeout(() => {
         router.push("/pedidos");
       }, 1200);
     } catch (error) {
-      console.error("Erro ao finalizar pedido:", error);
-      setErro(error.message || "Não foi possível finalizar o pedido.");
+      console.error(
+        "Erro ao finalizar pedido:",
+        error
+      );
+
+      setErro(
+        error.message ||
+          "Não foi possível finalizar o pedido."
+      );
     } finally {
       setFinalizando(false);
     }
   }
 
   const resumo = useMemo(() => {
-    const subtotal = carrinho.reduce((acc, item) => {
-      return acc + item.price * item.qty;
-    }, 0);
+    const subtotal = carrinho.reduce(
+      (acc, item) => {
+        return acc + item.price * item.qty;
+      },
+      0
+    );
 
-    const quantidadeTotal = carrinho.reduce((acc, item) => {
-      return acc + item.qty;
-    }, 0);
+    const quantidadeTotal = carrinho.reduce(
+      (acc, item) => {
+        return acc + item.qty;
+      },
+      0
+    );
 
     const taxaServico = subtotal > 0 ? 0 : 0;
     const freteEstimado = subtotal > 0 ? 0 : 0;
-    const total = subtotal + taxaServico + freteEstimado;
+
+    const total =
+      subtotal + taxaServico + freteEstimado;
 
     return {
       subtotal,
@@ -444,13 +526,26 @@ export default function FinalizarPedido() {
       >
         <motion.div
           className="text-center"
-          initial={{ opacity: 0, y: 16, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.38, ease: "easeOut" }}
+          initial={{
+            opacity: 0,
+            y: 16,
+            scale: 0.98,
+          }}
+          animate={{
+            opacity: 1,
+            y: 0,
+            scale: 1,
+          }}
+          transition={{
+            duration: 0.38,
+            ease: "easeOut",
+          }}
         >
           <motion.div
             className="spinner-border text-warning mb-3"
-            animate={{ rotate: 360 }}
+            animate={{
+              rotate: 360,
+            }}
             transition={{
               duration: 1,
               repeat: Infinity,
@@ -458,7 +553,9 @@ export default function FinalizarPedido() {
             }}
           />
 
-          <h4 className="fw-bold">Carregando finalização...</h4>
+          <h4 className="fw-bold">
+            Carregando finalização...
+          </h4>
 
           <p className="text-secondary mb-0">
             Conferindo seu carrinho e seus dados.
@@ -480,12 +577,22 @@ export default function FinalizarPedido() {
     >
       <motion.section
         className="py-5 text-white"
-        initial={{ opacity: 0, y: -18 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.38, ease: "easeOut" }}
+        initial={{
+          opacity: 0,
+          y: -18,
+        }}
+        animate={{
+          opacity: 1,
+          y: 0,
+        }}
+        transition={{
+          duration: 0.38,
+          ease: "easeOut",
+        }}
         style={{
           background: heroGradient,
-          borderBottom: "1px solid rgba(255,255,255,.08)",
+          borderBottom:
+            "1px solid rgba(255,255,255,.08)",
           minHeight: "245px",
           display: "flex",
           alignItems: "center",
@@ -496,15 +603,29 @@ export default function FinalizarPedido() {
             <div className="d-flex align-items-center gap-3">
               <motion.div
                 className="d-flex justify-content-center align-items-center"
-                initial={{ opacity: 0, scale: 0.92, rotate: -4 }}
-                animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                transition={{ duration: 0.36, ease: "easeOut", delay: 0.08 }}
+                initial={{
+                  opacity: 0,
+                  scale: 0.92,
+                  rotate: -4,
+                }}
+                animate={{
+                  opacity: 1,
+                  scale: 1,
+                  rotate: 0,
+                }}
+                transition={{
+                  duration: 0.36,
+                  ease: "easeOut",
+                  delay: 0.08,
+                }}
                 style={{
                   width: "60px",
                   height: "60px",
                   borderRadius: "20px",
-                  background: "rgba(255,255,255,.10)",
-                  border: "1px solid rgba(255,255,255,.12)",
+                  background:
+                    "rgba(255,255,255,.10)",
+                  border:
+                    "1px solid rgba(255,255,255,.12)",
                 }}
               >
                 <i
@@ -516,7 +637,9 @@ export default function FinalizarPedido() {
                 />
               </motion.div>
 
-              <motion.div {...getSequencedMotion(1, 12)}>
+              <motion.div
+                {...getSequencedMotion(1, 12)}
+              >
                 <span className="badge bg-warning text-dark mb-2 px-3 py-2">
                   Finalização
                 </span>
@@ -535,20 +658,28 @@ export default function FinalizarPedido() {
                 <p
                   style={{
                     margin: "6px 0 0",
-                    color: "rgba(255,255,255,.72)",
+                    color:
+                      "rgba(255,255,255,.72)",
                   }}
                 >
-                  Revise seus produtos, confirme seus dados e conclua sua compra.
+                  Revise seus produtos, confirme seus
+                  dados e conclua sua compra.
                 </p>
               </motion.div>
             </div>
 
             <motion.button
               type="button"
-              onClick={() => router.push("/produtos")}
+              onClick={() =>
+                router.push("/produtos")
+              }
               className="btn btn-outline-light"
-              whileHover={{ x: -3 }}
-              whileTap={{ scale: 0.98 }}
+              whileHover={{
+                x: -3,
+              }}
+              whileTap={{
+                scale: 0.98,
+              }}
               style={{
                 borderRadius: "16px",
                 padding: "12px 18px",
@@ -568,10 +699,25 @@ export default function FinalizarPedido() {
           {erro && (
             <motion.div
               key="erro-finalizar-pedido"
-              initial={{ opacity: 0, y: -12, scale: 0.985 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -10, scale: 0.985 }}
-              transition={{ duration: 0.24, ease: "easeOut" }}
+              initial={{
+                opacity: 0,
+                y: -12,
+                scale: 0.985,
+              }}
+              animate={{
+                opacity: 1,
+                y: 0,
+                scale: 1,
+              }}
+              exit={{
+                opacity: 0,
+                y: -10,
+                scale: 0.985,
+              }}
+              transition={{
+                duration: 0.24,
+                ease: "easeOut",
+              }}
             >
               <AlertCard
                 variant="danger"
@@ -585,10 +731,25 @@ export default function FinalizarPedido() {
           {sucesso && (
             <motion.div
               key="sucesso-finalizar-pedido"
-              initial={{ opacity: 0, y: -12, scale: 0.985 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -10, scale: 0.985 }}
-              transition={{ duration: 0.24, ease: "easeOut" }}
+              initial={{
+                opacity: 0,
+                y: -12,
+                scale: 0.985,
+              }}
+              animate={{
+                opacity: 1,
+                y: 0,
+                scale: 1,
+              }}
+              exit={{
+                opacity: 0,
+                y: -10,
+                scale: 0.985,
+              }}
+              transition={{
+                duration: 0.24,
+                ease: "easeOut",
+              }}
             >
               <AlertCard
                 variant="success"
@@ -624,11 +785,13 @@ export default function FinalizarPedido() {
 
                     <p
                       style={{
-                        color: "rgba(255,255,255,.55)",
+                        color:
+                          "rgba(255,255,255,.55)",
                         margin: 0,
                       }}
                     >
-                      Confira os itens antes de confirmar o pedido.
+                      Confira os itens antes de
+                      confirmar o pedido.
                     </p>
                   </div>
 
@@ -638,11 +801,24 @@ export default function FinalizarPedido() {
                         type="button"
                         onClick={limparCarrinho}
                         className="btn btn-outline-danger"
-                        initial={{ opacity: 0, scale: 0.96 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.96 }}
-                        whileHover={{ y: -2 }}
-                        whileTap={{ scale: 0.98 }}
+                        initial={{
+                          opacity: 0,
+                          scale: 0.96,
+                        }}
+                        animate={{
+                          opacity: 1,
+                          scale: 1,
+                        }}
+                        exit={{
+                          opacity: 0,
+                          scale: 0.96,
+                        }}
+                        whileHover={{
+                          y: -2,
+                        }}
+                        whileTap={{
+                          scale: 0.98,
+                        }}
                         style={{
                           borderRadius: "14px",
                           fontWeight: "700",
@@ -660,10 +836,25 @@ export default function FinalizarPedido() {
                     <motion.div
                       key="carrinho-vazio"
                       className="d-flex flex-column justify-content-center align-items-center text-center"
-                      initial={{ opacity: 0, y: 14, scale: 0.985 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -10, scale: 0.985 }}
-                      transition={{ duration: 0.3, ease: "easeOut" }}
+                      initial={{
+                        opacity: 0,
+                        y: 14,
+                        scale: 0.985,
+                      }}
+                      animate={{
+                        opacity: 1,
+                        y: 0,
+                        scale: 1,
+                      }}
+                      exit={{
+                        opacity: 0,
+                        y: -10,
+                        scale: 0.985,
+                      }}
+                      transition={{
+                        duration: 0.3,
+                        ease: "easeOut",
+                      }}
                       style={{
                         minHeight: "330px",
                         ...innerPanelStyle,
@@ -686,19 +877,27 @@ export default function FinalizarPedido() {
 
                       <p
                         style={{
-                          color: "rgba(255,255,255,.58)",
+                          color:
+                            "rgba(255,255,255,.58)",
                           maxWidth: "480px",
                         }}
                       >
-                        Adicione produtos ao carrinho antes de finalizar o pedido.
+                        Adicione produtos ao carrinho
+                        antes de finalizar o pedido.
                       </p>
 
                       <motion.button
                         type="button"
-                        onClick={() => router.push("/produtos")}
+                        onClick={() =>
+                          router.push("/produtos")
+                        }
                         className="btn mt-3"
-                        whileHover={{ y: -3 }}
-                        whileTap={{ scale: 0.98 }}
+                        whileHover={{
+                          y: -3,
+                        }}
+                        whileTap={{
+                          scale: 0.98,
+                        }}
                         style={{
                           ...buttonGradient,
                           padding: "13px 22px",
@@ -711,313 +910,329 @@ export default function FinalizarPedido() {
                     <motion.div
                       key="lista-carrinho"
                       className="d-flex flex-column gap-3"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
+                      initial={{
+                        opacity: 0,
+                      }}
+                      animate={{
+                        opacity: 1,
+                      }}
+                      exit={{
+                        opacity: 0,
+                      }}
                     >
-                      {carrinho.map((item, index) => (
-                        <motion.article
-                          key={item.id}
-                          className="d-flex flex-column flex-md-row align-items-md-center gap-3"
-                          layout
-                          {...getSequencedMotion(index, 16)}
-                          exit={{ opacity: 0, x: -18, scale: 0.985 }}
-                          transition={{ duration: 0.28, ease: "easeOut" }}
-                          style={{
-                            ...innerPanelStyle,
-                            borderRadius: "24px",
-                            padding: "18px",
-                          }}
-                        >
-                          <div
-                            className="d-flex align-items-center justify-content-center"
+                      {carrinho.map(
+                        (item, index) => (
+                          <motion.article
+                            key={item.id}
+                            className="d-flex flex-column flex-md-row align-items-md-center gap-3"
+                            layout
+                            {...getSequencedMotion(
+                              index,
+                              16
+                            )}
+                            exit={{
+                              opacity: 0,
+                              x: -18,
+                              scale: 0.985,
+                            }}
+                            transition={{
+                              duration: 0.28,
+                              ease: "easeOut",
+                            }}
                             style={{
-                              width: "110px",
-                              height: "110px",
-                              borderRadius: "20px",
-                              background: "rgba(0,0,0,.22)",
-                              border: "1px solid rgba(255,255,255,.06)",
-                              overflow: "hidden",
-                              flexShrink: 0,
+                              ...innerPanelStyle,
+                              borderRadius: "24px",
+                              padding: "18px",
                             }}
                           >
-                            <motion.img
-                              src={item.img}
-                              alt={item.name}
-                              onError={(event) => {
-                                event.currentTarget.src = "/logo.png";
-                              }}
-                              initial={{ opacity: 0, scale: 0.96 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              transition={{ duration: 0.24, ease: "easeOut" }}
-                              style={{
-                                width: "100%",
-                                height: "100%",
-                                objectFit: "contain",
-                                padding: "10px",
-                              }}
-                            />
-                          </div>
-
-                          <div className="flex-grow-1" style={{ minWidth: 0 }}>
-                            <span
-                              style={{
-                                color: "#ffcf40",
-                                fontSize: ".78rem",
-                                fontWeight: "800",
-                                textTransform: "uppercase",
-                                letterSpacing: ".7px",
-                              }}
-                            >
-                              Produto #{item.id_produto}
-                            </span>
-
-                            <h4
-                              className="mt-2 mb-2"
-                              style={{
-                                color: "white",
-                                fontWeight: "800",
-                                fontSize: "1.15rem",
-                              }}
-                            >
-                              {item.name}
-                            </h4>
-
-                            <p
-                              className="mb-0"
-                              style={{
-                                color: "rgba(255,255,255,.55)",
-                              }}
-                            >
-                              Valor unitário:{" "}
-                              <strong style={{ color: "#ffe082" }}>
-                                {formatarPreco(item.price)}
-                              </strong>
-                            </p>
-                          </div>
-
-                          <div
-                            className="d-flex align-items-center"
-                            style={{
-                              width: "fit-content",
-                              background: "rgba(0,0,0,.18)",
-                              border: "1px solid rgba(255,255,255,.07)",
-                              borderRadius: "18px",
-                              overflow: "hidden",
-                              boxShadow: "none",
-                            }}
-                          >
-                            <motion.button
-                              type="button"
-                              onClick={() => diminuirQuantidade(item.id)}
-                              disabled={item.qty <= 1}
-                              className="btn"
-                              whileTap={item.qty <= 1 ? {} : { scale: 0.94 }}
-                              style={{
-                                width: "48px",
-                                height: "48px",
-                                border: "none",
-                                color: "white",
-                                opacity: item.qty <= 1 ? 0.35 : 1,
-                              }}
-                            >
-                              <i className="bi bi-dash-lg" />
-                            </motion.button>
-
-                            <motion.div
-                              key={item.qty}
+                            <div
                               className="d-flex align-items-center justify-content-center"
-                              initial={{ opacity: 0, y: -4 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ duration: 0.18, ease: "easeOut" }}
                               style={{
-                                width: "58px",
-                                fontWeight: "800",
-                                color: "white",
+                                width: "110px",
+                                height: "110px",
+                                borderRadius:
+                                  "20px",
+                                background:
+                                  "rgba(0,0,0,.22)",
+                                border:
+                                  "1px solid rgba(255,255,255,.06)",
+                                overflow: "hidden",
+                                flexShrink: 0,
                               }}
                             >
-                              {item.qty}
-                            </motion.div>
+                              <motion.img
+                                src={item.img}
+                                alt={item.name}
+                                onError={(event) => {
+                                  event.currentTarget.src =
+                                    "/logo.png";
+                                }}
+                                initial={{
+                                  opacity: 0,
+                                  scale: 0.96,
+                                }}
+                                animate={{
+                                  opacity: 1,
+                                  scale: 1,
+                                }}
+                                transition={{
+                                  duration: 0.24,
+                                  ease: "easeOut",
+                                }}
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit:
+                                    "contain",
+                                  padding: "10px",
+                                }}
+                              />
+                            </div>
 
-                            <motion.button
-                              type="button"
-                              onClick={() => aumentarQuantidade(item.id)}
-                              className="btn"
-                              whileTap={{ scale: 0.94 }}
+                            <div
+                              className="flex-grow-1"
                               style={{
-                                width: "48px",
-                                height: "48px",
-                                border: "none",
-                                color: "white",
+                                minWidth: 0,
                               }}
                             >
-                              <i className="bi bi-plus-lg" />
-                            </motion.button>
-                          </div>
+                              <span
+                                style={{
+                                  color:
+                                    "#ffcf40",
+                                  fontSize:
+                                    ".78rem",
+                                  fontWeight:
+                                    "800",
+                                  textTransform:
+                                    "uppercase",
+                                  letterSpacing:
+                                    ".7px",
+                                }}
+                              >
+                                Produto #
+                                {item.id_produto}
+                              </span>
 
-                          <div
-                            className="text-md-end"
-                            style={{
-                              minWidth: "150px",
-                            }}
-                          >
-                            <span
-                              style={{
-                                display: "block",
-                                color: "rgba(255,255,255,.48)",
-                                fontSize: ".78rem",
-                                textTransform: "uppercase",
-                                fontWeight: "800",
-                              }}
-                            >
-                              Subtotal
-                            </span>
+                              <h4
+                                className="mt-2 mb-2"
+                                style={{
+                                  color:
+                                    "white",
+                                  fontWeight:
+                                    "800",
+                                  fontSize:
+                                    "1.15rem",
+                                }}
+                              >
+                                {item.name}
+                              </h4>
 
-                            <motion.strong
-                              key={item.price * item.qty}
-                              initial={{ opacity: 0, y: -4 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ duration: 0.18, ease: "easeOut" }}
-                              style={{
-                                display: "block",
-                                color: "#5cff95",
-                                fontSize: "1.15rem",
-                                marginTop: "4px",
-                              }}
-                            >
-                              {formatarPreco(item.price * item.qty)}
-                            </motion.strong>
+                              <p
+                                className="mb-0"
+                                style={{
+                                  color:
+                                    "rgba(255,255,255,.55)",
+                                }}
+                              >
+                                Valor unitário:{" "}
+                                <strong
+                                  style={{
+                                    color:
+                                      "#ffe082",
+                                  }}
+                                >
+                                  {formatarPreco(
+                                    item.price
+                                  )}
+                                </strong>
+                              </p>
+                            </div>
 
-                            <motion.button
-                              type="button"
-                              onClick={() => removerItem(item.id)}
-                              className="btn btn-sm mt-2"
-                              whileHover={{ y: -2 }}
-                              whileTap={{ scale: 0.98 }}
+                            <div
+                              className="d-flex align-items-center"
                               style={{
-                                color: "#ff758f",
-                                border: "1px solid rgba(255,117,143,.25)",
-                                borderRadius: "12px",
+                                width: "fit-content",
+                                background:
+                                  "rgba(0,0,0,.18)",
+                                border:
+                                  "1px solid rgba(255,255,255,.07)",
+                                borderRadius:
+                                  "18px",
+                                overflow: "hidden",
                                 boxShadow: "none",
                               }}
                             >
-                              <i className="bi bi-x-lg me-1" />
-                              Remover
-                            </motion.button>
-                          </div>
-                        </motion.article>
-                      ))}
+                              <motion.button
+                                type="button"
+                                onClick={() =>
+                                  diminuirQuantidade(
+                                    item.id
+                                  )
+                                }
+                                disabled={
+                                  item.qty <= 1
+                                }
+                                className="btn"
+                                whileTap={
+                                  item.qty <= 1
+                                    ? {}
+                                    : {
+                                        scale: 0.94,
+                                      }
+                                }
+                                style={{
+                                  width: "48px",
+                                  height: "48px",
+                                  border: "none",
+                                  color: "white",
+                                  opacity:
+                                    item.qty <= 1
+                                      ? 0.35
+                                      : 1,
+                                }}
+                              >
+                                <i className="bi bi-dash-lg" />
+                              </motion.button>
+
+                              <motion.div
+                                key={item.qty}
+                                className="d-flex align-items-center justify-content-center"
+                                initial={{
+                                  opacity: 0,
+                                  y: -4,
+                                }}
+                                animate={{
+                                  opacity: 1,
+                                  y: 0,
+                                }}
+                                transition={{
+                                  duration: 0.18,
+                                  ease: "easeOut",
+                                }}
+                                style={{
+                                  width: "58px",
+                                  fontWeight:
+                                    "800",
+                                  color: "white",
+                                }}
+                              >
+                                {item.qty}
+                              </motion.div>
+
+                              <motion.button
+                                type="button"
+                                onClick={() =>
+                                  aumentarQuantidade(
+                                    item.id
+                                  )
+                                }
+                                className="btn"
+                                whileTap={{
+                                  scale: 0.94,
+                                }}
+                                style={{
+                                  width: "48px",
+                                  height: "48px",
+                                  border: "none",
+                                  color: "white",
+                                }}
+                              >
+                                <i className="bi bi-plus-lg" />
+                              </motion.button>
+                            </div>
+
+                            <div
+                              className="text-md-end"
+                              style={{
+                                minWidth: "150px",
+                              }}
+                            >
+                              <span
+                                style={{
+                                  display:
+                                    "block",
+                                  color:
+                                    "rgba(255,255,255,.48)",
+                                  fontSize:
+                                    ".78rem",
+                                  textTransform:
+                                    "uppercase",
+                                  fontWeight:
+                                    "800",
+                                }}
+                              >
+                                Subtotal
+                              </span>
+
+                              <motion.strong
+                                key={
+                                  item.price *
+                                  item.qty
+                                }
+                                initial={{
+                                  opacity: 0,
+                                  y: -4,
+                                }}
+                                animate={{
+                                  opacity: 1,
+                                  y: 0,
+                                }}
+                                transition={{
+                                  duration: 0.18,
+                                  ease: "easeOut",
+                                }}
+                                style={{
+                                  display:
+                                    "block",
+                                  color:
+                                    "#5cff95",
+                                  fontSize:
+                                    "1.15rem",
+                                  marginTop:
+                                    "4px",
+                                }}
+                              >
+                                {formatarPreco(
+                                  item.price *
+                                    item.qty
+                                )}
+                              </motion.strong>
+
+                              <motion.button
+                                type="button"
+                                onClick={() =>
+                                  removerItem(
+                                    item.id
+                                  )
+                                }
+                                className="btn btn-sm mt-2"
+                                whileHover={{
+                                  y: -2,
+                                }}
+                                whileTap={{
+                                  scale: 0.98,
+                                }}
+                                style={{
+                                  color:
+                                    "#ff758f",
+                                  border:
+                                    "1px solid rgba(255,117,143,.25)",
+                                  borderRadius:
+                                    "12px",
+                                  boxShadow:
+                                    "none",
+                                }}
+                              >
+                                <i className="bi bi-x-lg me-1" />
+                                Remover
+                              </motion.button>
+                            </div>
+                          </motion.article>
+                        )
+                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>
-              </motion.div>
-
-              <motion.div
-                className="mt-4"
-                {...getSequencedMotion(1, 20)}
-                style={{
-                  ...panelStyle,
-                  padding: "32px",
-                }}
-              >
-                <h2
-                  style={{
-                    color: "#ffe082",
-                    fontWeight: "800",
-                    marginBottom: "8px",
-                  }}
-                >
-                  Dados para Entrega
-                </h2>
-
-                <p
-                  style={{
-                    color: "rgba(255,255,255,.55)",
-                    marginBottom: "24px",
-                  }}
-                >
-                  Esses dados ajudam na confirmação visual da compra. Seu backend atual ainda registra o pedido apenas por usuário e produto.
-                </p>
-
-                <div className="row g-3">
-                  {[
-                    {
-                      campo: "nome",
-                      label: "Nome",
-                      type: "text",
-                      placeholder: "Seu nome",
-                      col: "col-md-6",
-                    },
-                    {
-                      campo: "email",
-                      label: "Email",
-                      type: "email",
-                      placeholder: "seuemail@empresa.com",
-                      col: "col-md-6",
-                    },
-                    {
-                      campo: "telefone",
-                      label: "Telefone",
-                      type: "text",
-                      placeholder: "(00) 00000-0000",
-                      col: "col-md-6",
-                    },
-                    {
-                      campo: "cep",
-                      label: "CEP",
-                      type: "text",
-                      placeholder: "00000-000",
-                      col: "col-md-6",
-                    },
-                    {
-                      campo: "endereco",
-                      label: "Endereço",
-                      type: "text",
-                      placeholder: "Rua, número, bairro, cidade",
-                      col: "col-12",
-                    },
-                  ].map((field, index) => (
-                    <motion.div
-                      className={field.col}
-                      key={field.campo}
-                      {...getSequencedMotion(index, 12)}
-                    >
-                      <label className="form-label text-white-50">
-                        {field.label}
-                      </label>
-
-                      <input
-                        type={field.type}
-                        className="form-control"
-                        value={formData[field.campo]}
-                        onChange={(event) => atualizarCampo(field.campo, event.target.value)}
-                        placeholder={field.placeholder}
-                        style={inputStyle}
-                      />
-                    </motion.div>
-                  ))}
-
-                  <motion.div
-                    className="col-12"
-                    {...getSequencedMotion(5, 12)}
-                  >
-                    <label className="form-label text-white-50">
-                      Observação
-                    </label>
-
-                    <textarea
-                      className="form-control"
-                      value={formData.observacao}
-                      onChange={(event) => atualizarCampo("observacao", event.target.value)}
-                      placeholder="Alguma observação para o pedido..."
-                      rows={4}
-                      style={{
-                        ...inputStyle,
-                        resize: "none",
-                      }}
-                    />
-                  </motion.div>
-                </div>
               </motion.div>
             </div>
 
@@ -1036,19 +1251,37 @@ export default function FinalizarPedido() {
                 <div className="d-flex align-items-center gap-3 mb-4">
                   <motion.div
                     className="d-flex align-items-center justify-content-center"
-                    initial={{ opacity: 0, scale: 0.92, rotate: -4 }}
-                    animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                    transition={{ duration: 0.34, ease: "easeOut" }}
+                    initial={{
+                      opacity: 0,
+                      scale: 0.92,
+                      rotate: -4,
+                    }}
+                    animate={{
+                      opacity: 1,
+                      scale: 1,
+                      rotate: 0,
+                    }}
+                    transition={{
+                      duration: 0.34,
+                      ease: "easeOut",
+                    }}
                     style={{
                       width: "54px",
                       height: "54px",
                       borderRadius: "18px",
-                      background: "rgba(255,179,0,.12)",
+                      background:
+                        "rgba(255,179,0,.12)",
                       color: "#ffcf40",
-                      border: "1px solid rgba(255,255,255,.08)",
+                      border:
+                        "1px solid rgba(255,255,255,.08)",
                     }}
                   >
-                    <i className="bi bi-receipt" style={{ fontSize: "1.4rem" }} />
+                    <i
+                      className="bi bi-receipt"
+                      style={{
+                        fontSize: "1.4rem",
+                      }}
+                    />
                   </motion.div>
 
                   <div>
@@ -1064,46 +1297,81 @@ export default function FinalizarPedido() {
 
                     <p
                       style={{
-                        color: "rgba(255,255,255,.52)",
+                        color:
+                          "rgba(255,255,255,.52)",
                         margin: 0,
                       }}
                     >
-                      Pedido de {usuario?.nome_user || "usuário"}
+                      Pedido de{" "}
+                      {usuario?.nome_user ||
+                        "usuário"}
                     </p>
                   </div>
                 </div>
 
                 <div className="d-flex flex-column gap-3">
                   {[
-                    ["Produtos", resumo.quantidadeTotal],
-                    ["Subtotal", formatarPreco(resumo.subtotal)],
-                    ["Frete estimado", "A combinar"],
-                  ].map(([label, value], index) => (
-                    <motion.div
-                      key={label}
-                      className="d-flex justify-content-between"
-                      {...getSequencedMotion(index, 12)}
-                      style={{
-                        ...innerPanelStyle,
-                        borderRadius: "16px",
-                        padding: "15px",
-                      }}
-                    >
-                      <span style={{ color: "rgba(255,255,255,.58)" }}>
-                        {label}
-                      </span>
+                    [
+                      "Produtos",
+                      resumo.quantidadeTotal,
+                    ],
+                    [
+                      "Subtotal",
+                      formatarPreco(
+                        resumo.subtotal
+                      ),
+                    ],
+                    [
+                      "Frete estimado",
+                      "A combinar",
+                    ],
+                  ].map(
+                    ([label, value], index) => (
+                      <motion.div
+                        key={label}
+                        className="d-flex justify-content-between"
+                        {...getSequencedMotion(
+                          index,
+                          12
+                        )}
+                        style={{
+                          ...innerPanelStyle,
+                          borderRadius: "16px",
+                          padding: "15px",
+                        }}
+                      >
+                        <span
+                          style={{
+                            color:
+                              "rgba(255,255,255,.58)",
+                          }}
+                        >
+                          {label}
+                        </span>
 
-                      <strong style={label === "Frete estimado" ? { color: "#5cff95" } : undefined}>
-                        {value}
-                      </strong>
-                    </motion.div>
-                  ))}
+                        <strong
+                          style={
+                            label ===
+                            "Frete estimado"
+                              ? {
+                                  color:
+                                    "#5cff95",
+                                }
+                              : undefined
+                          }
+                        >
+                          {value}
+                        </strong>
+                      </motion.div>
+                    )
+                  )}
 
                   <motion.div
                     {...getSequencedMotion(3, 8)}
                     style={{
                       height: "1px",
-                      background: "rgba(255,255,255,.08)",
+                      background:
+                        "rgba(255,255,255,.08)",
                       margin: "8px 0",
                     }}
                   />
@@ -1116,9 +1384,11 @@ export default function FinalizarPedido() {
                       <span
                         style={{
                           display: "block",
-                          color: "rgba(255,255,255,.52)",
+                          color:
+                            "rgba(255,255,255,.52)",
                           fontSize: ".82rem",
-                          textTransform: "uppercase",
+                          textTransform:
+                            "uppercase",
                           fontWeight: "800",
                           letterSpacing: ".7px",
                         }}
@@ -1126,38 +1396,76 @@ export default function FinalizarPedido() {
                         Total
                       </span>
 
-                      <small style={{ color: "rgba(255,255,255,.42)" }}>
+                      <small
+                        style={{
+                          color:
+                            "rgba(255,255,255,.42)",
+                        }}
+                      >
                         Sem frete calculado
                       </small>
                     </div>
 
                     <motion.strong
                       key={resumo.total}
-                      initial={{ opacity: 0, y: -5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.18, ease: "easeOut" }}
+                      initial={{
+                        opacity: 0,
+                        y: -5,
+                      }}
+                      animate={{
+                        opacity: 1,
+                        y: 0,
+                      }}
+                      transition={{
+                        duration: 0.18,
+                        ease: "easeOut",
+                      }}
                       style={{
                         color: "#5cff95",
                         fontSize: "1.7rem",
                       }}
                     >
-                      {formatarPreco(resumo.total)}
+                      {formatarPreco(
+                        resumo.total
+                      )}
                     </motion.strong>
                   </motion.div>
                 </div>
 
                 <motion.button
                   type="submit"
-                  disabled={finalizando || carrinho.length === 0}
+                  disabled={
+                    finalizando ||
+                    carrinho.length === 0
+                  }
                   className="btn w-100 mt-4"
-                  whileHover={finalizando || carrinho.length === 0 ? {} : { y: -3 }}
-                  whileTap={finalizando || carrinho.length === 0 ? {} : { scale: 0.98 }}
+                  whileHover={
+                    finalizando ||
+                    carrinho.length === 0
+                      ? {}
+                      : {
+                          y: -3,
+                        }
+                  }
+                  whileTap={
+                    finalizando ||
+                    carrinho.length === 0
+                      ? {}
+                      : {
+                          scale: 0.98,
+                        }
+                  }
                   style={{
                     ...buttonGradient,
                     padding: "15px",
-                    opacity: finalizando || carrinho.length === 0 ? 0.65 : 1,
+                    opacity:
+                      finalizando ||
+                      carrinho.length === 0
+                        ? 0.65
+                        : 1,
                     cursor:
-                      finalizando || carrinho.length === 0
+                      finalizando ||
+                      carrinho.length === 0
                         ? "not-allowed"
                         : "pointer",
                   }}
@@ -1177,10 +1485,16 @@ export default function FinalizarPedido() {
 
                 <motion.button
                   type="button"
-                  onClick={() => router.push("/pedidos")}
+                  onClick={() =>
+                    router.push("/pedidos")
+                  }
                   className="btn btn-outline-light w-100 mt-3"
-                  whileHover={{ y: -3 }}
-                  whileTap={{ scale: 0.98 }}
+                  whileHover={{
+                    y: -3,
+                  }}
+                  whileTap={{
+                    scale: 0.98,
+                  }}
                   style={{
                     borderRadius: "16px",
                     padding: "13px",
@@ -1190,38 +1504,6 @@ export default function FinalizarPedido() {
                 >
                   Ver meus pedidos
                 </motion.button>
-
-                <motion.div
-                  className="mt-4"
-                  {...getSequencedMotion(5, 12)}
-                  style={{
-                    ...innerPanelStyle,
-                    borderRadius: "20px",
-                    padding: "18px",
-                  }}
-                >
-                  <h6
-                    style={{
-                      color: "#ffcf40",
-                      fontWeight: "800",
-                      marginBottom: "10px",
-                    }}
-                  >
-                    <i className="bi bi-info-circle me-2" />
-                    Observação técnica
-                  </h6>
-
-                  <p
-                    style={{
-                      color: "rgba(255,255,255,.58)",
-                      lineHeight: "1.7",
-                      margin: 0,
-                      fontSize: ".92rem",
-                    }}
-                  >
-                    O pedido será enviado ao backend usando o usuário logado e os produtos do carrinho.
-                  </p>
-                </motion.div>
               </aside>
             </motion.div>
           </div>
